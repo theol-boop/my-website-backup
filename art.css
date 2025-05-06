@@ -1,0 +1,158 @@
+body {
+    font-family: sans-serif;
+    background-color: #ffffff;
+    margin: 0;
+    position: relative;
+}
+
+/* Center Title */
+h1 {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 30px;
+}
+
+.art-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Responsive grid */
+    gap: 25px;
+    padding: 20px;
+}
+
+.art-item {
+    position: relative;
+    cursor: pointer;
+    aspect-ratio: 1 / 1;
+}
+
+.art-item .preview {
+    width: 100%;
+    height: 100%;
+    background-color: transparent;
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    border-radius: 50%;
+    filter: blur(3px);
+}
+
+.art-item:hover .preview,
+.art-item:focus .preview
+{
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    filter: blur(0);
+}
+
+/* Style for the hover title */
+.art-item .art-title {
+    position: absolute;
+    top: 50%; /* Center vertically */
+    left: 50%; /* Center horizontally */
+    transform: translate(-50%, 95%); /* Position very low initially */
+    background-color: rgba(255, 255, 255, 0.8); /* Changed to semi-transparent white */
+    color: #000; /* Changed to black */
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0s linear 0.3s;
+    pointer-events: none; /* Don't let the title interfere with hover */
+    z-index: 10; /* Ensure it's above the preview */
+}
+
+/* Show title on hover/focus of the art item */
+.art-item:hover .art-title,
+.art-item:focus .art-title {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 85%); /* Move upwards slightly, staying very low */
+    transition: opacity 0.3s ease 0.6s, transform 0.3s ease 0.6s, visibility 0s linear 0.6s; /* Increased delay to 0.6s */
+}
+
+/* Styles for the container of the full image view */
+.art-item .full-image-container {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    padding: 20px;
+    box-sizing: border-box;
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.8);
+    transition: opacity 0.4s ease, visibility 0s linear 0.4s, transform 0.4s ease;
+    z-index: 1000;
+    cursor: zoom-out;
+}
+
+/* Style for the actual image within the container */
+.art-item .full-image-container .full-image {
+    display: block;
+    max-width: 100%;
+    max-height: calc(100% - 40px);
+    object-fit: contain;
+    margin: auto;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Style for the text within the container */
+.art-item .full-image-container .full-image-text {
+    position: absolute;
+    bottom: 20px;
+    right: 25px;
+    color: #ddd;
+    font-size: 0.9em;
+    text-align: right;
+    max-width: 80%;
+    pointer-events: none;
+}
+
+/* Styles when an item is expanded */
+.art-item.expanded .preview {
+    opacity: 0.5;
+}
+
+.art-item.expanded .full-image-container {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+    transition: opacity 0.4s ease, visibility 0s linear 0s, transform 0.4s ease;
+}
+
+
+body.gallery-active {
+    overflow: hidden;
+}
+
+/* Optional: Dim other items when one is active */
+body.gallery-active .art-gallery .art-item:not(.expanded) {
+    opacity: 0.3;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+
+/* SVG Title Style */
+.page-title-svg {
+    display: block; /* Make it block to allow margins */
+    margin: 20px auto 40px auto; /* Top margin, auto left/right for center, bottom margin */
+    height: 60px; /* Adjust height as needed */
+    width: auto; /* Maintain aspect ratio */
+}
+
+/* Center Title */
+h1 {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 30px;
+} 

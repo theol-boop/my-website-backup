@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project X - Theo Lebeaux</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Basic styling for the canvas */
+        #gradient-canvas {
+            display: block; /* Prevents extra space below canvas */
+            width: 500px;   /* Example size */
+            height: 300px;  /* Example size */
+            margin: 20px auto; /* Center it */
+            cursor: pointer; /* Indicate interactivity */
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <a href="projects.html" class="back-button">
+            <img src="images/back-button.svg" alt="Back to Projects">
+        </a>
+        <nav class="main-nav"></nav>
+        <img src="images/theo-lebeaux-logo.png" alt="Theo Lebeaux Logo" class="logo">
+    </header>
+
+    <main>
+        <h1>Project X</h1>
+        <p>Experimental Gradient Color Picker</p>
+        <canvas id="gradient-canvas"></canvas>
+        <!-- Content for Project X goes here -->
+    </main>
+
+    <footer>
+        <!-- Footer content -->
+    </footer>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+            }
+        }
+    </script>
+    <script type="module" src="project-x-script.js" defer></script>
+</body>
+</html> 

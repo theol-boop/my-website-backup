@@ -1,0 +1,255 @@
+/* Inherits header styles from style.css */
+
+/* Music Page Specific Styles */
+body {
+    /* Maybe a slightly different background or font if desired */
+}
+
+/* Updated Page Title Icon style */
+.page-title-icon {
+    display: block; 
+    margin: 20px auto 30px auto; /* Reduced bottom margin */
+    height: 50px; /* Adjust size as needed */
+    width: auto; 
+}
+
+/* Horizontal Navigation Strip - Updated */
+.music-nav {
+    display: flex;
+    justify-content: center;
+    /* background-color: #f0f0f0; Removed background */
+    padding: 5px 0; /* Reduced vertical padding */
+    margin-bottom: 30px;
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    overflow-x: auto; /* Allow scrolling on smaller screens */
+    white-space: nowrap; /* Prevent wrapping */
+}
+
+.music-nav .nav-item {
+    text-decoration: none;
+    color: #333;
+    padding: 5px 15px; /* Reduced vertical padding, adjusted horizontal */
+    margin: 0 3px; /* Slightly reduced margin */
+    border-radius: 4px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    font-weight: 500;
+    font-style: italic;
+}
+
+.music-nav .nav-item:hover {
+    background-color: #e0e0e0;
+    color: #000;
+}
+
+.music-nav .nav-item.active {
+    background-color: #333;
+    color: #fff;
+    font-weight: bold;
+}
+
+/* Content Area */
+.music-content {
+    padding: 0 20px; /* Add some side padding */
+    max-width: 1000px; /* Limit content width */
+    margin: 0 auto; /* Center content area */
+}
+
+/* Content Sections */
+.content-section {
+    display: none; /* Hide all sections by default */
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px dashed #ccc; /* Placeholder border */
+    min-height: 200px; /* Ensure some space */
+}
+
+.content-section.active-section {
+    display: block; /* Show the active section */
+}
+
+.placeholder-content {
+    margin-top: 15px;
+    padding: 20px;
+    background-color: #fafafa;
+    text-align: center;
+    color: #999;
+    font-style: italic;
+}
+
+/* Basic Styles for Mock Content */
+.mock-player,
+.mock-album-grid,
+.mock-merch-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 20px;
+    justify-content: center;
+}
+
+.mock-player {
+    align-items: center;
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.mock-artwork {
+    height: 80px;
+    width: 80px;
+    object-fit: cover;
+    margin-right: 15px;
+}
+
+.mock-player-controls span {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.mock-player-controls button,
+.mock-player-controls .store-link {
+    margin-right: 10px;
+}
+
+.mock-album-item,
+.mock-merch-item {
+    text-align: center;
+    max-width: 150px;
+}
+
+.mock-album-item img,
+.mock-merch-item img {
+    max-width: 100%;
+    height: auto;
+    margin-bottom: 10px;
+    border: 1px solid #eee;
+}
+
+.mock-album-item span,
+.mock-merch-item span {
+    display: block;
+    font-size: 0.9em;
+    margin-bottom: 5px;
+}
+
+.mock-epk-content h3 {
+    margin-top: 15px;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 3px;
+}
+
+.mock-lessons-content h3 {
+     margin-top: 15px;
+     margin-bottom: 5px;
+}
+
+.store-link, .ticket-link {
+    display: inline-block;
+    background-color: #eee;
+    padding: 3px 8px;
+    border-radius: 3px;
+    text-decoration: none;
+    color: #333;
+    font-size: 0.85em;
+    transition: background-color 0.2s ease;
+}
+
+.store-link:hover, .ticket-link:hover {
+    background-color: #ddd;
+}
+
+.mock-live-list {
+    list-style: none;
+    padding: 0;
+}
+
+.mock-live-list li {
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px dotted #eee;
+}
+
+.mock-live-list .sold-out {
+    font-style: italic;
+    color: #999;
+    margin-left: 10px;
+}
+
+/* Equalizer Animation Styles */
+@keyframes bounce {
+  0%, 40%, 100% { transform: scaleY(0.1); } /* Keep low for longer */
+  20% { transform: scaleY(1.0); } /* Quick peak */
+}
+
+.equalizer-icon {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; /* Keep centered */
+  height: 70px; 
+  width: 135px;  
+}
+
+/* Style the individual bars (spans) */
+.equalizer-icon span {
+  display: block;
+  width: 2px; 
+  height: 100%; 
+  background-color: currentColor; 
+  animation: bounce 3.5s ease-in-out infinite; /* Significantly slower, changed timing func */
+  transform-origin: center; 
+}
+
+/* Remove old repeating :nth-child rules */
+/* .equalizer-icon span:nth-child(8n + ...) ... */
+
+/* Apply unique, pseudo-random delays to all 40 bars */
+.equalizer-icon span:nth-child(1) { animation-delay: -0.3s; }
+.equalizer-icon span:nth-child(2) { animation-delay: -1.1s; }
+.equalizer-icon span:nth-child(3) { animation-delay: -2.5s; }
+.equalizer-icon span:nth-child(4) { animation-delay: -0.8s; }
+.equalizer-icon span:nth-child(5) { animation-delay: -1.9s; }
+.equalizer-icon span:nth-child(6) { animation-delay: -3.1s; }
+.equalizer-icon span:nth-child(7) { animation-delay: -0.5s; }
+.equalizer-icon span:nth-child(8) { animation-delay: -2.2s; }
+.equalizer-icon span:nth-child(9) { animation-delay: -1.4s; }
+.equalizer-icon span:nth-child(10) { animation-delay: -3.4s; }
+.equalizer-icon span:nth-child(11) { animation-delay: -0.1s; }
+.equalizer-icon span:nth-child(12) { animation-delay: -2.8s; }
+.equalizer-icon span:nth-child(13) { animation-delay: -1.6s; }
+.equalizer-icon span:nth-child(14) { animation-delay: -0.9s; }
+.equalizer-icon span:nth-child(15) { animation-delay: -3.0s; }
+.equalizer-icon span:nth-child(16) { animation-delay: -1.2s; }
+.equalizer-icon span:nth-child(17) { animation-delay: -0.4s; }
+.equalizer-icon span:nth-child(18) { animation-delay: -2.1s; }
+.equalizer-icon span:nth-child(19) { animation-delay: -1.8s; }
+.equalizer-icon span:nth-child(20) { animation-delay: -3.3s; }
+.equalizer-icon span:nth-child(21) { animation-delay: -0.6s; }
+.equalizer-icon span:nth-child(22) { animation-delay: -2.6s; }
+.equalizer-icon span:nth-child(23) { animation-delay: -1.0s; }
+.equalizer-icon span:nth-child(24) { animation-delay: -0.2s; }
+.equalizer-icon span:nth-child(25) { animation-delay: -2.3s; }
+.equalizer-icon span:nth-child(26) { animation-delay: -1.5s; }
+.equalizer-icon span:nth-child(27) { animation-delay: -3.2s; }
+.equalizer-icon span:nth-child(28) { animation-delay: -0.7s; }
+.equalizer-icon span:nth-child(29) { animation-delay: -2.9s; }
+.equalizer-icon span:nth-child(30) { animation-delay: -1.3s; }
+.equalizer-icon span:nth-child(31) { animation-delay: -2.0s; }
+.equalizer-icon span:nth-child(32) { animation-delay: -0.4s; }
+.equalizer-icon span:nth-child(33) { animation-delay: -3.5s; }
+.equalizer-icon span:nth-child(34) { animation-delay: -1.7s; }
+.equalizer-icon span:nth-child(35) { animation-delay: -0.8s; }
+.equalizer-icon span:nth-child(36) { animation-delay: -2.4s; }
+.equalizer-icon span:nth-child(37) { animation-delay: -1.1s; }
+.equalizer-icon span:nth-child(38) { animation-delay: -3.1s; }
+.equalizer-icon span:nth-child(39) { animation-delay: -0.6s; }
+.equalizer-icon span:nth-child(40) { animation-delay: -2.7s; }
+
+/* Explicitly remove path styles (redundant but safe) */
+.page-title-icon path { 
+  stroke-dasharray: unset;
+  stroke-dashoffset: unset;
+  animation: none;
+} 

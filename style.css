@@ -1,0 +1,1078 @@
+/* Basic Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* --- Common Elements --- */
+
+/* SVG Back Button */
+a.back-button {
+    display: inline-block; /* Allows setting size */
+    line-height: 0; /* Prevent extra space around image */
+    text-decoration: none;
+    /* Add margin or positioning as needed per page context */
+}
+
+a.back-button img {
+    height: 30px; /* Adjust size as needed */
+    width: auto;
+    vertical-align: middle; /* Align image nicely if needed */
+    transition: opacity 0.2s ease;
+}
+
+a.back-button:hover img {
+    opacity: 0.7; /* Slight fade on hover */
+}
+
+/* --- End Common Elements --- */
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #ffffff;
+    letter-spacing: -0.5px; /* Slightly closer letters */
+    line-height: 1.6;
+    /* Flexbox layout for sticky footer */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.site-header {
+    /* Invisible header - adjust padding as needed */
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between; /* Logo pushed to the right */
+    align-items: center;
+    /* We'll make it truly invisible later if needed, for now, space is reserved */
+}
+
+.site-logo {
+    mix-blend-mode: multiply; /* Attempt to make white background transparent */
+}
+
+.logo {
+    /* font-size: 1.5em; */ /* Removed as it's an image now */
+    /* font-weight: bold; */
+    height: 80px; /* Increased height */
+    width: auto;
+    transition: filter 0.3s ease; /* Add transition for blur */
+}
+
+.main-nav {
+    /* Basic nav styles - hamburger functionality later */
+    flex-grow: 1;
+    padding-left: 20px; /* Add some space between nav/placeholder and logo */
+}
+
+main {
+    padding: 40px; /* Increased padding */
+    /* transition: filter 0.3s ease-in-out; */ /* Removed blur transition */
+    flex-grow: 1; /* Allow main content to grow and push footer down */
+    position: relative; /* Added to ensure main content is above fixed countdown */
+    z-index: 1;         /* Added to ensure main content is above fixed countdown */
+}
+
+/* Add a class for the blur effect - REMOVED */
+/* main.blurred {
+    filter: blur(5px);
+} */
+
+/* Blur Overlay Styles - REMOVED */
+/*
+#blur-overlay {
+    display: none; 
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.1); 
+    backdrop-filter: blur(4px); 
+    -webkit-backdrop-filter: blur(4px); 
+    z-index: 5; 
+    transition: opacity 0.3s ease-in-out;
+    opacity: 0;
+}
+
+#blur-overlay.visible {
+    display: block;
+    opacity: 1;
+}
+*/
+
+.icon-grid {
+    display: grid;
+    gap: 40px; /* Increased gap */
+    padding: 80px; /* Increased padding */
+    justify-content: center;
+    align-items: center;
+
+    /* Desktop: 4 columns x 2 rows */
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    max-width: 1600px; /* Increased max width */
+    margin: 20px auto 80px auto; /* Further reduced top margin */
+}
+
+.icon-link {
+    text-decoration: none;
+    color: inherit;
+    display: flex; /* Use flexbox for centering content inside the link */
+    justify-content: center;
+    align-items: center;
+    position: relative; /* Needed for absolute positioning of info-box */
+    transition: filter 0.3s ease, transform 0.3s ease;
+}
+
+.icon {
+    width: 220px; /* Adjusted size */
+    height: 220px; /* Adjusted size */
+    /* border: 1px solid #ccc; */ /* Removed border for images */
+    border: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-size: 1.2em; /* Increased font size for text icons */
+    cursor: pointer;
+    transition: transform 0.1s ease-in-out;
+    background-color: transparent; /* Light background for icons without images - CHANGED */
+    overflow: hidden; /* Ensure images don't overflow */
+}
+
+/* Style icons that still contain text */
+#icon-video, #icon-work, #icon-projects, #icon-stuff {
+    border: none; /* Keep border for text icons - CHANGED */
+    background-color: transparent; /* Reset background - CHANGED */
+}
+
+.icon img {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain; /* Scale image nicely */
+}
+
+/* Make James Peach GIF larger */
+#icon-james-peach img {
+    max-width: 100%; /* Fill container width */
+    max-height: 100%; /* Fill container height */
+    object-fit: contain; /* Ensure it scales nicely without cropping, if aspect ratio differs */
+    filter: invert(1); /* Re-added to invert colors */
+}
+
+/* Make the red button icon smaller */
+#icon-red-button img {
+    max-width: 35%; /* Adjusted from 22.5% - making it a bit bigger */
+    max-height: 35%; /* Adjusted from 22.5% - making it a bit bigger */
+}
+
+.james-peach-icon-image {
+    mix-blend-mode: screen; /* Attempt to make (now potentially black) background transparent */
+}
+
+/* Info Box Styles */
+
+.info-box {
+    visibility: hidden; 
+    opacity: 0; 
+    position: fixed; 
+    background-color: #333; /* CHANGED from #000000 */
+    color: #ffffff; /* White text (already was) */
+    padding: 8px 15px; /* CHANGED from 15px 25px */
+    border-radius: 5px; /* CHANGED from 30px */
+    font-size: 0.9em; /* CHANGED from 0.95em */
+    line-height: 1.4;
+    z-index: 990; /* CHANGED from 10, to be high but below other popups */ 
+    pointer-events: none; 
+    transition: opacity 0.2s ease-in-out, visibility 0.08s ease-in-out; 
+    max-width: 250px; /* Add max-width */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* ADDED */
+    /* cursor: default; can be inherited or set if needed, but links have own cursor */
+}
+
+.info-box.visible {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto; 
+}
+
+.info-box a {
+    color: #ffffff; /* CHANGED from #00ffff (neon blue) to white */
+    text-decoration: underline; /* ADDED to be consistent with other action links */
+}
+.info-box a:hover {
+    /* text-decoration: underline; (already underlined by default) */
+    /* Optional: slightly different hover color for white links if desired, e.g., #eee */
+    opacity: 0.8; /* Example: slight fade on hover for white link */
+}
+
+/* Wiggle Animation on Hover */
+@keyframes wiggle {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+    75% { transform: rotate(-2deg); }
+    100% { transform: rotate(0deg); }
+}
+
+/* Keep wiggle on icon when link is hovered */
+.icon-link:hover .icon {
+    animation: wiggle 0.5s ease-in-out;
+}
+
+/* Mobile: 2 columns x 4 rows */
+@media (max-width: 768px) {
+    .site-header {
+        padding: 15px 20px;
+    }
+
+    .icon-grid {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(4, 1fr);
+        padding: 40px; /* Adjusted padding */
+        max-width: 95%; /* Adjusted max width */
+        gap: 20px; /* Adjusted gap */
+        margin: 40px auto; /* Adjusted margin */
+    }
+
+    .icon {
+        width: 150px; /* Increased mobile size */
+        height: 150px; /* Increased mobile size */
+    }
+
+    /* Basic hamburger menu placeholder styles */
+    /*
+    .main-nav::after { 
+        content: "\2630"; 
+        font-size: 1.8em;
+        cursor: pointer;
+    }
+    */
+    /* Hide actual nav links on mobile for now */
+    /* Removed empty ruleset below */
+    /* .main-nav { ... } */
+
+    .logo {
+        height: 45px; /* Increased mobile logo height */
+    }
+
+    .info-box {
+        font-size: 0.9em; /* Adjust mobile font size if needed */
+        padding: 15px 20px; /* Adjust mobile padding */
+    }
+
+    /* --- Blog Styles for Mobile --- */
+    /* Stack blog content and sidebar on smaller screens */
+    .blog-container {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .post-preview-image-placeholder {
+        width: 80px;
+        height: 80px;
+        float: none; /* Don't float on mobile */
+        margin-bottom: 10px;
+        margin-right: 0;
+    }
+    /* --- End Blog Styles for Mobile --- */
+}
+
+/* --- Blog Page Styles --- */
+.blog-container {
+    display: flex;
+    flex-wrap: wrap; /* Allow sidebar to wrap on smaller screens */
+    gap: 40px; /* Space between main content and sidebar */
+    padding: 20px; /* Padding around the container */
+    max-width: 1200px;
+    margin: 20px auto; /* Center the container */
+}
+
+.blog-main {
+    flex: 3; /* Main content takes up more space */
+    min-width: 300px; /* Ensure main content doesn't get too squished */
+}
+
+.blog-sidebar {
+    flex: 1; /* Sidebar takes less space */
+    min-width: 200px; /* Minimum width for the sidebar */
+}
+
+.blog-main h1 {
+    margin-bottom: 30px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.blog-post-preview {
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid #eee;
+}
+
+.blog-post-preview:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.post-preview-image-placeholder {
+    width: 100px; /* Size of the circle */
+    height: 100px;
+    background-color: #ccc; /* Grey color */
+    border-radius: 50%; /* Make it a circle */
+    margin-bottom: 15px;
+    float: left; /* Float left to have text wrap around */
+    margin-right: 20px;
+}
+
+/* Clearfix for the container holding the floated placeholder */
+.blog-post-preview::after {
+    content: "";
+    clear: both;
+    display: table;
+}
+
+.blog-post-preview h2 {
+    margin-top: 0; /* Remove top margin if image is present */
+    margin-bottom: 5px;
+}
+
+.blog-post-preview h2 a {
+    text-decoration: none;
+    color: #333;
+}
+
+.blog-post-preview h2 a:hover {
+    color: #007bff;
+    text-decoration: underline;
+}
+
+.post-meta {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.post-meta .tag {
+    display: inline-block;
+    background-color: #f0f0f0;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: 5px;
+    font-size: 0.85em;
+}
+
+.read-more {
+    display: inline-block;
+    margin-top: 10px;
+    text-decoration: none;
+    color: #007bff;
+}
+
+.read-more:hover {
+    text-decoration: underline;
+}
+
+.sidebar-widget {
+    margin-bottom: 30px;
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 5px;
+}
+
+.sidebar-widget h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+
+.sidebar-widget ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-widget ul li {
+    margin-bottom: 10px;
+}
+
+.sidebar-widget ul li a {
+    text-decoration: none;
+    color: #333;
+}
+
+.sidebar-widget ul li a:hover {
+    color: #007bff;
+}
+
+.sidebar-widget ul.tag-list li {
+    display: inline-block; /* Display tags inline */
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
+
+.sidebar-widget ul.tag-list li a {
+    display: inline-block;
+    background-color: #e9e9e9;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+/* --- Single Blog Post Styles --- */
+.blog-post-full {
+    max-width: 800px; /* Limit width for readability */
+    margin: 20px auto;
+    padding: 20px;
+}
+
+.blog-post-full h1 {
+    margin-bottom: 10px;
+}
+
+.blog-post-full .post-meta {
+    margin-bottom: 30px; /* More space after meta */
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+}
+
+.post-content {
+    line-height: 1.7; /* Improve readability */
+}
+
+.post-full-image-placeholder {
+    width: 200px; /* Larger placeholder */
+    height: 200px;
+    background-color: #ccc;
+    border-radius: 50%;
+    margin: 0 auto 30px auto; /* Center the placeholder */
+    display: block;
+}
+
+.post-content p,
+.post-content ul,
+.post-content ol {
+    margin-bottom: 1.5em;
+}
+
+.post-content ul,
+.post-content ol {
+    margin-left: 2em;
+}
+
+/* --- End Single Blog Post Styles --- */
+
+/* --- Video Page Styles --- */
+.video-gallery-container h1 {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.video-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 40px; /* Space between video items */
+    padding: 20px;
+}
+
+.video-item {
+    width: 250px; /* Adjust width as needed */
+    text-align: center;
+}
+
+.video-placeholder {
+    width: 200px; /* Size of the circle */
+    height: 200px;
+    background-color: #ccc; /* Grey color */
+    border-radius: 50%; /* Make it a circle */
+    margin: 0 auto 15px auto; /* Center circle, add space below */
+    cursor: pointer; /* Indicate it's clickable */
+    transition: transform 0.2s ease-in-out;
+}
+
+.video-placeholder:hover {
+    transform: scale(1.05);
+}
+
+.video-description {
+    font-size: 0.9em;
+    color: #666; /* Grey color */
+    line-height: 1.4;
+    padding: 0 10px; /* Add some padding */
+}
+
+/* Theater Mode Styles */
+#theater-overlay {
+    display: none; /* Hidden by default */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85); /* Semi-transparent black */
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+#theater-player-container {
+    display: none; /* Hidden by default */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%; /* Adjust size */
+    max-width: 960px;
+    height: auto;
+    aspect-ratio: 16 / 9; /* Common video aspect ratio */
+    background-color: #111; /* Player background */
+    z-index: 101;
+    /* Add styles for closing button later */
+}
+
+/* When theater mode is active */
+body.theater-mode-active #theater-overlay {
+    display: block;
+    opacity: 1;
+}
+
+body.theater-mode-active #theater-player-container {
+    display: block;
+}
+
+/* Optional: Dim or hide background content in theater mode */
+body.theater-mode-active .site-header,
+body.theater-mode-active .video-gallery-container,
+body.theater-mode-active footer {
+    /* filter: blur(5px); */ /* Option 1: Blur */
+    opacity: 0.3; /* Option 2: Dim */
+    transition: opacity 0.3s ease-in-out, filter 0.3s ease-in-out;
+}
+/* --- End Video Page Styles --- */
+
+/* --- End Blog Page Styles --- */
+
+/* --- Utility Styles --- */
+.centered-image-container {
+    text-align: center;
+    margin-top: 40px; /* Add some space above centered images */
+    margin-bottom: 40px;
+}
+
+.centered-image-container img {
+    max-width: 80%; /* Prevent images from becoming too large */
+    height: auto; /* Maintain aspect ratio */
+    display: inline-block; /* Needed for text-align center to work */
+}
+
+/* Specific adjustment for project page logo */
+.bottom-project-logo {
+    margin-top: 60px; /* More space above the bottom logo */
+}
+
+.bottom-project-logo img {
+    max-width: 35%; /* Shrink the El Portal logo */
+}
+
+/* --- End Utility Styles --- */
+
+/* --- End Blog Page Styles --- */
+
+/* --- James Peach Page Styles --- */
+
+/* == Color Inversion for James Peach Page == */
+body.james-peach-page {
+    background-color: #000000;
+    color: #ffffff;
+}
+
+/* Invert back button and logo specifically on this page */
+.james-peach-page .site-header .back-button img,
+.james-peach-page .site-header .logo {
+    filter: invert(1);
+}
+
+/* Adjust link colors for dark background */
+.james-peach-page a {
+    color: #a0dffc; /* Light blue, consistent with info box */
+}
+.james-peach-page a:hover {
+    color: #ffffff;
+}
+
+/* == End Color Inversion == */
+
+.james-peach-content {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+    /* text-align: center; Removed - sections handle alignment */
+}
+
+/* Animated Title GIF */
+.title-gif-container {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.title-gif {
+    max-width: 400px; /* Adjust size as needed */
+    width: 80%;
+    height: auto;
+    display: inline-block;
+    /* Apply the ping-pong animation */
+    animation-name: pulse;
+    animation-duration: 2.5s; /* Slightly slower maybe */
+    animation-timing-function: ease-in-out;
+    animation-direction: alternate;
+    animation-iteration-count: infinite;
+}
+
+/* Two Column Section */
+.two-column-section {
+    display: flex;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    gap: 30px;
+    margin-bottom: 40px;
+    align-items: center; /* Vertically align items */
+}
+
+.column {
+    flex: 1; /* Make columns flexible */
+    min-width: 250px; /* Prevent columns from getting too narrow */
+}
+
+.column-gif {
+    text-align: center;
+}
+
+.column-text {
+    text-align: left;
+}
+
+.column-text h2 {
+    margin-top: 0; /* Remove top margin */
+    margin-bottom: 15px;
+    color: #ffffff; /* Ensure headings are white */
+}
+
+.column-text p {
+     color: #f0f0f0; /* Slightly off-white for body text */
+}
+
+.james-peach-gif {
+    max-width: 200px; /* Shrink the GIF further */
+    width: 100%;
+    height: auto;
+    display: inline-block;
+    animation-name: pulse;
+    animation-duration: 2s;
+    animation-timing-function: ease-in-out;
+    animation-direction: alternate;
+    animation-iteration-count: infinite;
+}
+
+/* Full Width Sections */
+.full-width-section {
+    margin-bottom: 40px;
+}
+
+.placeholder-article {
+    text-align: left;
+    margin-top: 30px;
+    line-height: 1.6;
+}
+
+.placeholder-article h2 {
+    margin-bottom: 15px;
+    text-align: center;
+    color: #ffffff; /* Ensure headings are white */
+}
+
+.placeholder-article p {
+     color: #f0f0f0; /* Slightly off-white for body text */
+}
+
+.placeholder-image-rect {
+    width: 100%;
+    max-width: 500px; /* Limit width */
+    height: 250px; /* Example height */
+    background-color: #444; /* Darker grey placeholder */
+    margin: 20px auto; /* Center it */
+    display: block;
+}
+
+/* Define the animation (already defined, but ensure it's present) */
+@keyframes pulse {
+    from {
+        transform: scale(1);
+    }
+    to {
+        transform: scale(1.08);
+    }
+}
+
+/* Bottom Figma Logo Specifics */
+.bottom-figma-logo img {
+    max-width: 150px; /* Adjust size if needed */
+    filter: invert(1); /* Invert the figma logo too if it's dark */
+}
+
+/* Bottom JKBX Figma Logo Specifics */
+.bottom-jkbx-logo img {
+    max-width: 100px; /* Make this logo much smaller */
+}
+
+/* --- End James Peach Page Styles --- */
+
+/* --- End Blog Page Styles --- */ 
+/* --- End Blog Page Styles --- */ 
+
+footer {
+    /* Add some basic footer styling if needed */
+    padding: 20px;
+    text-align: center;
+    background-color: transparent; /* Changed from #f1f1f1 */
+    margin-top: auto; /* Pushes footer down in flex container, redundant if main grows */
+}
+
+/* Blur other icons when one is hovered */
+.icon-grid:has(.icon-link:hover) .icon-link:not(:hover) {
+    filter: blur(4px);
+    /* Consider adding transition here if needed, or ensure parent handles it */
+}
+
+/* Keep hovered item sharp and scaled */
+.icon-grid .icon-link:hover {
+    transform: scale(1.05); /* Scale up the hovered icon slightly */
+    filter: none; /* Ensure hovered icon is never blurred */
+    z-index: 2; /* Bring hovered item slightly forward */
+}
+
+/* Apply blur directly to the link, not just the icon inside */
+.icon-link {
+    transition: filter 0.3s ease, transform 0.3s ease; /* Ensure transitions are smooth */
+}
+
+/* Blur header logo when any icon is hovered */
+body:has(.icon-grid .icon-link:hover) .site-header .logo {
+    filter: blur(4px);
+    transition: filter 0.3s ease; /* Add transition for logo blur */
+}
+
+/* Blur comet when any icon is hovered */
+body:has(.icon-grid .icon-link:hover) #comet {
+    filter: blur(4px);
+    transition: filter 0.3s ease; /* Consistent transition for comet blur */
+}
+
+/* --- Floating Icon Animation --- */
+@keyframes float {
+  0% {
+    transform: translate(0px, 0px); /* Start position */
+  }
+  50% {
+    transform: translate(-10px, -15px); /* Increased distance, added horizontal drift */
+  }
+  100% {
+    transform: translate(0px, 0px); /* Return position */
+  }
+}
+
+/* Define the alternate floating animation */
+@keyframes float-alt {
+  0% {
+    transform: translate(0px, 0px);
+  }
+  50% {
+    transform: translate(10px, -15px); /* Opposite horizontal, same vertical */
+  }
+  100% {
+    transform: translate(0px, 0px);
+  }
+}
+
+/* Apply base animation to all icon links */
+.icon-grid .icon-link {
+    animation-name: float;
+    animation-duration: 6s; /* Adjust duration for speed */
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+/* Override animation for even-numbered icons */
+.icon-grid .icon-link:nth-child(even) {
+    animation-name: float-alt;
+}
+
+/* Stagger the animation delays for each icon */
+.icon-grid .icon-link:nth-child(1) { animation-delay: -0.5s; }
+.icon-grid .icon-link:nth-child(2) { animation-delay: -1.5s; }
+.icon-grid .icon-link:nth-child(3) { animation-delay: -2.5s; }
+.icon-grid .icon-link:nth-child(4) { animation-delay: -3.5s; }
+.icon-grid .icon-link:nth-child(5) { animation-delay: -4.0s; }
+.icon-grid .icon-link:nth-child(6) { animation-delay: -5.0s; }
+.icon-grid .icon-link:nth-child(7) { animation-delay: -6.0s; } /* Corresponds to #icon-projects */
+.icon-grid .icon-link:nth-child(8) { animation-delay: -7.0s; } /* Corresponds to #icon-stuff */
+
+/* Wiggle Animation on Hover */
+@keyframes wiggle {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+    75% { transform: rotate(-2deg); }
+    100% { transform: rotate(0deg); }
+}
+
+/* Keep wiggle on icon when link is hovered */
+.icon-link:hover .icon {
+    animation: wiggle 0.5s ease-in-out;
+}
+
+/* Secret Color Picker Styles */
+#secret-hover-trigger,
+#horror-hover-trigger /* Added horror trigger */
+{
+    position: fixed;
+    bottom: 0;
+    /* right: 0; */ /* Base right position removed, will be set individually */
+    width: 50px; /* Adjust size as needed */
+    height: 50px; /* Adjust size as needed */
+    /* background-color: rgba(255, 0, 0, 0.1); */ /* Optional: for debugging visibility */
+    z-index: 999; /* Ensure it's above most other content if they don't have high z-index */
+}
+
+/* Specific positioning for the triggers */
+#secret-hover-trigger {
+    right: 50px; /* To the left of the horror trigger */
+    /* bottom: 0; is inherited */
+}
+
+#horror-hover-trigger {
+    right: 0; /* Far right */
+    /* bottom: 0; is inherited */
+    /* bottom: 60px; */ /* Removed old stacking rule */
+}
+
+
+#color-picker-message,
+#horror-message-box /* Added horror message box */
+{
+    position: fixed;
+    bottom: 10px;
+    /* right: 10px; */ /* Base right position removed, will be set individually */
+    background-color: #333;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 5px;
+    font-size: 0.9em;
+    z-index: 1000; /* Above trigger and other content */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    cursor: default; /* Default cursor for the message box */
+    display: inline-block; /* Allows side-by-side layout if they were in a container, but using absolute pos */
+}
+
+/* Specific positioning for the message boxes */
+#horror-message-box { /* This will be on the right */
+    right: 10px;
+    /* bottom: 70px; */ /* Removed old stacking rule */
+}
+
+#color-picker-message { /* This will be to the left of the horror message box */
+    right: calc(10px + 80px + 2px); /* (horror-right-padding) + (approx horror-width) + (desired_gap) */
+    /* A more precise width for 'Scary'/'Not Scary' is around 70-90px. Adjusted gap to 2px. */
+}
+
+#color-picker-message .action-link, /* General action links in this box */
+#horror-message-box .action-link /* Action links in the horror box */
+{
+    text-decoration: underline;
+    cursor: pointer; /* Pointer cursor for the clickable span */
+}
+
+#color-picker-popup { /* This is the old popup, likely unused now, but styles remain */
+    position: fixed;
+    bottom: 45px; /* Position above the message or adjust as needed */
+    right: 10px;
+    background-color: #000000; /* Match message box - CHANGED to black */
+    color: white; /* Match message box */
+    border: 1px solid #555; /* Darker border or none */
+    border-radius: 25px; /* Match message box - CHANGED to very rounded */
+    padding: 15px; /* Match message box padding, or keep larger if content needs it */
+    padding-top: 25px; /* Ensure enough space for X and title */
+    min-width: 250px; /* Keep or adjust based on content */
+    z-index: 1001;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3); /* Similar shadow */
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* Adjusted gap */
+}
+
+#color-picker-popup h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.1em;
+    color: white; /* Text color for dark background */
+    text-align: center;
+    padding-right: 20px; 
+}
+
+#color-picker-popup p { /* This rule might be unused now but kept for safety */
+    margin: 0 0 10px 0;
+    font-size: 0.95em;
+    color: white; /* Text color for dark background */
+}
+
+#color-picker-popup button {
+    padding: 8px 12px;
+    border: 1px solid #666; /* Border for buttons on dark bg */
+    background-color: #555; /* Darker buttons */
+    color: white; /* Light text on buttons */
+    cursor: pointer;
+    border-radius: 20px; /* CHANGED to pill-shape */
+    transition: background-color 0.2s ease;
+    font-size: 0.9em;
+}
+
+#color-picker-popup button:hover {
+    background-color: #777; /* Lighter hover for dark buttons */
+}
+
+/* Utility class to hide elements */
+.hidden {
+    display: none !important; /* Use important to override inline styles if necessary */
+}
+
+/* Styling for the popup close button */
+.close-popup-button {
+    position: absolute;
+    top: 8px;  /* Adjusted for new padding */
+    right: 10px; /* Adjusted for new padding */
+    background: transparent;
+    border: none; /* Ensured no border */
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #ccc; /* Lighter X for dark background */
+    cursor: pointer;
+    padding: 0 5px;
+    line-height: 1;
+}
+
+.close-popup-button:hover {
+    color: #fff; /* Brighter X on hover */
+}
+
+/* Tumultuous Icon Animation - More Intense */
+@keyframes tumultuous-float {
+    0% { transform: translate(0px, 0px) rotate(0deg); }
+    10% { transform: translate(-18px, 12px) rotate(-7.5deg); }
+    20% { transform: translate(15px, -15px) rotate(6deg); }
+    30% { transform: translate(-21px, 6px) rotate(10.5deg); }
+    40% { transform: translate(24px, -9px) rotate(-9deg); }
+    50% { transform: translate(-12px, 21px) rotate(-4.5deg); }
+    60% { transform: translate(18px, -24px) rotate(3deg); }
+    70% { transform: translate(-15px, -9px) rotate(9deg); }
+    80% { transform: translate(21px, 12px) rotate(-6deg); }
+    90% { transform: translate(-9px, 18px) rotate(-3deg); }
+    100% { transform: translate(0px, 0px) rotate(0deg); }
+}
+
+/* 
+When tumultuous mode is active, this class primarily sets the animation name.
+Duration, delay, etc., will be randomized by JavaScript per icon.
+*/
+body.tumultuous-mode-active .icon-grid .icon-link {
+    animation-name: tumultuous-float !important; 
+    /* animation-duration and animation-delay will be set by JS */
+    /* Keep iteration count and timing function if they are consistent, or set in JS too */
+    animation-timing-function: linear !important;
+    animation-iteration-count: infinite !important;
+    animation-direction: normal !important; /* Override alternate if it was set */
+    /* Individual delays from original float are overridden by JS setting new delays or 0s */
+}
+
+/* --- Comet Animation --- */
+#comet {
+    position: fixed;
+    width: 300px; /* Adjusted from 600px back to 300px */
+    height: 300px; /* Adjusted from 600px back to 300px */
+    top: 50%;
+    left: 50%;
+    /* transform: translate(-50%, -50%); Centering is now part of the animation */
+    z-index: -1;
+    pointer-events: none;
+    animation: wobble-comet 30s cubic-bezier(0.42, 0, 0.58, 1) infinite; /* Slowed down from 18s, kept at 30s */
+}
+
+#comet img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    mix-blend-mode: screen;
+    /* opacity: 0.5; */ /* Removed to make GIF fully opaque */
+}
+
+/* --- Wobble Animation for Comet --- */
+@keyframes wobble-comet {
+    0% {
+        transform: translate(-50%, -50%) translateX(0vw) translateY(0vh) rotate(0deg) scale(1);
+    }
+    12.5% { /* Softer curve out */
+        transform: translate(-50%, -50%) translateX(15vw) translateY(-20vh) rotate(30deg) scale(1.1);
+    }
+    25% { /* Wider arc */
+        transform: translate(-50%, -50%) translateX(35vw) translateY(-10vh) rotate(70deg) scale(1);
+    }
+    37.5% { /* Peak and larger scale */
+        transform: translate(-50%, -50%) translateX(20vw) translateY(25vh) rotate(120deg) scale(1.3);
+    }
+    50% { /* Return towards center, but not fully, to create a flowing loop */
+        transform: translate(-50%, -50%) translateX(-5vw) translateY(5vh) rotate(180deg) scale(1.1);
+    }
+    62.5% { /* Opposite side, softer curve out */
+        transform: translate(-50%, -50%) translateX(-20vw) translateY(20vh) rotate(210deg) scale(1.2);
+    }
+    75% { /* Wider arc on the other side */
+        transform: translate(-50%, -50%) translateX(-40vw) translateY(0vh) rotate(260deg) scale(1);
+    }
+    87.5% { /* Second peak and significant scale up */
+        transform: translate(-50%, -50%) translateX(-10vw) translateY(-30vh) rotate(310deg) scale(1.8);
+    }
+    100% {
+        transform: translate(-50%, -50%) translateX(0vw) translateY(0vh) rotate(360deg) scale(1);
+    }
+}
+
+/* --- End Comet Animation --- */
+
+/* --- Giant Countdown Display Styles --- */
+#countdown-display {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Impact', 'Arial Black', sans-serif; /* Fat text font */
+    font-size: 80vh; /* Very large, spanning most of the screen height */
+    color: #000000; /* Solid black text */
+    pointer-events: none; /* Should not interfere with clicks */
+    z-index: 0; /* Behind main content (main has z-index: 1) */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    text-align: center;
+    line-height: 1; /* Ensure number is vertically centered well */
+}
+
+#countdown-display.countdown-display-visible {
+    opacity: 1; /* Full opacity when visible */
+    visibility: visible;
+}
+/* --- End Giant Countdown Display Styles --- */ 
