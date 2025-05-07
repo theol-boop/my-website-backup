@@ -1,85 +1,95 @@
 document.addEventListener('DOMContentLoaded', () => {
     const jkbxLink = document.getElementById('jkbx-link');
     const jkbxInfoBox = document.getElementById('jkbx-info-box');
-    const blurOverlay = document.getElementById('blur-overlay'); // Get overlay element
+    // const blurOverlay = document.getElementById('blur-overlay'); // Get overlay element // Not used
 
     const redButtonLink = document.getElementById('red-button-link'); // New Red Button
+
+    // Header Logo Info Box elements
+    const headerLogoElement = document.getElementById('header-logo');
+    const headerLogoInfoBox = document.getElementById('header-logo-info-box');
+
+    // New element references for apocalypse sequence
+    const siteHeader = document.querySelector('.site-header');
+    const iconGrid = document.querySelector('.icon-grid');
+    const selfDestructPopup = document.getElementById('self-destruct-popup');
+    const apocalypseOverlay = document.getElementById('apocalypse-overlay'); // <-- ADD THIS LINE
+
+    // Click Log Message elements
+    const clickLogMessageElement = document.getElementById('click-log-message');
+    let redButtonClickCount = 0;
 
     let leaveTimeout; // Variable to hold the timeout ID
     const leaveDelay = 300; // Delay in milliseconds before hiding
 
-    if (jkbxLink && jkbxInfoBox) {
-        jkbxLink.addEventListener('mouseenter', () => {
-            clearTimeout(leaveTimeout); // Clear any pending hide actions
+    // Generic function to show info box
+    function showInfoBox(triggerElement, infoBoxElement) {
+        if (!triggerElement || !infoBoxElement) return;
 
-            // Calculate position for the info box
-            const iconRect = jkbxLink.getBoundingClientRect(); // Get icon link position
-            const infoBox = jkbxInfoBox; // Use a shorter name
-            
-            // Recalculate dimensions *after* making visible (or use estimates)
-            infoBox.style.visibility = 'hidden'; // Keep hidden but allow measurement
-            infoBox.style.display = 'block'; // Temporarily display to measure
-            const infoBoxWidth = infoBox.offsetWidth;
-            const infoBoxHeight = infoBox.offsetHeight;
-            infoBox.style.display = ''; // Reset display
-            infoBox.style.visibility = ''; // Reset visibility
+        clearTimeout(triggerElement.leaveTimeoutId); // Clear any pending hide actions
 
-            let top, left;
-            const mobileBreakpoint = 768;
-            const padding = 15; // Space between icon and info box
+        const iconRect = triggerElement.getBoundingClientRect();
+        infoBoxElement.style.visibility = 'hidden';
+        infoBoxElement.style.display = 'block';
+        const infoBoxWidth = infoBoxElement.offsetWidth;
+        const infoBoxHeight = infoBoxElement.offsetHeight;
+        infoBoxElement.style.display = '';
+        infoBoxElement.style.visibility = '';
 
-            if (window.innerWidth < mobileBreakpoint) {
-                // Mobile: Position centered above the icon
-                top = iconRect.top - infoBoxHeight - padding;
-                left = iconRect.left + (iconRect.width / 2) - (infoBoxWidth / 2);
-            } else {
-                // Desktop: Position vertically centered to the right of the icon
-                top = iconRect.top + (iconRect.height / 2) - (infoBoxHeight / 2);
-                left = iconRect.right + (padding / 3); /* MODIFIED: Reduced padding for closer positioning */
-            }
+        let top, left;
+        const mobileBreakpoint = 768;
+        const padding = 15;
 
-            // --- Boundary checks --- 
-            if (top < padding) top = padding;
-            if (left < padding) left = padding;
-            if (left + infoBoxWidth > window.innerWidth - padding) {
-                left = window.innerWidth - infoBoxWidth - padding;
-            }
-             if (top + infoBoxHeight > window.innerHeight - padding) {
-                // Adjust if too low: could move it up, or reposition left/right on desktop
-                top = window.innerHeight - infoBoxHeight - padding;
-                // Optional: If it also goes off the right edge now, maybe position left?
-                if (window.innerWidth >= mobileBreakpoint && left + infoBoxWidth > window.innerWidth - padding) {
-                    left = iconRect.left - infoBoxWidth - padding;
-                    if (left < padding) left = padding; // Check left boundary again
-                }
-            }
-            // --- End boundary checks ---
-
-            infoBox.style.top = `${top}px`;
-            infoBox.style.left = `${left}px`;
-
-            // Show info box (overlay logic removed)
-            // blurOverlay.classList.add('visible');
-            infoBox.classList.add('visible');
-        });
-
-        const hideElements = () => {
-             leaveTimeout = setTimeout(() => {
-                // blurOverlay.classList.remove('visible');
-                jkbxInfoBox.classList.remove('visible');
-            }, leaveDelay);
+        if (window.innerWidth < mobileBreakpoint) {
+            top = iconRect.top - infoBoxHeight - padding;
+            left = iconRect.left + (iconRect.width / 2) - (infoBoxWidth / 2);
+        } else {
+            // Position underneath the icon and centered for desktop (e.g., JKBX info box)
+            top = iconRect.bottom + (padding / 3);
+            left = iconRect.left + (iconRect.width / 2) - (infoBoxWidth / 2);
         }
 
-        jkbxLink.addEventListener('mouseleave', hideElements);
+        if (top < padding) top = padding;
+        if (left < padding) left = padding;
+        if (left + infoBoxWidth > window.innerWidth - padding) {
+            left = window.innerWidth - infoBoxWidth - padding;
+        }
+        if (top + infoBoxHeight > window.innerHeight - padding) {
+            top = window.innerHeight - infoBoxHeight - padding;
+            if (window.innerWidth >= mobileBreakpoint && left + infoBoxWidth > window.innerWidth - padding && triggerElement.id !== 'header-logo') {
+                left = iconRect.left - infoBoxWidth - padding;
+                if (left < padding) left = padding;
+            }
+        }
 
-        // Keep elements visible if mouse moves onto the info box
-        jkbxInfoBox.addEventListener('mouseenter', () => {
-            clearTimeout(leaveTimeout); // Cancel hiding if mouse enters the box itself
-        });
-
-        // Hide when mouse leaves the info box
-        jkbxInfoBox.addEventListener('mouseleave', hideElements);
+        infoBoxElement.style.top = `${top}px`;
+        infoBoxElement.style.left = `${left}px`;
+        infoBoxElement.classList.add('visible');
     }
+
+    // Generic function to hide info box
+    function hideInfoBox(triggerElement, infoBoxElement) {
+        if (!infoBoxElement) return;
+        triggerElement.leaveTimeoutId = setTimeout(() => {
+            infoBoxElement.classList.remove('visible');
+        }, leaveDelay);
+    }
+
+    // Setup event listeners for an info box trigger
+    function setupInfoBoxEventListeners(triggerElement, infoBoxElement) {
+        if (!triggerElement || !infoBoxElement) return;
+
+        triggerElement.addEventListener('mouseenter', () => showInfoBox(triggerElement, infoBoxElement));
+        triggerElement.addEventListener('mouseleave', () => hideInfoBox(triggerElement, infoBoxElement));
+        infoBoxElement.addEventListener('mouseenter', () => clearTimeout(triggerElement.leaveTimeoutId));
+        infoBoxElement.addEventListener('mouseleave', () => hideInfoBox(triggerElement, infoBoxElement));
+    }
+
+    // JKBX Info Box Logic
+    setupInfoBoxEventListeners(jkbxLink, jkbxInfoBox);
+
+    // Header Logo Info Box Logic
+    setupInfoBoxEventListeners(headerLogoElement, headerLogoInfoBox);
 
     // --- Video Theater Mode --- //
 
@@ -141,10 +151,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentCountdownValue = 10;
     const countdownDisplayElement = document.getElementById('countdown-display'); // Cache element
 
-
-    // Initially hide messages - These elements are removed from HTML, so related JS is not needed.
-    // if (colorMessage) colorMessage.classList.add('hidden');
-    // if (horrorMessageBox) horrorMessageBox.classList.add('hidden');
+    // State for apocalypse sequence - Moved here for correct scope
+    let isApocalypseSequenceActive = false;
+    let pageCloseTimeoutId = null; // For the final page "close" action
 
     // --- Intermittent Message Logic (shared helper) ---
     // This logic is no longer needed as the hover/intermittent messages are removed.
@@ -290,6 +299,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (redButtonLink) {
         redButtonLink.addEventListener('click', (event) => {
             event.preventDefault(); // Prevent default anchor behavior
+
+            // Increment and update click log message
+            redButtonClickCount++;
+            if (clickLogMessageElement) {
+                if (redButtonClickCount === 1) {
+                    clickLogMessageElement.style.display = 'block'; // Or 'inline', 'inline-block' depending on desired layout
+                }
+                clickLogMessageElement.innerHTML = `you\'ve clicked the button <span class="click-count-number">${redButtonClickCount}</span> times.`;
+            }
 
             const currentlyNukeActive = isNukeActive;
             const currentlyBgColorActive = isRedButtonBgColorActive;
@@ -447,11 +465,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Ensure initial state of colorMessage (HTML should have it as "open the Secret Menu")
     // If isSecretMenuOpen is false, colorMessage should show "open ..."
     // If it was somehow already open (e.g. page refresh with JS state preserved by browser), render controls
+    /* Commenting out the problematic block referencing isSecretMenuOpen
     if (isSecretMenuOpen) {
         renderMainControlMessage();
     } else if (colorMessage && openSecretMenuLink) {
         // Ensure listener is attached if not opened yet. HTML provides initial text.
     }
+    */
 
     // Start intermittent message display
     const startIntermittentMessage = () => {
@@ -474,97 +494,30 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     // Start the intermittent message display initially if panel is hidden
+    /* Commenting out the problematic block referencing colorPopup 
     if (colorPopup && colorPopup.classList.contains('hidden')) {
         startIntermittentMessage();
     }
-
-    if (toggleTumultuousModeButton) {
-        const iconLinks = document.querySelectorAll('.icon-grid .icon-link');
-
-        toggleTumultuousModeButton.addEventListener('click', () => {
-            document.body.classList.toggle('tumultuous-mode-active');
-            const isTumultuousActive = document.body.classList.contains('tumultuous-mode-active');
-
-            if (isTumultuousActive) {
-                toggleTumultuousModeButton.textContent = 'Disarm Nuke'; // New text
-                iconLinks.forEach(icon => {
-                    icon.style.animationName = 'tumultuous-float';
-                    icon.style.animationDuration = (Math.random() * 0.4 + 0.3).toFixed(2) + 's';
-                    icon.style.animationDelay = (Math.random() * 0.2).toFixed(2) + 's';
-                    icon.style.animationTimingFunction = 'linear';
-                    icon.style.animationIterationCount = 'infinite';
-                    icon.style.animationDirection = 'normal';
-                });
-
-                // Start Nuke background flash
-                if (nukeIntervalId === null) { // Prevent multiple intervals
-                    originalBodyBgImage = document.body.style.backgroundImage;
-                    originalBodyBgColor = document.body.style.backgroundColor;
-                    nukeIntervalId = setInterval(() => {
-                        const currentBgImage = document.body.style.backgroundImage;
-                        const currentBgColor = document.body.style.backgroundColor;
-                        
-                        document.body.style.backgroundImage = '';
-                        document.body.style.backgroundColor = 'red';
-                        
-                        setTimeout(() => {
-                            // Only revert if still in nuke mode and not overridden by another color change
-                            if (document.body.classList.contains('tumultuous-mode-active')) {
-                                // If a random gradient was active, prioritize it.
-                                // Otherwise, if a solid color was set before red flash, use it.
-                                // Fallback to transparent if neither was set.
-                                if (originalBodyBgImage) {
-                                    document.body.style.backgroundImage = originalBodyBgImage;
-                                    document.body.style.backgroundColor = ''; // Clear color to let image show
-                                } else {
-                                    document.body.style.backgroundImage = ''; // Ensure no lingering image
-                                    document.body.style.backgroundColor = originalBodyBgColor || '';
-                                }
-                            }
-                        }, 150); // Duration of the red flash
-                    }, 1000); // Flash every 1 second
-                }
-
-            } else {
-                toggleTumultuousModeButton.textContent = 'Nuke'; // New text
-                iconLinks.forEach(icon => {
-                    icon.style.animationName = '';
-                    icon.style.animationDuration = '';
-                    icon.style.animationDelay = '';
-                    icon.style.animationTimingFunction = '';
-                    icon.style.animationIterationCount = '';
-                    icon.style.animationDirection = '';
-                });
-
-                // Stop Nuke background flash
-                if (nukeIntervalId !== null) {
-                    clearInterval(nukeIntervalId);
-                    nukeIntervalId = null;
-                    // Restore original background if it existed, otherwise clear red
-                    document.body.style.backgroundImage = originalBodyBgImage;
-                    document.body.style.backgroundColor = originalBodyBgColor;
-                    originalBodyBgImage = ''; // Clear stored values
-                    originalBodyBgColor = '';
-                }
-            }
-        });
-    }
+    */
 
     // --- Countdown Functions ---
     function startCountdown() {
         if (isCountdownActive || !countdownDisplayElement) return;
         isCountdownActive = true;
+        isApocalypseSequenceActive = false; // Reset for new countdown
         currentCountdownValue = 10;
         
         countdownDisplayElement.style.display = 'flex'; // Ensure it's not display:none from initial HTML
         countdownDisplayElement.classList.add('countdown-display-visible');
 
         function updateNumber() {
-            if (currentCountdownValue >= 1) {
-                countdownDisplayElement.textContent = currentCountdownValue;
+            countdownDisplayElement.textContent = currentCountdownValue;
+            if (currentCountdownValue > 0) {
                 currentCountdownValue--;
-            } else {
-                stopCountdown(); // Automatically stops after 1 has been displayed
+            } else { 
+                clearInterval(countdownIntervalId); 
+                countdownIntervalId = null; 
+                triggerApocalypse();
             }
         }
         updateNumber(); // Display the first number (10) immediately
@@ -574,17 +527,374 @@ document.addEventListener('DOMContentLoaded', () => {
     function stopCountdown() {
         clearInterval(countdownIntervalId);
         countdownIntervalId = null;
-        if (countdownDisplayElement) {
+        
+        if (isApocalypseSequenceActive) {
+            restoreNormalView(); // If apocalypse happened, restore fully
+        } else if (countdownDisplayElement) { 
             countdownDisplayElement.classList.remove('countdown-display-visible');
-            // Optional: delay hiding with display:none to allow fade-out transition to complete
             setTimeout(() => {
-                if (!isCountdownActive) { // Check again in case it was restarted quickly
-                     countdownDisplayElement.textContent = ''; // Clear text after fade
-                     // countdownDisplayElement.style.display = 'none'; // Hide it fully if needed after transition
+                if (!isCountdownActive && !isApocalypseSequenceActive) { 
+                     countdownDisplayElement.textContent = '';
                 }
-            }, 300); // Match CSS transition duration
+            }, 300); 
         }
         isCountdownActive = false;
+        // If nuke mode was active and is being stopped, ensure its visual effects are also reset.
+        // This is somewhat implicitly handled by restoreNormalView or if another effect takes over.
+        // However, to be certain, if nuke was the cause, its specific cleanup might be needed.
+        // For now, toggleNukeMode sets isNukeActive = false before calling stopCountdown.
+        // And if apocalypse happened, body BG is restored by restoreNormalView.
+        // If only countdown (from nuke) is stopped before apocalypse, toggleNukeMode should handle BG.
     }
+
+    function triggerApocalypse() {
+        isApocalypseSequenceActive = true;
+
+        if (nukeIntervalId) {
+            clearInterval(nukeIntervalId);
+            nukeIntervalId = null;
+        }
+
+        if (countdownDisplayElement) {
+            countdownDisplayElement.classList.remove('countdown-display-visible');
+            countdownDisplayElement.style.display = 'none'; 
+            countdownDisplayElement.textContent = ''; 
+        }
+
+        if (apocalypseOverlay) {
+            apocalypseOverlay.style.display = 'block';
+        }
+
+        // Wait 0.4 seconds, then show popup
+        setTimeout(() => { // Show self-destruct popup
+            if (isApocalypseSequenceActive && selfDestructPopup) { 
+                selfDestructPopup.style.display = 'block'; // Explicitly set display
+                selfDestructPopup.classList.add('visible'); 
+
+                // After popup is visible, wait 0.4 seconds then start wiggling
+                setTimeout(() => {
+                    if (isApocalypseSequenceActive && selfDestructPopup) {
+                        selfDestructPopup.classList.add('destruct-wiggle-active');
+
+                        // After wiggling starts, wait 1.2 seconds then "close" the page
+                        pageCloseTimeoutId = setTimeout(() => {
+                            if (isApocalypseSequenceActive) { // Check again before navigating
+                                window.location.href = 'about:blank';
+                            }
+                        }, 1200); // 1.2 seconds after wiggling starts
+                    }
+                }, 400); // 0.4 seconds delay for wiggling to start
+            }
+        }, 400); // Changed from 1500 to 400
+    }
+
+    function restoreNormalView() {
+        clearTimeout(pageCloseTimeoutId); // Clear page close timeout
+
+        if (apocalypseOverlay) {
+            apocalypseOverlay.style.display = 'none';
+        }
+
+        if (siteHeader) siteHeader.style.display = ''; 
+        if (iconGrid) iconGrid.style.display = ''; 
+
+        document.body.style.backgroundColor = originalBodyBgColor || 'white';
+        document.body.style.backgroundImage = originalBodyBgImage || '';
+        document.body.style.transition = ''; 
+
+        if (selfDestructPopup) {
+            selfDestructPopup.classList.remove('visible');
+            selfDestructPopup.classList.remove('destruct-wiggle-active'); // Remove wiggle class
+            selfDestructPopup.style.display = 'none'; // Also explicitly hide
+        }
+
+        if (countdownDisplayElement) {
+            countdownDisplayElement.classList.remove('countdown-display-visible');
+             setTimeout(() => {
+                if (!isCountdownActive && !isApocalypseSequenceActive) { 
+                     countdownDisplayElement.textContent = '';
+                }
+            }, 300);
+        }
+        isApocalypseSequenceActive = false;
+    }
+
+    // --- James Peach Page - Interactive Image Placeholder --- //
+    if (document.body.classList.contains('james-peach-page')) {
+        console.log('James Peach page specific script initializing...');
+        const interactivePlaceholders = document.querySelectorAll('.jp-interactive-placeholder');
+        const body = document.body;
+        console.log(`Found ${interactivePlaceholders.length} interactive placeholder(s).`);
+
+        interactivePlaceholders.forEach((placeholder, index) => {
+            console.log(`Processing placeholder #${index}:`, placeholder);
+            const preview = placeholder.querySelector('.jp-preview-image'); 
+            const expandedView = placeholder.querySelector('.jp-expanded-view');
+
+            // console.log(`Placeholder #${index} - Preview element:`, preview); // Kept for debugging
+            // console.log(`Placeholder #${index} - Expanded view element:`, expandedView); // Kept for debugging
+
+            if (!preview) {
+                console.error(`Placeholder #${index}: Critical error - '.jp-preview-image' child not found. Cannot attach click listener or open modal.`);
+                return; // Essential to stop if preview doesn't exist
+            }
+            if (!expandedView) {
+                console.error(`Placeholder #${index}: Critical error - '.jp-expanded-view' child not found. Modal cannot be shown even if opened.`);
+                return; // Essential to stop if expanded view doesn't exist
+            }
+
+            const openItem = () => {
+                console.log(`Attempting to open item for placeholder #${index}`);
+                
+                // Guard clause 1: Prevent opening if another known modal system is active
+                if (body.classList.contains('gallery-active') || body.classList.contains('theater-mode-active')) {
+                    console.warn(`Cannot open JP modal for placeholder #${index}: Another modal system ('gallery-active' or 'theater-mode-active') is currently active.`);
+                    return;
+                }
+
+                // Guard clause 2: Prevent re-opening if this specific item is already expanded
+                if (placeholder.classList.contains('expanded')) {
+                    console.log(`JP modal for placeholder #${index} is already expanded. No action taken.`);
+                    return;
+                }
+                
+                placeholder.classList.add('expanded');
+                body.classList.add('jp-gallery-active');
+                console.log(`SUCCESS: JP modal for placeholder #${index} opened. Classes added: 'expanded' to placeholder, 'jp-gallery-active' to body.`);
+            };
+
+            const closeItem = () => {
+                console.log(`Attempting to close item for placeholder #${index}`);
+                placeholder.classList.remove('expanded');
+                body.classList.remove('jp-gallery-active');
+                console.log(`SUCCESS: JP modal for placeholder #${index} closed. Classes removed.`);
+            };
+
+            // Event Listeners:
+            // Strictly attach click listener to the 'preview' element, similar to art.js
+            console.log(`Attaching click listener to specific preview element for placeholder #${index}:`, preview);
+            preview.addEventListener('click', openItem);
+
+            // Keydown for Enter on the main placeholder (for accessibility when focused)
+            placeholder.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' && document.activeElement === placeholder) {
+                    console.log(`Enter key pressed on focused placeholder #${index}. Attempting to open item.`);
+                    openItem();
+                }
+            });
+
+            // Click on the expanded view (overlay) to close
+            expandedView.addEventListener('click', (event) => {
+                if (event.target === expandedView) {
+                    console.log(`Expanded view overlay clicked for placeholder #${index}. Attempting to close item.`);
+                    closeItem();
+                } else {
+                    console.log(`Click detected inside expanded view (likely on image/descriptor), not closing. Target:`, event.target);
+                }
+            });
+
+            // Document-level listener for Escape key to close an active modal
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && placeholder.classList.contains('expanded')) {
+                    console.log(`Escape key pressed while JP modal for placeholder #${index} is expanded. Attempting to close item.`);
+                    closeItem();
+                }
+            });
+        });
+    }
+
+    const logoContainer = document.querySelector('.hero-title-gif');
+    // Only proceed if the logoContainer exists on the current page
+    if (logoContainer) {
+        const gifSrc = logoContainer.dataset.gifSrc;
+        if (!gifSrc) {
+            console.error('data-gif-src attribute not found on .hero-title-gif container.');
+            // Return or exit function if critical, or handle gracefully
+        } else {
+            const numSlices = 90; 
+            const rippleDelayIncrement = 0.08; 
+
+            const img = new Image();
+            img.onload = () => {
+                const computedStyle = getComputedStyle(logoContainer);
+                const parsedMaxHeight = parseFloat(computedStyle.maxHeight);
+                
+                const heroSection = document.querySelector('.jp-hero-section');
+                let calculatedMaxWidth = 0;
+                if (heroSection) {
+                    calculatedMaxWidth = heroSection.offsetWidth * 0.90; 
+                } else {
+                    calculatedMaxWidth = logoContainer.offsetWidth;
+                }
+
+                const containerMaxWidth = calculatedMaxWidth > 0 ? calculatedMaxWidth : (logoContainer.offsetWidth || img.naturalWidth);
+                const containerMaxHeight = parsedMaxHeight || logoContainer.offsetHeight || img.naturalHeight;
+
+                const imgAspectRatio = img.naturalWidth / img.naturalHeight;
+                const safeContainerMaxWidth = Math.max(1, containerMaxWidth);
+                const safeContainerMaxHeight = Math.max(1, containerMaxHeight);
+
+                let targetWidth = img.naturalWidth;
+                let targetHeight = img.naturalHeight;
+
+                const hasMaxWidth = safeContainerMaxWidth > 1 && isFinite(safeContainerMaxWidth);
+                const hasMaxHeight = safeContainerMaxHeight > 1 && isFinite(safeContainerMaxHeight);
+
+                if (hasMaxWidth && hasMaxHeight) {
+                    const containerAspectRatio = safeContainerMaxWidth / safeContainerMaxHeight;
+                    if (imgAspectRatio > containerAspectRatio) {
+                        targetWidth = safeContainerMaxWidth;
+                        targetHeight = targetWidth / imgAspectRatio;
+                        if (targetHeight > safeContainerMaxHeight) {
+                            targetHeight = safeContainerMaxHeight;
+                            targetWidth = targetHeight * imgAspectRatio;
+                        }
+                    } else {
+                        targetHeight = safeContainerMaxHeight;
+                        targetWidth = targetHeight * imgAspectRatio;
+                        if (targetWidth > safeContainerMaxWidth) {
+                            targetWidth = safeContainerMaxWidth;
+                            targetHeight = targetWidth / imgAspectRatio;
+                        }
+                    }
+                } else if (hasMaxWidth) {
+                    targetWidth = safeContainerMaxWidth;
+                    targetHeight = targetWidth / imgAspectRatio;
+                } else if (hasMaxHeight) {
+                    targetHeight = safeContainerMaxHeight;
+                    targetWidth = targetHeight * imgAspectRatio;
+                }
+
+                let finalContainerWidth = targetWidth;
+                let finalContainerHeight = targetHeight;
+                
+                if (finalContainerWidth === 0 && hasMaxHeight) { 
+                     finalContainerHeight = safeContainerMaxHeight;
+                     finalContainerWidth = finalContainerHeight * imgAspectRatio;
+                     if (hasMaxWidth && finalContainerWidth > safeContainerMaxWidth) { 
+                        finalContainerWidth = safeContainerMaxWidth;
+                        finalContainerHeight = finalContainerWidth / imgAspectRatio;
+                     }
+                }
+                if (finalContainerHeight === 0 && hasMaxWidth && logoContainer.style.aspectRatio) {
+                     finalContainerWidth = safeContainerMaxWidth;
+                     finalContainerHeight = finalContainerWidth / imgAspectRatio;
+                     if (hasMaxHeight && finalContainerHeight > safeContainerMaxHeight) {
+                        finalContainerHeight = safeContainerMaxHeight;
+                        finalContainerWidth = finalContainerHeight * imgAspectRatio;
+                     }
+                }
+
+                if ((finalContainerWidth <= 1 || finalContainerHeight <= 1) && (hasMaxWidth || hasMaxHeight)) {
+                    if (hasMaxHeight && hasMaxWidth) {
+                        if ((safeContainerMaxWidth / safeContainerMaxHeight) > imgAspectRatio) {
+                            finalContainerHeight = safeContainerMaxHeight;
+                            finalContainerWidth = finalContainerHeight * imgAspectRatio;
+                        } else { 
+                            finalContainerWidth = safeContainerMaxWidth;
+                            finalContainerHeight = finalContainerWidth / imgAspectRatio;
+                        }
+                    } else if (hasMaxHeight) { 
+                         finalContainerHeight = safeContainerMaxHeight;
+                         finalContainerWidth = finalContainerHeight * imgAspectRatio;
+                    } else if (hasMaxWidth) { 
+                         finalContainerWidth = safeContainerMaxWidth;
+                         finalContainerHeight = finalContainerWidth / imgAspectRatio;
+                    } else {
+                        finalContainerWidth = img.naturalWidth; 
+                        finalContainerHeight = img.naturalHeight;
+                    }
+                }
+                
+                if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+                    if (finalContainerWidth <= 0) finalContainerWidth = 1;
+                    if (finalContainerHeight <= 0) finalContainerHeight = 1;
+                }
+
+                logoContainer.style.width = `${finalContainerWidth}px`;
+                logoContainer.style.height = `${finalContainerHeight}px`;
+                logoContainer.style.aspectRatio = 'auto'; 
+
+                while (logoContainer.firstChild) {
+                    logoContainer.removeChild(logoContainer.firstChild);
+                }
+
+                let accumulatedWidth = 0;
+                for (let i = 0; i < numSlices; i++) {
+                    const slice = document.createElement('div');
+                    slice.classList.add('logo-slice');
+
+                    const currentImageX = Math.round((i / numSlices) * finalContainerWidth);
+                    const nextImageX = Math.round(((i + 1) / numSlices) * finalContainerWidth);
+                    
+                    let sliceDivWidth;
+                    if (i === numSlices - 1) {
+                        sliceDivWidth = finalContainerWidth - accumulatedWidth;
+                    } else {
+                        sliceDivWidth = nextImageX - currentImageX;
+                    }
+                    
+                    sliceDivWidth = Math.max(0, sliceDivWidth);
+
+                    slice.style.width = `${sliceDivWidth}px`;
+                    slice.style.backgroundImage = `url(${gifSrc})`;
+                    slice.style.backgroundSize = `${finalContainerWidth}px ${finalContainerHeight}px`;
+                    slice.style.backgroundPositionX = `-${currentImageX}px`;
+                    slice.style.animationDelay = `${i * rippleDelayIncrement}s`;
+                    
+                    logoContainer.appendChild(slice);
+                    accumulatedWidth += sliceDivWidth;
+                }
+            };
+
+            img.onerror = () => {
+                console.error('Failed to load GIF:', gifSrc);
+            };
+
+            img.src = gifSrc;
+        }
+    } // End of the if (logoContainer) block
+
+    const videoItems = document.querySelectorAll('.video-gallery .video-item');
+
+    // Function to hide all video descriptions
+    function hideAllDescriptions() {
+        videoItems.forEach(item => {
+            const descriptionBox = item.querySelector('.video-description');
+            if (descriptionBox) {
+                descriptionBox.classList.remove('description-visible');
+            }
+        });
+    }
+
+    videoItems.forEach(item => {
+        const video = item.querySelector('video');
+        const descriptionBox = item.querySelector('.video-description');
+
+        if (video && descriptionBox) {
+            video.addEventListener('play', () => {
+                console.log('[Video Player] Play event triggered for:', video.src);
+                console.log('[Video Player] Corresponding description box:', descriptionBox);
+                hideAllDescriptions(); // Hide others first
+                descriptionBox.classList.add('description-visible'); // Show current
+                console.log('[Video Player] Added .description-visible to:', descriptionBox);
+            });
+
+            video.addEventListener('pause', () => {
+                console.log('[Video Player] Pause event triggered for:', video.src);
+                descriptionBox.classList.remove('description-visible');
+                console.log('[Video Player] Removed .description-visible from (on pause):', descriptionBox);
+            });
+
+            video.addEventListener('ended', () => {
+                console.log('[Video Player] Ended event triggered for:', video.src);
+                descriptionBox.classList.remove('description-visible');
+                console.log('[Video Player] Removed .description-visible from (on ended):', descriptionBox);
+            });
+        } else {
+            if (!video) console.error('[Video Player] Video element not found in item:', item);
+            if (!descriptionBox) console.error('[Video Player] Description box not found in item:', item);
+        }
+    });
 
 }); 

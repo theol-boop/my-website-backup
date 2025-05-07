@@ -8,22 +8,28 @@
 </head>
 <body class="james-peach-page">
     <header class="site-header">
-        <a href="index.html" class="back-button">
-            <img src="images/back-button.svg" alt="Back">
-        </a>
-        <nav class="main-nav"></nav>
-        <img src="images/theo-lebeaux-logo.png" alt="Theo Lebeaux Logo" class="logo">
+        <div class="header-left">
+            <a href="index.html" class="back-button">
+                <img src="images/back-button.svg" alt="Back">
+            </a>
+            <nav class="main-nav"></nav>
+        </div>
+        <div class="header-center">
+            <img src="images/theo-lebeaux-logo.png" alt="Theo Lebeaux Logo" class="logo">
+        </div>
+        <div class="header-right">
+            <!-- This can be empty or hold future right-aligned items -->
+        </div>
     </header>
 
     <main class="james-peach-content">
-        <div class="title-gif-container">
-            <img src="images/jp-animated-logo-cropped.gif" alt="James Peach Animated Title" class="title-gif">
-        </div>
+        <!-- NEW HERO SECTION -->
+        <section class="jp-hero-section">
+            <div class="hero-title-gif" data-gif-src="images/jp-animated-logo-transparent.gif" aria-label="James Peach Animated Title"></div>
+            <img src="images/jp-animation-redux.gif" alt="James Peach Redux Animation" class="hero-redux-gif">
+        </section>
 
         <section class="two-column-section">
-            <div class="column column-gif">
-                 <img src="images/jp-animation-redux.gif" alt="James Peach Animation" class="james-peach-gif">
-            </div>
             <div class="column column-text">
                 <h2>About the Project</h2>
                 <p>This is placeholder text describing the James Peach project. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod, nisi vel consectetur interdum, nisl nunc egestas nunc, vitae tincidunt nisl nunc euismod nunc.</p>

@@ -40,12 +40,149 @@ body {
 }
 
 .site-header {
-    /* Invisible header - adjust padding as needed */
-    padding: 20px 40px;
+    padding: 20px 40px; /* Keep existing padding */
     display: flex;
-    justify-content: space-between; /* Logo pushed to the right */
+    justify-content: space-between; /* Key for 3-column layout */
     align-items: center;
-    /* We'll make it truly invisible later if needed, for now, space is reserved */
+    /* position: relative; /* No longer needed for this centering method */
+}
+
+/* New styles for header columns */
+.header-left, .header-right {
+    flex: 1; /* Allows them to grow and shrink, pushing center to middle */
+    display: flex; /* To align items within left/right sections if needed */
+    align-items: center;
+}
+
+.header-left {
+    justify-content: flex-start; /* Align content to the start of the left zone */
+}
+
+.header-right {
+    justify-content: flex-end; /* Align content to the end of the right zone */
+}
+
+.header-center {
+    display: flex;
+    justify-content: center;
+}
+
+/* Styles for JKBX Letterhead Logo */
+.jkbx-letterhead-logo {
+    height: 50px; /* Adjust as needed */
+    width: auto;
+    margin-top: 10px; /* Add some space above the logo */
+    margin-left: 10px; /* Add some space to the left */
+}
+
+/* New styles for JKBX page redesign */
+.jkbx-main-logo-container {
+    text-align: left; /* Align logo to the left */
+    padding: 10px 40px 5px 40px; /* Reduced vertical padding, esp. bottom */
+    margin-bottom: 0; /* Remove space below the logo container */
+}
+
+.jkbx-main-logo-container .jkbx-letterhead-logo {
+    height: 70px; /* Adjusted size */
+    width: auto;
+    margin-top: 10px; /* Reduced top margin */
+    margin-left: 0;
+}
+
+.horizontal-menu-bar {
+    background-color: transparent; /* Removed background */
+    padding: 5px 40px 15px 40px; /* Adjusted padding */
+    text-align: left;
+    border-bottom: none; /* Removed border */
+}
+
+.horizontal-menu-bar ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 25px; /* Adjusted space between menu items */
+}
+
+.horizontal-menu-bar ul li {
+    display: inline-block;
+}
+
+.horizontal-menu-bar ul li a {
+    text-decoration: none;
+    color: #000000; /* Black text */
+    font-weight: normal; /* Normal weight */
+    font-size: 1.2em; /* Slightly larger, adjust as needed */
+    padding: 0; /* Remove padding */
+    text-transform: lowercase; /* Match image */
+    font-family: Arial, sans-serif; /* Ensure consistent font */
+}
+
+.horizontal-menu-bar ul li a:hover {
+    color: #555555; /* Darker grey on hover */
+    border-bottom: none; /* Removed hover border */
+}
+
+.content-section {
+    max-width: 800px; /* Limit width for readability */
+    margin: 40px auto; /* Center the content section with top/bottom margin */
+    padding: 0 20px; /* Padding inside the content section */
+    text-align: left;
+    font-family: Arial, sans-serif; /* Ensure consistent font for children */
+}
+
+.content-section p {
+    margin-bottom: 1.5em;
+    line-height: 1.6;
+    font-size: 1em;
+}
+
+.content-section em {
+    font-style: italic;
+}
+
+.content-section strong {
+    font-weight: bold;
+}
+
+.content-section .footnote {
+    font-size: 0.8em;
+    vertical-align: super;
+    color: #555;
+}
+
+.content-section .inline-link {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.content-section .inline-link:hover {
+    text-decoration: underline;
+}
+
+.content-section .projects-list {
+    margin-left: 20px; /* Indent list */
+    margin-bottom: 1.5em;
+}
+
+.content-section .projects-list li {
+    margin-bottom: 0.5em;
+}
+
+.content-section h2 {
+    font-size: 1.8em;
+    margin-top: 2em;
+    margin-bottom: 0.5em;
+    text-align: center; /* Center the 'but why?' heading */
+    font-family: Arial, sans-serif; /* Ensure consistent font */
+}
+
+.content-section .sub-heading {
+    text-align: center; /* Center the '(problem and solution)' text */
+    font-size: 0.9em;
+    color: #777;
+    margin-top: -0.5em; /* Pull it closer to the h2 */
+    margin-bottom: 2em;
 }
 
 .site-logo {
@@ -53,17 +190,22 @@ body {
 }
 
 .logo {
-    /* font-size: 1.5em; */ /* Removed as it's an image now */
-    /* font-weight: bold; */
-    height: 80px; /* Increased height */
+    height: 80px;
     width: auto;
-    transition: filter 0.3s ease; /* Add transition for blur */
+    transition: filter 0.3s ease;
+    /* Remove absolute positioning properties */
+    /* position: absolute; */
+    /* left: 50%; */
+    /* top: 50%; */
+    /* transform: translate(-50%, -50%); */
+    flex-shrink: 0; /* Prevent logo from shrinking if header-center is squeezed */
 }
 
 .main-nav {
-    /* Basic nav styles - hamburger functionality later */
-    flex-grow: 1;
-    padding-left: 20px; /* Add some space between nav/placeholder and logo */
+    flex-grow: 0; /* Stays 0 */
+    padding-left: 20px;
+    display: flex; /* if it contains multiple items itself */
+    align-items: center;
 }
 
 main {
@@ -159,7 +301,7 @@ main {
     max-width: 100%; /* Fill container width */
     max-height: 100%; /* Fill container height */
     object-fit: contain; /* Ensure it scales nicely without cropping, if aspect ratio differs */
-    filter: invert(1); /* Re-added to invert colors */
+    filter: invert(1); /* Uncommented to invert colors on index.html */
 }
 
 /* Make the red button icon smaller */
@@ -168,9 +310,6 @@ main {
     max-height: 35%; /* Adjusted from 22.5% - making it a bit bigger */
 }
 
-.james-peach-icon-image {
-    mix-blend-mode: screen; /* Attempt to make (now potentially black) background transparent */
-}
 
 /* Info Box Styles */
 
@@ -222,10 +361,23 @@ main {
     animation: wiggle 0.5s ease-in-out;
 }
 
+/* Wiggle animation for header logo */
+#header-logo:hover {
+    animation: wiggle 0.5s ease-in-out;
+}
+
 /* Mobile: 2 columns x 4 rows */
 @media (max-width: 768px) {
     .site-header {
         padding: 15px 20px;
+    }
+
+    .logo {
+        height: 60px; /* Adjust logo size for mobile */
+    }
+
+    a.back-button img {
+        height: 25px; /* Adjust back button size for mobile */
     }
 
     .icon-grid {
@@ -254,10 +406,6 @@ main {
     /* Removed empty ruleset below */
     /* .main-nav { ... } */
 
-    .logo {
-        height: 45px; /* Increased mobile logo height */
-    }
-
     .info-box {
         font-size: 0.9em; /* Adjust mobile font size if needed */
         padding: 15px 20px; /* Adjust mobile padding */
@@ -278,6 +426,78 @@ main {
         margin-right: 0;
     }
     /* --- End Blog Styles for Mobile --- */
+
+    /* James Peach Page Specific Mobile Styles */
+    .james-peach-page .site-header {
+        padding: 15px 15px; /* Further reduce padding for this specific page */
+    }
+
+    .james-peach-content {
+        padding: 20px; /* Reduce main content padding */
+    }
+
+    .title-gif-container {
+        flex-direction: column; /* Stack title GIFs if needed, though they might already be block */
+        align-items: center; /* Center them when stacked */
+    }
+
+    .title-gif-container .title-gif,
+    .title-gif-container .redux-gif-large {
+        max-width: 90%; /* Ensure they don't overflow */
+        height: auto;
+        margin-bottom: 10px; /* Add some space if they stack */
+    }
+    
+    .redux-gif-large {
+        /* Adjustments for the larger redux gif if it's too prominent on mobile */
+        max-width: 60px; /* Halved and adjusted for mobile */
+    }
+
+    .two-column-section {
+        flex-direction: column; /* Stack columns */
+        gap: 20px; /* Add gap between stacked columns */
+    }
+
+    .two-column-section .column {
+        width: 100%; /* Make columns full width */
+        margin-bottom: 20px; /* Add space below the first column when stacked */
+    }
+    
+    .two-column-section .column:last-child {
+        margin-bottom: 0;
+    }
+
+    .column-text h2 {
+        font-size: 1.5em; /* Adjust heading size */
+    }
+
+    .column-text p {
+        font-size: 0.95em; /* Adjust paragraph text size */
+    }
+
+    .jp-interactive-placeholder,
+    .jp-preview-image,
+    .jp-expanded-view img {
+        max-width: 100%; /* Ensure interactive elements scale */
+        height: auto;
+    }
+
+    .placeholder-article h2 {
+        font-size: 1.4em; /* Adjust article heading size */
+    }
+    
+    .placeholder-article p {
+        font-size: 0.9em; /* Adjust article paragraph size */
+    }
+
+    .placeholder-image-rect {
+        height: 150px; /* Adjust placeholder image rect height */
+        margin: 15px 0;
+    }
+
+    .bottom-figma-logo img {
+        max-width: 80px; /* Adjust figma logo size */
+    }
 }
 
 /* --- Blog Page Styles --- */
@@ -473,36 +693,103 @@ main {
 
 .video-gallery {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 40px; /* Space between video items */
+    flex-direction: column; /* Stack videos vertically */
+    align-items: center; /* Center items in the column */
+    gap: 80px; /* Increased space between video items slightly more */
     padding: 20px;
 }
 
 .video-item {
-    width: 250px; /* Adjust width as needed */
-    text-align: center;
+    width: 90%; /* Allow it to be reasonably wide on larger screens */
+    max-width: 1050px; /* Cap the total width of the video + description row */
+    position: relative; 
+    display: flex; 
+    align-items: flex-start; 
+    justify-content: center; /* Centers video when description is hidden */
+    gap: 30px; 
 }
 
-.video-placeholder {
-    width: 200px; /* Size of the circle */
-    height: 200px;
-    background-color: #ccc; /* Grey color */
-    border-radius: 50%; /* Make it a circle */
-    margin: 0 auto 15px auto; /* Center circle, add space below */
-    cursor: pointer; /* Indicate it's clickable */
-    transition: transform 0.2s ease-in-out;
-}
-
-.video-placeholder:hover {
-    transform: scale(1.05);
+.video-item video {
+    flex-grow: 0; 
+    flex-shrink: 1; 
+    flex-basis: 60%;  
+    max-width: 680px; 
+    height: auto;
+    display: block; 
+    border-radius: 8px; 
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1); 
+    transition: flex-basis 0.4s ease-in-out, max-width 0.4s ease-in-out, margin-left 0.4s ease-in-out, transform 0.4s ease-in-out; /* Added margin/transform for smoother shift */
 }
 
 .video-description {
-    font-size: 0.9em;
-    color: #666; /* Grey color */
-    line-height: 1.4;
-    padding: 0 10px; /* Add some padding */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(20px); 
+    flex-grow: 1;   
+    flex-shrink: 0; 
+    flex-basis: 0;  
+    max-width: 0;   
+    padding-left: 0; 
+    padding-right: 0;
+    padding-top: 0; /* Collapse vertical padding when hidden */
+    padding-bottom: 0; /* Collapse vertical padding when hidden */
+    line-height: 0; /* Collapse line height when hidden */
+    overflow: hidden;  
+    background-color: #2c2c2c; 
+    color: #f0f0f0;       
+    /* padding-top: 25px; Original, restored by .description-visible */
+    /* padding-bottom: 25px; Original, restored by .description-visible */
+    border-radius: 8px; 
+    font-size: 0.9em; 
+    /* line-height: 1.6; Original, restored by .description-visible */
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25); 
+    z-index: 5; 
+    transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out, 
+                visibility 0s linear 0.4s, flex-basis 0.4s ease-in-out, 
+                max-width 0.4s ease-in-out, padding-left 0.4s ease-in-out, padding-right 0.4s ease-in-out,
+                padding-top 0.4s ease-in-out, padding-bottom 0.4s ease-in-out, line-height 0.4s ease-in-out;
+}
+
+.video-description.description-visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+    flex-basis: 35%;  
+    max-width: 340px; 
+    padding-left: 25px; 
+    padding-right: 25px;
+    padding-top: 25px; /* Restore vertical padding */
+    padding-bottom: 25px; /* Restore vertical padding */
+    line-height: 1.6; /* Restore line height */
+    transition-delay: 0s; /* Reset delays for all transitioned properties when becoming visible */
+}
+
+.video-description h3 { /* Title style */
+    font-size: 1.4em;
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #ffffff;
+}
+
+.video-description p { /* Paragraph style */
+    margin-bottom: 20px;
+    font-size: 0.95em;
+}
+
+.video-description .credits { /* Credits container */
+    margin-top: 20px;
+    font-size: 0.85em;
+    border-top: 1px solid #444; /* Separator line */
+    padding-top: 15px;
+}
+
+.video-description .credit-item {
+    margin-bottom: 8px;
+}
+
+.video-description .credit-item strong { /* Credit label (e.g., Director:) */
+    color: #bbbbbb; /* Lighter grey for labels */
+    margin-right: 8px;
 }
 
 /* Theater Mode Styles */
@@ -554,7 +841,47 @@ body.theater-mode-active footer {
 }
 /* --- End Video Page Styles --- */
 
-/* --- End Blog Page Styles --- */
+/* --- Video Page Dark Theme --- */
+body.video-page-dark-theme {
+    background-color: #000000;
+    color: #ffffff;
+}
+
+.video-page-dark-theme .site-header .back-button img,
+.video-page-dark-theme .site-header .logo {
+    filter: invert(1);
+}
+
+/* Remove or adjust this if .video-description is now the box itself */
+/* 
+.video-page-dark-theme .video-description {
+    color: #ccc; 
+}
+*/
+
+.video-page-dark-theme .video-item video {
+    box-shadow: 0 8px 30px rgba(255,255,255,0.08); /* Doubled Lighter shadow for dark theme */
+}
+
+/* Ensure the dark theme description box has appropriate colors if not already covered */
+.video-page-dark-theme .video-description {
+    background-color: #3a3a3a; 
+    color: #e0e0e0;           
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4); /* Doubled Darker shadow for contrast */
+}
+
+.video-page-dark-theme .video-description h3 {
+    color: #ffffff;
+}
+
+.video-page-dark-theme .video-description .credits {
+    border-top-color: #555555; /* Lighter separator for dark theme */
+}
+
+.video-page-dark-theme .video-description .credit-item strong {
+    color: #cccccc;
+}
+/* --- End Video Page Dark Theme --- */
 
 /* --- Utility Styles --- */
 .centered-image-container {
@@ -579,8 +906,6 @@ body.theater-mode-active footer {
 }
 
 /* --- End Utility Styles --- */
-
-/* --- End Blog Page Styles --- */
 
 /* --- James Peach Page Styles --- */
 
@@ -609,27 +934,100 @@ body.james-peach-page {
 .james-peach-content {
     max-width: 900px;
     margin: 20px auto;
-    padding: 20px;
+    padding: 0; /* Remove main padding for full-bleed hero */
     /* text-align: center; Removed - sections handle alignment */
 }
 
 /* Animated Title GIF */
 .title-gif-container {
     text-align: center;
-    margin-bottom: 50px;
+    margin-bottom: 0px; /* Greatly reduce bottom margin */
+    padding-bottom: 60px; /* Add padding to give space for orbit if it dips low, adjust as needed */
+    position: relative; /* Establish positioning context for the orbiting GIF */
 }
 
 .title-gif {
-    max-width: 400px; /* Adjust size as needed */
-    width: 80%;
-    height: auto;
+    /* max-width: 600px; */ /* Removed to use native size */
+    /* width: 80%; */ /* Removed to use native size */
+    height: auto; /* Maintain aspect ratio */
     display: inline-block;
-    /* Apply the ping-pong animation */
-    animation-name: pulse;
-    animation-duration: 2.5s; /* Slightly slower maybe */
-    animation-timing-function: ease-in-out;
-    animation-direction: alternate;
-    animation-iteration-count: infinite;
+    border: none !important; /* Explicitly ensure no border, with increased specificity */
+    transform: scale(0.49); /* Increased by 25% from 0.392 */
+    position: relative; /* Needed for z-index to work correctly against orbiting element */
+    z-index: 10; /* Base z-index for the logo */
+    /* Apply the ping-pong animation - COMMENTING OUT */
+    /* animation-name: pulse; */
+    /* animation-duration: 2.5s; */
+    /* animation-timing-function: ease-in-out; */
+    /* animation-direction: alternate; */
+    /* animation-iteration-count: infinite; */
+}
+
+.redux-gif-large {
+    max-width: 75px; /* Halved from 150px */
+    width: auto; 
+    height: auto;
+    position: absolute; 
+    top: 50%; 
+    left: 50%; 
+    transform-origin: center center;
+    pointer-events: auto; 
+    /* animation: orbit-dreamy 15s ease-in-out infinite; */ /* Removed orbit */
+    animation: bounce-fun 10s ease-in-out infinite alternate; /* New bounce animation */
+    z-index: 15; /* Ensure it's always in front of the title-gif (which is z-index 10) */
+}
+
+/* @keyframes orbit-dreamy - This can be removed or commented out if no longer needed */
+/* For now, I will leave it commented in case it's useful later, but it's not applied. */
+/*
+@keyframes orbit-dreamy {
+    0% {
+        transform: translate(-50%, -50%) translateX(-24px) translateY(4px) rotate(0deg) scale(0.7);
+        z-index: 5; 
+        opacity: 0.8;
+    }
+    25% {
+        transform: translate(-50%, -50%) translateX(0px) translateY(-20px) rotate(90deg) scale(1.1);
+        z-index: 15; 
+        opacity: 1;
+    }
+    50% {
+        transform: translate(-50%, -50%) translateX(28px) translateY(0px) rotate(180deg) scale(0.8);
+        z-index: 5; 
+        opacity: 0.7;
+    }
+    75% {
+        transform: translate(-50%, -50%) translateX(-8px) translateY(16px) rotate(270deg) scale(1.0);
+        z-index: 15; 
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) translateX(-24px) translateY(4px) rotate(360deg) scale(0.7);
+        z-index: 5; 
+        opacity: 0.8;
+    }
+}
+*/
+
+@keyframes bounce-fun {
+    0% {
+        transform: translate(-50%, -50%) translateX(0px) translateY(0px) rotate(0deg) scale(1);
+    }
+    20% { /* Move left and up, shrink slightly, rotate */
+        transform: translate(-50%, -50%) translateX(-120px) translateY(-40px) rotate(-25deg) scale(0.8);
+    }
+    40% { /* Move far right, dip down, grow, rotate other way */
+        transform: translate(-50%, -50%) translateX(150px) translateY(30px) rotate(15deg) scale(1.2);
+    }
+    60% { /* Back towards center-left, up high, shrink, level out rotation */
+        transform: translate(-50%, -50%) translateX(-80px) translateY(-60px) rotate(5deg) scale(0.7);
+    }
+    80% { /* Dip low right, normal size, more rotation */
+        transform: translate(-50%, -50%) translateX(100px) translateY(50px) rotate(-10deg) scale(1);
+    }
+    100% {
+        transform: translate(-50%, -50%) translateX(0px) translateY(0px) rotate(0deg) scale(1);
+    }
 }
 
 /* Two Column Section */
@@ -676,9 +1074,110 @@ body.james-peach-page {
     animation-iteration-count: infinite;
 }
 
+/* Styles for the new interactive placeholder on James Peach page */
+.jp-interactive-placeholder {
+    position: relative; /* For positioning expanded view later if needed */
+    cursor: pointer;
+    width: 100%; /* Take full width of its parent (.column-gif) */
+    aspect-ratio: 1 / 1; /* Maintain a square aspect ratio like art items, adjust if needed */
+    outline: none; /* For focused state */
+}
+
+.jp-preview-image {
+    width: 100%;
+    height: 100%;
+    background-color: #eee; /* Fallback color */
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.3s ease, filter 0.3s ease, border-radius 0.3s ease; /* Added border-radius transition */
+    overflow: hidden;
+    border-radius: 50%; /* Start as a circle */
+    filter: blur(3px);
+}
+
+.jp-interactive-placeholder:hover .jp-preview-image,
+.jp-interactive-placeholder:focus .jp-preview-image {
+    transform: scale(1.05);
+    filter: blur(0);
+}
+
+.jp-expanded-view {
+    /* display: none; Initially hidden, JS will show it */ /* Now handled by opacity/visibility */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #000000; /* CHANGED to fully opaque black */
+    padding: 20px;
+    box-sizing: border-box;
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.8);
+    transition: opacity 0.4s ease, visibility 0s linear 0.4s, transform 0.4s ease;
+    z-index: 1000; /* High z-index to be on top */
+    cursor: zoom-out; /* Indicate it can be closed */
+    /* margin-top: 10px; /* Space between preview and expanded view if preview is kept visible */ /* Removed as it's a modal now */
+}
+
+.jp-interactive-placeholder.expanded .jp-expanded-view {
+    opacity: 1 !important; /* ADDED !important to ensure it overrides other opacity rules */
+    visibility: visible;
+    transform: scale(1);
+    transition: opacity 0.4s ease, visibility 0s linear 0s, transform 0.4s ease;
+}
+
+.jp-expanded-view img {
+    display: block;
+    max-width: 100%;
+    max-height: calc(100% - 70px); /* Adjusted to leave space for descriptor */
+    object-fit: contain;
+    margin: auto;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 1; /* Explicitly ensure full opacity for the image */
+    mix-blend-mode: normal; /* Ensure normal blending */
+    /* border-radius: 5px; */ /* Expanded image will be rectangular (or slightly rounded) */ /* Handled by container or not needed */
+}
+
+.jp-image-descriptor {
+    text-align: right;
+    font-size: 0.9em;
+    color: #dddddd; /* Light text for dark background of james-peach page, slightly dimmer than #f0f0f0 */
+    /* margin-top: 8px; */ /* Removed, using absolute positioning now */
+    /* padding-right: 5px; */ /* Removed, using absolute positioning now */
+    position: absolute;
+    bottom: 20px;
+    right: 25px;
+    max-width: 80%;
+    pointer-events: none; /* Descriptor shouldn't interfere with clicks on the overlay */
+}
+
+/* Optional: Dim other items when one is active, specific to James Peach page */
+body.jp-gallery-active .james-peach-content > *:not(.jp-interactive-placeholder.expanded),
+body.jp-gallery-active .site-header {
+    opacity: 0.3;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+    z-index: 0; /* Ensure these are pushed behind the modal and main content */
+}
+
+body.jp-gallery-active {
+    overflow: hidden; /* Prevent scrolling when gallery is active */
+}
+
+/* Ensure the expanded placeholder itself isn't dimmed by the rule above */
+body.jp-gallery-active .jp-interactive-placeholder.expanded {
+    opacity: 1 !important; 
+    pointer-events: auto !important;
+}
+
 /* Full Width Sections */
 .full-width-section {
     margin-bottom: 40px;
+    padding: 0 40px; /* Add padding back */
 }
 
 .placeholder-article {
@@ -770,6 +1269,13 @@ body:has(.icon-grid .icon-link:hover) #comet {
     transition: filter 0.3s ease; /* Consistent transition for comet blur */
 }
 
+/* Blur other icons and comet when header logo is hovered */
+body:has(.site-header #header-logo:hover) .icon-grid .icon-link:not(:hover),
+body:has(.site-header #header-logo:hover) #comet {
+    filter: blur(4px);
+    transition: filter 0.3s ease;
+}
+
 /* --- Floating Icon Animation --- */
 @keyframes float {
   0% {
@@ -834,136 +1340,9 @@ body:has(.icon-grid .icon-link:hover) #comet {
     animation: wiggle 0.5s ease-in-out;
 }
 
-/* Secret Color Picker Styles */
-#secret-hover-trigger,
-#horror-hover-trigger /* Added horror trigger */
-{
-    position: fixed;
-    bottom: 0;
-    /* right: 0; */ /* Base right position removed, will be set individually */
-    width: 50px; /* Adjust size as needed */
-    height: 50px; /* Adjust size as needed */
-    /* background-color: rgba(255, 0, 0, 0.1); */ /* Optional: for debugging visibility */
-    z-index: 999; /* Ensure it's above most other content if they don't have high z-index */
-}
-
-/* Specific positioning for the triggers */
-#secret-hover-trigger {
-    right: 50px; /* To the left of the horror trigger */
-    /* bottom: 0; is inherited */
-}
-
-#horror-hover-trigger {
-    right: 0; /* Far right */
-    /* bottom: 0; is inherited */
-    /* bottom: 60px; */ /* Removed old stacking rule */
-}
-
-
-#color-picker-message,
-#horror-message-box /* Added horror message box */
-{
-    position: fixed;
-    bottom: 10px;
-    /* right: 10px; */ /* Base right position removed, will be set individually */
-    background-color: #333;
-    color: white;
-    padding: 8px 15px;
-    border-radius: 5px;
-    font-size: 0.9em;
-    z-index: 1000; /* Above trigger and other content */
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    cursor: default; /* Default cursor for the message box */
-    display: inline-block; /* Allows side-by-side layout if they were in a container, but using absolute pos */
-}
-
-/* Specific positioning for the message boxes */
-#horror-message-box { /* This will be on the right */
-    right: 10px;
-    /* bottom: 70px; */ /* Removed old stacking rule */
-}
-
-#color-picker-message { /* This will be to the left of the horror message box */
-    right: calc(10px + 80px + 2px); /* (horror-right-padding) + (approx horror-width) + (desired_gap) */
-    /* A more precise width for 'Scary'/'Not Scary' is around 70-90px. Adjusted gap to 2px. */
-}
-
-#color-picker-message .action-link, /* General action links in this box */
-#horror-message-box .action-link /* Action links in the horror box */
-{
-    text-decoration: underline;
-    cursor: pointer; /* Pointer cursor for the clickable span */
-}
-
-#color-picker-popup { /* This is the old popup, likely unused now, but styles remain */
-    position: fixed;
-    bottom: 45px; /* Position above the message or adjust as needed */
-    right: 10px;
-    background-color: #000000; /* Match message box - CHANGED to black */
-    color: white; /* Match message box */
-    border: 1px solid #555; /* Darker border or none */
-    border-radius: 25px; /* Match message box - CHANGED to very rounded */
-    padding: 15px; /* Match message box padding, or keep larger if content needs it */
-    padding-top: 25px; /* Ensure enough space for X and title */
-    min-width: 250px; /* Keep or adjust based on content */
-    z-index: 1001;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3); /* Similar shadow */
-    display: flex;
-    flex-direction: column;
-    gap: 12px; /* Adjusted gap */
-}
-
-#color-picker-popup h3 {
-    margin: 0 0 8px 0;
-    font-size: 1.1em;
-    color: white; /* Text color for dark background */
-    text-align: center;
-    padding-right: 20px; 
-}
-
-#color-picker-popup p { /* This rule might be unused now but kept for safety */
-    margin: 0 0 10px 0;
-    font-size: 0.95em;
-    color: white; /* Text color for dark background */
-}
-
-#color-picker-popup button {
-    padding: 8px 12px;
-    border: 1px solid #666; /* Border for buttons on dark bg */
-    background-color: #555; /* Darker buttons */
-    color: white; /* Light text on buttons */
-    cursor: pointer;
-    border-radius: 20px; /* CHANGED to pill-shape */
-    transition: background-color 0.2s ease;
-    font-size: 0.9em;
-}
-
-#color-picker-popup button:hover {
-    background-color: #777; /* Lighter hover for dark buttons */
-}
-
-/* Utility class to hide elements */
-.hidden {
-    display: none !important; /* Use important to override inline styles if necessary */
-}
-
-/* Styling for the popup close button */
-.close-popup-button {
-    position: absolute;
-    top: 8px;  /* Adjusted for new padding */
-    right: 10px; /* Adjusted for new padding */
-    background: transparent;
-    border: none; /* Ensured no border */
-    font-size: 1.5em;
-    font-weight: bold;
-    color: #ccc; /* Lighter X for dark background */
-    cursor: pointer;
-    padding: 0 5px;
-    line-height: 1;
-}
-
-.close-popup-button:hover {
-    color: #fff; /* Brighter X on hover */
+/* Wiggle animation for header logo */
+#header-logo:hover {
+    animation: wiggle 0.5s ease-in-out;
 }
 
 /* Tumultuous Icon Animation - More Intense */
@@ -1060,10 +1439,10 @@ body.tumultuous-mode-active .icon-grid .icon-link {
     justify-content: center;
     align-items: center;
     font-family: 'Impact', 'Arial Black', sans-serif; /* Fat text font */
-    font-size: 80vh; /* Very large, spanning most of the screen height */
+    font-size: 100vh; /* INCREASED: Was 80vh, now full viewport height */
     color: #000000; /* Solid black text */
     pointer-events: none; /* Should not interfere with clicks */
-    z-index: 0; /* Behind main content (main has z-index: 1) */
+    z-index: 2; /* INCREASED: Was 0, main content is 1. Popups are higher. */
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
@@ -1076,3 +1455,520 @@ body.tumultuous-mode-active .icon-grid .icon-link {
     visibility: visible;
 }
 /* --- End Giant Countdown Display Styles --- */ 
+
+/* Make James Peach icon container on index page larger */
+#icon-james-peach {
+    width: 260px; /* Increased from default 220px */
+    height: 260px; /* Increased from default 220px */
+}
+
+.redux-gif-container-centered {
+    text-align: center;
+    margin-top: -100px; /* Adjust for 'tight' spacing, may need tweaking depending on title GIF's actual scaled height */
+    margin-bottom: 30px;
+}
+
+.redux-gif-large {
+    max-width: 300px; /* 'Pretty large', adjust as needed */
+    width: 90%;
+    height: auto;
+}
+
+/* --- Start James Peach Page Styles --- */
+
+body.james-peach-page {
+    background-color: #000000; /* Black background for the page */
+    color: #ffffff; /* Default text color to white for contrast */
+}
+
+/* Ensure header elements are visible and correctly styled on the dark background */
+.james-peach-page .site-header {
+    position: relative; 
+    z-index: 10; 
+}
+
+.james-peach-content {
+    padding: 0; /* Remove main padding for full-bleed hero */
+}
+
+/* Styles for the new hero section */
+.jp-hero-section {
+    position: relative; 
+    width: 100%;
+    height: 75vh; 
+    display: flex; 
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; 
+    margin-bottom: 40px; 
+}
+
+.jp-hero-section::before { /* Pseudo-element now for full-page background */
+    content: '';
+    position: fixed; /* Changed from absolute to fixed */
+    top: 0; 
+    left: 0; 
+    right: 0;
+    /* bottom: 0; Removed */
+    height: auto; /* Let background-size and aspect ratio determine height, or set explicitly if needed */
+    background-image: url('images/jp-widescreen2.png');
+    background-size: 100vw auto; /* Cover full viewport width, height auto to maintain scale */
+    background-repeat: no-repeat; 
+    background-position: top center; /* Align to the top, horizontally center */
+    z-index: -1; /* Place it behind all other content */
+    animation: ken-burns-zoom 70s ease-out infinite alternate;
+}
+
+@keyframes ken-burns-zoom {
+    0% {
+        /* Adjust transform-origin if needed for fixed positioning, default is center */
+        /* transform-origin: top center; */ 
+        transform: scale(1) rotate(0.1deg) translateX(-0.2%) translateY(0.1%);
+    }
+    25% {
+        transform: scale(1.1) rotate(-0.15deg) translateX(0.1%) translateY(-0.2%);
+    }
+    50% {
+        transform: scale(1.2) rotate(0.2deg) translateX(-0.1%) translateY(0.15%);
+    }
+    75% {
+        transform: scale(1.3) rotate(-0.1deg) translateX(0.2%) translateY(-0.1%);
+    }
+    100% {
+        transform: scale(1.4) rotate(0.15deg) translateX(-0.15%) translateY(0.2%);
+        /* Consider translateY values if the top edge shouldn't move too much during zoom */
+    }
+}
+
+.hero-title-gif {
+    position: absolute; 
+    top: 50%;  /* Changed back to 50% for central anchor */         
+    left: 50%;          
+    max-width: 90%;
+    max-height: 2000px;
+    z-index: 1; 
+    animation: quirkyLogoPath 25s ease-in-out infinite; /* New quirky animation */
+    display: flex; 
+    /* transform will be fully controlled by keyframes */
+}
+
+.logo-slice {
+    height: 100%;
+    background-repeat: no-repeat;
+    /* background-size and background-position will be set by JS */
+    animation-name: ripple-wave;
+    animation-duration: 3s; /* Increased from 1.5s to slow down ripple */
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    animation-direction: alternate; 
+    /* animation-delay will be set by JS for staggering */
+}
+
+@keyframes ripple-wave {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(15px); /* Adjust ripple height as desired */
+    }
+}
+
+@keyframes quirkyLogoPath {
+    0% {
+        transform: translate(-50%, -50%) translateX(-30vw) translateY(-15vh) rotate(-20deg) scale(0.8);
+    }
+    15% {
+        transform: translate(-50%, -50%) translateX(25vw) translateY(-20vh) rotate(30deg) scale(1.1);
+    }
+    30% {
+        transform: translate(-50%, -50%) translateX(30vw) translateY(10vh) rotate(-10deg) scale(0.9);
+    }
+    45% {
+        transform: translate(-50%, -50%) translateX(0vw) translateY(25vh) rotate(15deg) scale(1.2);
+    }
+    60% {
+        transform: translate(-50%, -50%) translateX(-35vw) translateY(15vh) rotate(-25deg) scale(0.7);
+    }
+    75% {
+        transform: translate(-50%, -50%) translateX(-20vw) translateY(-22vh) rotate(20deg) scale(1.0);
+    }
+    90% {
+        transform: translate(-50%, -50%) translateX(10vw) translateY(-5vh) rotate(5deg) scale(0.85);
+    }
+    100% {
+        transform: translate(-50%, -50%) translateX(-30vw) translateY(-15vh) rotate(-20deg) scale(0.8);
+    }
+}
+
+.hero-redux-gif {
+    position: absolute; 
+    top: 50%; 
+    left: 50%; 
+    width: 225px; /* Default size for smaller screens */
+    height: auto;
+    z-index: 2; 
+    animation: ellipse-orbit-enhanced 15s linear infinite;
+    mix-blend-mode: normal; 
+    opacity: 1; 
+}
+
+/* Media query for larger redux GIF on desktop */
+@media (min-width: 769px) {
+    .hero-redux-gif {
+        width: 450px; /* Increased controlled size for desktop */
+        /* max-width: none; Removed as we set a specific width now */
+    }
+}
+
+@keyframes ellipse-orbit-enhanced {
+    0% {
+        transform: translate(-50%, -50%) translateX(22vw) translateY(0vh) rotate(0deg) scale(0.85);
+        opacity: 1; /* Changed from 0.75 */
+    }
+    12.5% {
+        transform: translate(-50%, -50%) translateX(15vw) translateY(8vh) rotate(45deg) scale(1);
+        opacity: 1; /* Changed from 0.9 */
+    }
+    25% {
+        transform: translate(-50%, -50%) translateX(0vw) translateY(14vh) rotate(90deg) scale(1.15);
+        opacity: 1;
+    }
+    37.5% {
+        transform: translate(-50%, -50%) translateX(-15vw) translateY(8vh) rotate(135deg) scale(1);
+        opacity: 1; /* Changed from 0.9 */
+    }
+    50% {
+        transform: translate(-50%, -50%) translateX(-22vw) translateY(0vh) rotate(180deg) scale(0.85);
+        opacity: 1; /* Changed from 0.75 */
+    }
+    62.5% {
+        transform: translate(-50%, -50%) translateX(-15vw) translateY(-8vh) rotate(225deg) scale(1);
+        opacity: 1; /* Changed from 0.9 */
+    }
+    75% {
+        transform: translate(-50%, -50%) translateX(0vw) translateY(-14vh) rotate(270deg) scale(1.15);
+        opacity: 1;
+    }
+    87.5% {
+        transform: translate(-50%, -50%) translateX(15vw) translateY(-8vh) rotate(315deg) scale(1);
+        opacity: 1; /* Changed from 0.9 */
+    }
+    100% {
+        transform: translate(-50%, -50%) translateX(22vw) translateY(0vh) rotate(360deg) scale(0.85);
+        opacity: 1; /* Changed from 0.75 */
+    }
+}
+
+/* @keyframes subtle-float { ... } */ 
+
+/* OLD STYLES TO BE COMMENTED OUT OR REMOVED */
+
+/* .title-gif-container { ... } */
+/* .title-gif { ... } */
+/* .redux-gif-large { ... } */
+/* @keyframes bounce-fun { ... } */
+
+.two-column-section {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 30px;
+    padding: 0 40px; /* Add padding back to sections if main has 0 padding */
+}
+
+.column {
+    flex: 1;
+}
+
+/* .column-gif { ... } */
+
+.column-text {
+    /* Styles for the text column */
+}
+
+/* .james-peach-gif { ... } */
+
+/* Comment out all .jp-interactive-placeholder and .jp-expanded-view styles */
+/*
+.jp-interactive-placeholder {
+    position: relative;
+    cursor: pointer;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    outline: none;
+}
+
+.jp-preview-image {
+    width: 100%;
+    height: 100%;
+    background-color: #eee;
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.3s ease, filter 0.3s ease, border-radius 0.3s ease;
+    overflow: hidden;
+    border-radius: 50%;
+    filter: blur(3px);
+}
+
+.jp-interactive-placeholder:hover .jp-preview-image,
+.jp-interactive-placeholder:focus .jp-preview-image {
+    transform: scale(1.05);
+    filter: blur(0);
+}
+
+.jp-expanded-view {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #000000;
+    padding: 20px;
+    box-sizing: border-box;
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.8);
+    transition: opacity 0.4s ease, visibility 0s linear 0.4s, transform 0.4s ease;
+    z-index: 1000;
+    cursor: zoom-out;
+}
+
+.jp-interactive-placeholder.expanded .jp-expanded-view {
+    opacity: 1 !important;
+    visibility: visible;
+    transform: scale(1);
+    transition: opacity 0.4s ease, visibility 0s linear 0s, transform 0.4s ease;
+}
+
+.jp-expanded-view img {
+    display: block;
+    max-width: 100%;
+    max-height: calc(100% - 70px);
+    object-fit: contain;
+    margin: auto;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 1;
+    mix-blend-mode: normal;
+}
+
+.jp-image-descriptor {
+    text-align: right;
+    font-size: 0.9em;
+    color: #dddddd;
+    position: absolute;
+    bottom: 20px;
+    right: 25px;
+    max-width: 80%;
+    pointer-events: none;
+}
+
+body.jp-gallery-active .james-peach-content > *:not(.jp-interactive-placeholder.expanded),
+body.jp-gallery-active .site-header {
+    opacity: 0.3;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+    z-index: 0;
+}
+
+body.jp-gallery-active {
+    overflow: hidden;
+}
+
+body.jp-gallery-active .jp-interactive-placeholder.expanded {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+*/
+
+.full-width-section {
+    margin-bottom: 40px; /* This was the original first line of this section */
+    padding: 0 40px; /* Add padding back */
+}
+
+/* ... existing code ... */
+
+/* Centering and initial state for the self-destruct popup */
+#self-destruct-popup {
+    /* It will have the .info-box class for base styling */
+    /* Override/add centering styles */
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center; /* Center text inside the popup */
+    /* Ensure it's hidden initially by .info-box class, JavaScript will show it by adding .visible */
+    display: block; /* Keep display block for positioning, actual visibility controlled by .info-box and .visible */
+    z-index: 9999; /* Ensure it's on top of the apocalypse overlay */
+}
+
+/* New Apocalypse Overlay */
+#apocalypse-overlay {
+    display: none; /* Initially hidden */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: red;
+    z-index: 9998; /* High, but below self-destruct popup */
+}
+
+/* Keyframes for violent wiggling with build-up */
+@keyframes violentWiggle {
+    0% { transform: translate(-50%, -50%) rotate(0deg) translateX(0px) translateY(0px); }
+    /* Start subtle */
+    10% { transform: translate(-50%, -50%) rotate(-2deg) translateX(-3px) translateY(1px); }
+    20% { transform: translate(-50%, -50%) rotate(2deg) translateX(3px) translateY(-1px); }
+    /* Medium intensity */
+    30% { transform: translate(-50%, -50%) rotate(-5deg) translateX(-8px) translateY(3px); }
+    40% { transform: translate(-50%, -50%) rotate(6deg) translateX(8px) translateY(-3px); }
+    /* Getting more chaotic */
+    50% { transform: translate(-50%, -50%) rotate(-10deg) translateX(-15px) translateY(8px); }
+    60% { transform: translate(-50%, -50%) rotate(12deg) translateX(15px) translateY(-8px); }
+    /* Full chaos */
+    70% { transform: translate(-50%, -50%) rotate(-20deg) translateX(-25px) translateY(12px); }
+    80% { transform: translate(-50%, -50%) rotate(22deg) translateX(25px) translateY(-12px); }
+    90% { transform: translate(-50%, -50%) rotate(-28deg) translateX(-15px) translateY(8px); }
+    100% { transform: translate(-50%, -50%) rotate(0deg) translateX(0px) translateY(0px); } /* Return to allow smooth loop if needed, or end on chaos */
+}
+
+/* Class to apply the violent wiggling animation */
+#self-destruct-popup.destruct-wiggle-active {
+    /* The base transform: translate(-50%, -50%) is part of the keyframes now */
+    animation: violentWiggle 0.3s linear infinite;
+}
+
+/* Click Log Message Styles */
+#click-log-message {
+    position: fixed;
+    bottom: 15px;
+    right: 15px;
+    font-family: Arial, sans-serif; /* Consistent font */
+    font-size: 0.9em;            /* Consistent font size */
+    color: #666666;              /* Darker gray text */
+    pointer-events: none;        /* So it doesn't intercept clicks */
+    z-index: 995;                /* Below other popups but above most content */
+}
+
+#click-log-message .click-count-number {
+    color: red; /* Red color for the click count number only */
+}
+
+/* New section styles */
+.section-title {
+    font-size: 2em; /* Larger title for sections */
+    margin-top: 2.5em;
+    margin-bottom: 1em;
+    font-family: Arial, sans-serif; /* Ensure consistent font */
+}
+
+.centered-title {
+    text-align: center;
+}
+
+.distribution-section {
+    max-width: 1000px; /* Wider for the grid */
+    margin: 40px auto;
+    padding: 0 20px;
+    font-family: Arial, sans-serif; /* Ensure consistent font for children */
+}
+
+.distribution-grid {
+    display: flex;
+    flex-direction: column; /* Rows will be stacked by default */
+    gap: 20px; /* Space between rows */
+}
+
+.distribution-grid .grid-row {
+    display: flex;
+    flex-direction: column; /* Columns stack on mobile by default */
+    gap: 15px; /* Space between before/after on mobile */
+    border: 1px solid #e0e0e0; /* Optional: to delineate rows */
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.distribution-grid .grid-column {
+    flex: 1; /* Each column takes equal space in a row on desktop */
+    padding: 10px;
+}
+
+.distribution-grid .before-column {
+    /* Styles specific to the 'before' state, e.g., background or text color */
+    /* background-color: #f9f9f9; */ /* Example */
+}
+
+.distribution-grid .after-column {
+    /* Styles specific to the 'after' state */
+    /* background-color: #e9ffe9; */ /* Example */
+}
+
+.distribution-grid .after-column h3 {
+    font-size: 1.2em;
+    margin-top: 0;
+    margin-bottom: 0.5em;
+    color: #333;
+    font-family: Arial, sans-serif; /* Ensure consistent font */
+}
+
+/* Desktop layout for the grid */
+@media (min-width: 768px) {
+    .distribution-grid .grid-row {
+        flex-direction: row; /* Arrange columns side-by-side on desktop */
+        gap: 20px; /* Space between columns on desktop */
+    }
+}
+
+.connection-section.content-section h2,
+.design-ideas-section.content-section h2 {
+    /* Specific styling for these titles if needed, 
+       otherwise .section-title and .centered-title will apply */
+}
+
+.connection-section.content-section p {
+    /* Re-using .content-section p styles mostly */
+    text-align: center; /* As per image, these seem centered */
+}
+
+.connection-section.content-section p strong {
+    display: block; /* Make the bolded sentence take its own line if desired */
+    margin-top: 1em;
+    font-size: 1.1em; /* Slightly larger for emphasis */
+}
+
+.distribution-grid .grid-column p {
+    /* This will inherit from .distribution-section, 
+       but can be set explicitly if needed for overrides later */
+}
+
+/* Styles for image placeholder and caption */
+.image-placeholder-container {
+    margin-bottom: 10px; /* Space between placeholder and caption */
+}
+
+.image-placeholder-large {
+    width: 100%; /* Full width of its container (.content-section) */
+    min-height: 400px; /* Placeholder height, adjust as needed */
+    background-color: #f0f0f0; /* Light grey background for placeholder */
+    border: 1px dashed #ccc; /* Dashed border to indicate placeholder */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-family: Arial, sans-serif;
+}
+
+.image-placeholder-large::before {
+    content: "Image Placeholder"; /* Text inside the placeholder */
+}
+
+.image-caption-right {
+    text-align: right;
+    font-size: 0.9em;
+    color: #555; /* Consistent with other secondary text */
+    font-family: Arial, sans-serif;
+    margin-top: 5px;
+}
+
+

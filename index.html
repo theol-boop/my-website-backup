@@ -10,12 +10,19 @@
     <div id="countdown-display" style="display: none;"></div> <!-- Initially hidden via style to prevent FOUC -->
 
     <header class="site-header">
-        <div></div>
-        <nav class="main-nav">
-            <!-- Navigation links will go here later -->
-            <!-- Hamburger icon for mobile will be added via CSS -->
-        </nav>
-        <img src="images/theo-lebeaux-logo.png" alt="Theo Lebeaux Logo" class="logo site-logo">
+        <div class="header-left">
+            <div></div>
+            <nav class="main-nav">
+                <!-- Navigation links will go here later -->
+                <!-- Hamburger icon for mobile will be added via CSS -->
+            </nav>
+        </div>
+        <div class="header-center">
+            <img src="images/theo-lebeaux-logo.png" alt="Theo Lebeaux Logo" class="logo site-logo" id="header-logo">
+        </div>
+        <div class="header-right">
+            <!-- This can be empty or hold future right-aligned items -->
+        </div>
     </header>
 
     <main>
@@ -35,7 +42,7 @@
             </div></a>
             <a href="james-peach.html" class="icon-link">
                 <div class="icon" id="icon-james-peach">
-                     <img src="images/jp-animated-logo-cropped.gif" alt="James Peach Icon" class="james-peach-icon-image">
+                     <img src="images/jp-animated-logo-transparent.gif" alt="James Peach Icon" class="james-peach-icon-image">
                 </div>
             </a>
             <a href="art.html" class="icon-link">
@@ -67,7 +74,18 @@
         <a href="https://jkbx.fm" target="_blank">go to jkbx.fm</a><br>
         <a href="jkbx.html">learn more</a>
     </div>
+
+    <div class="info-box" id="header-logo-info-box">
+        tl;dr Theo Lebeaux is a creative technologist, musician, and artist exploring the intersections of art, technology, and sound.
+    </div>
+
+    <div class="info-box" id="self-destruct-popup" style="display: none;">
+        this will now self destruct
+    </div>
+
+    <div id="click-log-message" style="display: none;">you've clicked the button <span class="click-count-number">0</span> times.</div>
     
+    <div id="apocalypse-overlay"></div>
 
     <script src="script.js" defer></script>
 

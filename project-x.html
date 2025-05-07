@@ -3,46 +3,292 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project X - Theo Lebeaux</title>
+    <title>Project X - Three.js Experiment</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Basic styling for the canvas */
-        #gradient-canvas {
-            display: block; /* Prevents extra space below canvas */
-            width: 500px;   /* Example size */
-            height: 300px;  /* Example size */
-            margin: 20px auto; /* Center it */
-            cursor: pointer; /* Indicate interactivity */
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh; /* Full viewport height */
+            overflow: hidden; /* Prevent scrollbars if canvas slightly overflows */
+        }
+        .site-header {
+            flex-shrink: 0; /* Prevent header from shrinking */
+        }
+        #three-container {
+            flex-grow: 1; /* Allow container to take up remaining space */
+            position: relative; /* For potential absolute positioning of canvas elements if needed */
+            min-height: 0; /* Prevent flexbox issues with very small heights */
+        }
+        #three-container canvas {
+            display: block; /* Remove any default inline spacing */
+            width: 100%;
+            height: 100%;
         }
     </style>
 </head>
 <body>
     <header class="site-header">
-        <a href="projects.html" class="back-button">
-            <img src="images/back-button.svg" alt="Back to Projects">
-        </a>
-        <nav class="main-nav"></nav>
-        <img src="images/theo-lebeaux-logo.png" alt="Theo Lebeaux Logo" class="logo">
+        <div class="header-left">
+            <a href="projects.html" class="back-button">
+                <img src="images/back-button.svg" alt="Back to Projects">
+            </a>
+            <nav class="main-nav"></nav>
+        </div>
+        <div class="header-center">
+            <img src="images/theo-lebeaux-logo.png" alt="Theo Lebeaux Logo" class="logo">
+        </div>
+        <div class="header-right">
+            <!-- This can be empty or hold future right-aligned items -->
+        </div>
     </header>
 
-    <main>
-        <h1>Project X</h1>
-        <p>Experimental Gradient Color Picker</p>
-        <canvas id="gradient-canvas"></canvas>
-        <!-- Content for Project X goes here -->
-    </main>
-
-    <footer>
-        <!-- Footer content -->
-    </footer>
+    <div id="three-container"></div>
 
     <script type="importmap">
         {
             "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
             }
         }
     </script>
-    <script type="module" src="project-x-script.js" defer></script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        const container = document.getElementById('three-container');
+
+        // Scene
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xffffff); // Set background to white
+
+        // Camera
+        const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.z = 5;
+
+        // Renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        container.appendChild(renderer.domElement);
+
+        // Cube Group (for combined rotation of edges and vertices)
+        const cubeGroup = new THREE.Group();
+        scene.add(cubeGroup);
+
+        // Cube Geometry
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+
+        // Cube Edges
+        const edges = new THREE.EdgesGeometry(geometry);
+        const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+        const wireframe = new THREE.LineSegments(edges, lineMaterial);
+        cubeGroup.add(wireframe);
+
+        // Cube Vertices
+        const pointsMaterial = new THREE.PointsMaterial({ color: 0x000000, size: 0.05 }); // Adjust size as needed
+        const points = new THREE.Points(geometry, pointsMaterial);
+        cubeGroup.add(points);
+
+        // Pyramid Group
+        const pyramidGroup = new THREE.Group();
+        scene.add(pyramidGroup);
+
+        // Pyramid Geometry (Tetrahedron)
+        const pyramidGeometry = new THREE.TetrahedronGeometry(1.5); // Radius 1.5 to wrap cube
+
+        // Pyramid Edges
+        const pyramidEdges = new THREE.EdgesGeometry(pyramidGeometry);
+        // Re-use lineMaterial for black edges
+        const pyramidWireframe = new THREE.LineSegments(pyramidEdges, lineMaterial);
+        pyramidGroup.add(pyramidWireframe);
+
+        // Pyramid Vertices
+        // Re-use pointsMaterial for black vertices
+        const pyramidPoints = new THREE.Points(pyramidGeometry, pointsMaterial);
+        pyramidGroup.add(pyramidPoints);
+
+        // Octahedron Group
+        const octahedronGroup = new THREE.Group();
+        scene.add(octahedronGroup);
+
+        // Octahedron Geometry
+        const octahedronGeometry = new THREE.OctahedronGeometry(2.0); // Radius 2.0 to be outermost
+
+        // Octahedron Edges
+        const octahedronEdges = new THREE.EdgesGeometry(octahedronGeometry);
+        const octahedronWireframe = new THREE.LineSegments(octahedronEdges, lineMaterial);
+        octahedronGroup.add(octahedronWireframe);
+
+        // Octahedron Vertices
+        const octahedronPoints = new THREE.Points(octahedronGeometry, pointsMaterial);
+        octahedronGroup.add(octahedronPoints);
+
+        // Dodecahedron Group
+        const dodecahedronGroup = new THREE.Group();
+        scene.add(dodecahedronGroup);
+
+        // Dodecahedron Geometry
+        const dodecahedronGeometry = new THREE.DodecahedronGeometry(2.5); // Radius 2.5
+
+        // Dodecahedron Edges
+        const dodecahedronEdges = new THREE.EdgesGeometry(dodecahedronGeometry);
+        const dodecahedronWireframe = new THREE.LineSegments(dodecahedronEdges, lineMaterial);
+        dodecahedronGroup.add(dodecahedronWireframe);
+
+        // Dodecahedron Vertices
+        const dodecahedronPoints = new THREE.Points(dodecahedronGeometry, pointsMaterial);
+        dodecahedronGroup.add(dodecahedronPoints);
+
+        // Interaction variables (common for dragging)
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        const dampingFactor = 0.95; 
+        const rotationSensitivity = 0.005;
+
+        // Cube-specific rotation and inertia
+        let cubeRotationSpeedX = 0;
+        let cubeRotationSpeedY = 0;
+        const cubeNeutralSpinSpeedY = 0.0005;
+        const cubeNeutralSpinSpeedX = 0.0003;
+
+        // Pyramid-specific rotation and inertia
+        let pyramidRotationSpeedX = 0;
+        let pyramidRotationSpeedY = 0;
+        const pyramidNeutralSpinSpeedY = -0.0004; // Different direction and speed
+        const pyramidNeutralSpinSpeedX = 0.0006;
+
+        // Octahedron-specific rotation and inertia
+        let octahedronRotationSpeedX = 0;
+        let octahedronRotationSpeedY = 0;
+        const octahedronNeutralSpinSpeedY = 0.0003; 
+        const octahedronNeutralSpinSpeedX = -0.0005;
+
+        // Dodecahedron-specific rotation and inertia
+        let dodecahedronRotationSpeedX = 0;
+        let dodecahedronRotationSpeedY = 0;
+        const dodecahedronNeutralSpinSpeedY = 0.0002;
+        const dodecahedronNeutralSpinSpeedX = 0.0004;
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Apply neutral ambient rotation to cube
+            cubeGroup.rotation.y += cubeNeutralSpinSpeedY;
+            cubeGroup.rotation.x += cubeNeutralSpinSpeedX;
+
+            // Apply neutral ambient rotation to pyramid
+            pyramidGroup.rotation.y += pyramidNeutralSpinSpeedY;
+            pyramidGroup.rotation.x += pyramidNeutralSpinSpeedX;
+
+            // Apply neutral ambient rotation to octahedron
+            octahedronGroup.rotation.y += octahedronNeutralSpinSpeedY;
+            octahedronGroup.rotation.x += octahedronNeutralSpinSpeedX;
+
+            // Apply neutral ambient rotation to dodecahedron
+            dodecahedronGroup.rotation.y += dodecahedronNeutralSpinSpeedY;
+            dodecahedronGroup.rotation.x += dodecahedronNeutralSpinSpeedX;
+
+            if (!isDragging) {
+                // Apply inertial rotation to cube
+                cubeGroup.rotation.y += cubeRotationSpeedY;
+                cubeGroup.rotation.x += cubeRotationSpeedX;
+                cubeRotationSpeedY *= dampingFactor;
+                cubeRotationSpeedX *= dampingFactor;
+
+                // Apply inertial rotation to pyramid
+                pyramidGroup.rotation.y += pyramidRotationSpeedY;
+                pyramidGroup.rotation.x += pyramidRotationSpeedX;
+                pyramidRotationSpeedY *= dampingFactor;
+                pyramidRotationSpeedX *= dampingFactor;
+
+                // Apply inertial rotation to octahedron
+                octahedronGroup.rotation.y += octahedronRotationSpeedY;
+                octahedronGroup.rotation.x += octahedronRotationSpeedX;
+                octahedronRotationSpeedY *= dampingFactor;
+                octahedronRotationSpeedX *= dampingFactor;
+
+                // Apply inertial rotation to dodecahedron
+                dodecahedronGroup.rotation.y += dodecahedronRotationSpeedY;
+                dodecahedronGroup.rotation.x += dodecahedronRotationSpeedX;
+                dodecahedronRotationSpeedY *= dampingFactor;
+                dodecahedronRotationSpeedX *= dampingFactor;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Mouse Event Listeners
+        renderer.domElement.addEventListener('mousedown', (event) => {
+            isDragging = true;
+            previousMousePosition.x = event.clientX;
+            previousMousePosition.y = event.clientY;
+            // Stop inertia for all when starting a new drag
+            cubeRotationSpeedX = 0;
+            cubeRotationSpeedY = 0;
+            pyramidRotationSpeedX = 0;
+            pyramidRotationSpeedY = 0;
+            octahedronRotationSpeedX = 0;
+            octahedronRotationSpeedY = 0;
+            dodecahedronRotationSpeedX = 0;
+            dodecahedronRotationSpeedY = 0;
+        });
+
+        renderer.domElement.addEventListener('mousemove', (event) => {
+            if (!isDragging) return;
+
+            const deltaX = event.clientX - previousMousePosition.x;
+            const deltaY = event.clientY - previousMousePosition.y;
+
+            // Apply drag rotation to cube
+            cubeGroup.rotation.y += deltaX * rotationSensitivity;
+            cubeGroup.rotation.x += deltaY * rotationSensitivity;
+            cubeRotationSpeedY = deltaX * rotationSensitivity; // Store speed for cube inertia
+            cubeRotationSpeedX = deltaY * rotationSensitivity;
+
+            // Apply drag rotation to pyramid
+            pyramidGroup.rotation.y += deltaX * rotationSensitivity * 0.7; // Slightly different sensitivity for variety
+            pyramidGroup.rotation.x += deltaY * rotationSensitivity * 0.7;
+            pyramidRotationSpeedY = deltaX * rotationSensitivity * 0.7; // Store speed for pyramid inertia
+            pyramidRotationSpeedX = deltaY * rotationSensitivity * 0.7;
+
+            // Apply drag rotation to octahedron
+            octahedronGroup.rotation.y += deltaX * rotationSensitivity * 0.5; // Even less sensitive
+            octahedronGroup.rotation.x += deltaY * rotationSensitivity * 0.5;
+            octahedronRotationSpeedY = deltaX * rotationSensitivity * 0.5; // Store speed for octahedron inertia
+            octahedronRotationSpeedX = deltaY * rotationSensitivity * 0.5;
+
+            // Apply drag rotation to dodecahedron
+            dodecahedronGroup.rotation.y += deltaX * rotationSensitivity * 0.4; // Adjust sensitivity
+            dodecahedronGroup.rotation.x += deltaY * rotationSensitivity * 0.4;
+            dodecahedronRotationSpeedY = deltaX * rotationSensitivity * 0.4; // Store speed for dodecahedron inertia
+            dodecahedronRotationSpeedX = deltaY * rotationSensitivity * 0.4;
+
+            previousMousePosition.x = event.clientX;
+            previousMousePosition.y = event.clientY;
+        });
+
+        const stopDragging = () => {
+            if (isDragging) {
+                isDragging = false;
+            }
+        };
+
+        renderer.domElement.addEventListener('mouseup', stopDragging);
+        renderer.domElement.addEventListener('mouseout', stopDragging); // Stop dragging if mouse leaves canvas
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (container.clientWidth > 0 && container.clientHeight > 0) { // Ensure container has dimensions
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            }
+        });
+    </script>
 </body>
 </html> 
