@@ -897,4 +897,221 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Comet animation logic (if any further interaction is needed beyond CSS)
+});
+
+// --- Art Icon Pixelation Pulse ---
+document.addEventListener('DOMContentLoaded', () => {
+    const artIconImageEl = document.getElementById('artIconImage');
+    const artIconCanvasEl = document.getElementById('artIconCanvas');
+    let artIconCtx = null;
+    let artIconOriginalImage = null; // Will be new Image()
+
+    let isArtIconPulsing = false;
+    let artIconPulseRequestId = null;
+    let artIconPulseStartTime = 0;
+    const artIconPulseMinPixelation = 1;
+    const artIconPulseMaxPixelation = 20;
+    const artIconPulseBPM = 12;
+    const artIconMinPixelationHangTime = 1500; // 1.5 seconds hang time at minimum pixelation
+    let artIconTransitionDuration; // Calculated based on BPM and hang time
+
+    let currentArtIconAnimationState = 'HANGING_AT_MIN'; // Initial state
+
+    function easeInOutCubic(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function applyArtIconPixelation(pixelationLevel) {
+        if (!artIconOriginalImage || !artIconCtx || !artIconCanvasEl || !artIconOriginalImage.complete || artIconOriginalImage.naturalWidth === 0) return;
+
+        const canvasWidth = artIconCanvasEl.width;
+        const canvasHeight = artIconCanvasEl.height;
+
+        artIconCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+        const level = Math.max(1, Math.round(pixelationLevel)); // Ensure level is at least 1
+
+        if (level <= 1) {
+            artIconCtx.imageSmoothingEnabled = true;
+            artIconCtx.drawImage(artIconOriginalImage, 0, 0, artIconOriginalImage.naturalWidth, artIconOriginalImage.naturalHeight, 0, 0, canvasWidth, canvasHeight);
+        } else {
+            artIconCtx.imageSmoothingEnabled = false;
+            const tempW = Math.max(1, Math.floor(artIconOriginalImage.naturalWidth / level));
+            const tempH = Math.max(1, Math.floor(artIconOriginalImage.naturalHeight / level));
+
+            const tempPixelCanvas = document.createElement('canvas');
+            tempPixelCanvas.width = tempW;
+            tempPixelCanvas.height = tempH;
+            const tempPixelCtx = tempPixelCanvas.getContext('2d');
+
+            if (!tempPixelCtx) return;
+            tempPixelCtx.imageSmoothingEnabled = false;
+            tempPixelCtx.drawImage(artIconOriginalImage, 0, 0, artIconOriginalImage.naturalWidth, artIconOriginalImage.naturalHeight, 0, 0, tempW, tempH);
+            artIconCtx.drawImage(tempPixelCanvas, 0, 0, tempW, tempH, 0, 0, canvasWidth, canvasHeight);
+        }
+    }
+
+    function animateArtIconPulse() {
+        if (!isArtIconPulsing || !artIconCtx) return;
+
+        const currentTime = performance.now();
+        const elapsedTime = currentTime - artIconPulseStartTime;
+        let currentPixelation = artIconPulseMinPixelation;
+
+        switch (currentArtIconAnimationState) {
+            case 'HANGING_AT_MIN':
+                currentPixelation = artIconPulseMinPixelation;
+                if (elapsedTime >= artIconMinPixelationHangTime) {
+                    currentArtIconAnimationState = 'PULSING_TO_MAX';
+                    artIconPulseStartTime = currentTime; // Reset start time for new state
+                }
+                break;
+
+            case 'PULSING_TO_MAX':
+                if (artIconTransitionDuration <= 0) { // Should not happen if checked in start
+                    currentPixelation = artIconPulseMaxPixelation;
+                    currentArtIconAnimationState = 'PULSING_TO_MIN';
+                    artIconPulseStartTime = currentTime;
+                } else {
+                    const normalizedTime = Math.min(1, elapsedTime / artIconTransitionDuration);
+                    const easedProgress = easeInOutCubic(normalizedTime);
+                    currentPixelation = artIconPulseMinPixelation + (artIconPulseMaxPixelation - artIconPulseMinPixelation) * easedProgress;
+                    if (normalizedTime >= 1) {
+                        currentArtIconAnimationState = 'PULSING_TO_MIN';
+                        artIconPulseStartTime = currentTime;
+                    }
+                }
+                break;
+
+            case 'PULSING_TO_MIN':
+                 if (artIconTransitionDuration <= 0) { // Should not happen
+                    currentPixelation = artIconPulseMinPixelation;
+                    currentArtIconAnimationState = 'HANGING_AT_MIN';
+                    artIconPulseStartTime = currentTime;
+                } else {
+                    const normalizedTime = Math.min(1, elapsedTime / artIconTransitionDuration);
+                    const easedProgress = easeInOutCubic(normalizedTime);
+                    currentPixelation = artIconPulseMaxPixelation - (artIconPulseMaxPixelation - artIconPulseMinPixelation) * easedProgress;
+                    if (normalizedTime >= 1) {
+                        currentArtIconAnimationState = 'HANGING_AT_MIN';
+                        artIconPulseStartTime = currentTime;
+                    }
+                }
+                break;
+        }
+
+        applyArtIconPixelation(currentPixelation);
+        artIconPulseRequestId = requestAnimationFrame(animateArtIconPulse);
+    }
+
+    function startArtIconPulse() {
+        if (isArtIconPulsing || !artIconCtx) return;
+
+        const totalCycleDurationMs = 60000 / artIconPulseBPM;
+        const totalTransitionTimeMs = totalCycleDurationMs - artIconMinPixelationHangTime;
+
+        if (totalTransitionTimeMs <= 0) {
+            console.warn(`Art Icon Pulse: Hang time (${artIconMinPixelationHangTime}ms) is too long for BPM (${artIconPulseBPM}). 
+                           Total cycle time is ${totalCycleDurationMs}ms. Transitions will be instant or hang time reduced.`);
+            // Option 1: Reduce hang time to make transitions possible (e.g., 100ms each)
+            // artIconTransitionDuration = 100; 
+            // artIconMinPixelationHangTime = totalCycleDurationMs - 200; 
+            // if (artIconMinPixelationHangTime < 0) artIconMinPixelationHangTime = 0;
+            // Option 2: Make transitions instant if hang time is too dominant
+            artIconTransitionDuration = 0; // This will make it snap
+            // Or default to a very short transition, e.g., 50ms
+            // artIconTransitionDuration = 50;
+            // For now, we'll log a warning and transitions might be very fast or instant.
+        } else {
+            artIconTransitionDuration = totalTransitionTimeMs / 2; // Divide by 2 for to_max and to_min phases
+        }
+        
+        isArtIconPulsing = true;
+        currentArtIconAnimationState = 'HANGING_AT_MIN'; // Start by hanging at min
+        artIconPulseStartTime = performance.now();
+        animateArtIconPulse();
+    }
+
+    function stopArtIconPulse() {
+        isArtIconPulsing = false;
+        if (artIconPulseRequestId) {
+            cancelAnimationFrame(artIconPulseRequestId);
+            artIconPulseRequestId = null;
+        }
+    }
+
+    function initArtIconPixelation() {
+        if (!artIconImageEl || !artIconCanvasEl) {
+            console.error('Art icon image or canvas element not found for pixelation.');
+            return;
+        }
+
+        artIconOriginalImage = new Image();
+        artIconOriginalImage.crossOrigin = "anonymous";
+
+        artIconOriginalImage.onload = () => {
+            let displayWidth = artIconImageEl.offsetWidth;
+            let displayHeight = artIconImageEl.offsetHeight;
+
+            if (displayWidth === 0 || displayHeight === 0) {
+                console.warn("Art icon image offsetWidth/Height is 0. Using natural dimensions for canvas.");
+                displayWidth = artIconOriginalImage.naturalWidth;
+                displayHeight = artIconOriginalImage.naturalHeight;
+            }
+
+            if (displayWidth === 0 || displayHeight === 0) {
+                console.error("Could not determine dimensions for art icon canvas after fallback.");
+                return;
+            }
+
+            artIconCanvasEl.width = displayWidth;
+            artIconCanvasEl.height = displayHeight;
+            
+            // Match the display style of the image if it was, for example, inline
+            const imageDisplayStyle = window.getComputedStyle(artIconImageEl).display;
+            artIconCanvasEl.style.display = imageDisplayStyle === 'none' ? 'block' : imageDisplayStyle;
+
+            artIconCtx = artIconCanvasEl.getContext('2d');
+            if (!artIconCtx) {
+                console.error('Failed to get 2D context for art icon canvas.');
+                if(artIconCanvasEl) artIconCanvasEl.style.display = 'none'; // Hide canvas
+                if(artIconImageEl) artIconImageEl.style.display = imageDisplayStyle; // Show original image
+                return;
+            }
+
+            artIconImageEl.style.display = 'none';
+            startArtIconPulse();
+        };
+
+        artIconOriginalImage.onerror = () => {
+            console.error('Failed to load art icon image for pixelation: ' + (artIconImageEl ? artIconImageEl.src : ''));
+            if (artIconCanvasEl) artIconCanvasEl.style.display = 'none';
+            if (artIconImageEl) artIconImageEl.style.display = window.getComputedStyle(artIconImageEl).display || 'inline-block'; // Revert to original display
+        };
+        
+        if (artIconImageEl.src) {
+            artIconOriginalImage.src = artIconImageEl.src;
+        } else {
+            console.error('Art icon image element has no src.');
+            return;
+        }
+
+        // Handle cases where the image might already be cached and loaded
+        if (artIconImageEl.complete && artIconImageEl.naturalWidth > 0) {
+            // Call onload manually if already complete, with a tiny delay for safety
+            setTimeout(() => {
+                 // Check again in case onload fired naturally in a race condition
+                if (artIconOriginalImage.naturalWidth > 0 && !artIconCtx) { 
+                    artIconOriginalImage.onload();
+                }
+            }, 0);
+        }
+    }
+
+    if (artIconImageEl && artIconCanvasEl) {
+        initArtIconPixelation();
+    } else {
+        if (!artIconImageEl) console.warn("Art icon image element (#artIconImage) not found on DOMContentLoaded.");
+        if (!artIconCanvasEl) console.warn("Art icon canvas element (#artIconCanvas) not found on DOMContentLoaded.");
+    }
 }); 

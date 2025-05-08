@@ -15,14 +15,108 @@
         }
         .site-header {
             flex-shrink: 0; /* Prevent header from shrinking */
+            z-index: 10; /* Ensure header is above slider */
+            position: relative; /* Needed for z-index to work */
+            background-color: white; /* Or your header's background */
         }
-        #three-container {
-            flex-grow: 1; /* Allow container to take up remaining space */
-            position: relative; /* For potential absolute positioning of canvas elements if needed */
-            min-height: 0; /* Prevent flexbox issues with very small heights */
+        /* Slider Styles */
+        .slider-container {
+            flex-grow: 1;
+            position: relative;
+            width: 100%;
+            overflow: hidden; /* Hide slides that are not active */
+            display: flex; /* Use flex to manage slides if needed, though we'll show one at a time */
+        }
+        .slide {
+            min-width: 100%;
+            height: 100%;
+            display: none; /* Hide slides by default */
+            flex-direction: column; /* Allow content within slide to be flexed */
+            align-items: center;
+            justify-content: center;
+            position: absolute; /* Position slides on top of each other */
+            top: 0;
+            left: 0;
+        }
+        .slide.active {
+            display: flex; /* Show active slide */
+            z-index: 1;
+        }
+        .slide-content {
+            flex-grow: 1; /* Allow three-container to take up remaining space in slide */
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        .slide-content canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .slider-nav {
+            position: absolute;
+            top: 50%;
+            left: 20px; /* Adjust as needed */
+            right: 20px; /* Adjust as needed */
+            display: flex;
+            justify-content: space-between;
+            transform: translateY(-50%);
+            z-index: 5; /* Above slides but below header if necessary */
+            pointer-events: none; /* Allow clicks to pass through the container */
+        }
+        .slider-nav button {
+            background-color: transparent; /* No background */
+            color: black; 
+            border: none;
+            padding: 10px 15px;
+            font-size: 24px;
+            cursor: pointer;
+            /* border-radius: 50%; */ /* Removed for no circle */
+            width: auto; /* Adjust width to content */
+            height: auto; /* Adjust height to content */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto; /* Make buttons clickable again */
+        }
+        .slider-nav button:hover {
+            background-color: transparent; /* No background on hover either */
+            color: #555; /* Slightly darken icon on hover for feedback */
+        }
+        .slider-pagination {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            z-index: 5;
+            pointer-events: none; /* Allow clicks to pass through the container */
+        }
+        .dot {
+            height: 12px;
+            width: 12px;
+            margin: 0 5px;
+            background-color: rgba(0,0,0,0.5); /* Made darker */
+            border-radius: 50%;
+            display: inline-block;
+            cursor: pointer;
+            pointer-events: auto; /* Make dots clickable again */
+        }
+        .dot.active {
+            background-color: rgba(0,0,0,0.9);
+        }
+
+        /* Existing styles, ensure #three-container is handled if it's inside a slide */
+        #three-container { /* This ID will now be on a div inside a slide */
+            flex-grow: 1;
+            position: relative;
+            min-height: 0;
+            width: 100%;
+            height: 100%;
         }
         #three-container canvas {
-            display: block; /* Remove any default inline spacing */
+            display: block;
             width: 100%;
             height: 100%;
         }
@@ -44,7 +138,36 @@
         </div>
     </header>
 
-    <div id="three-container"></div>
+    <div class="slider-container">
+        <div class="slide active" data-slide-index="0">
+            <div class="slide-content" id="three-container-slide0">
+                <!-- Current Three.js experiment will go here -->
+            </div>
+        </div>
+        <div class="slide" data-slide-index="1">
+            <div class="slide-content" id="three-container-slide1">
+                <!-- Current Three.js experiment will go here (duplicate) -->
+            </div>
+        </div>
+        <div class="slide" data-slide-index="2">
+            <div class="slide-content" id="three-container-slide2">
+                <!-- New rotating square experiment will go here -->
+            </div>
+        </div>
+
+        <div class="slider-nav">
+            <button id="prev-slide">&#10094;</button>
+            <button id="next-slide">&#10095;</button>
+        </div>
+        <div class="slider-pagination">
+            <span class="dot active" data-slide-to="0"></span>
+            <span class="dot" data-slide-to="1"></span>
+            <span class="dot" data-slide-to="2"></span>
+        </div>
+    </div>
+
+    <!-- The original #three-container is removed, content will be moved into slides -->
+    <!-- <div id="three-container"></div> -->
 
     <script type="importmap">
         {
@@ -58,237 +181,748 @@
     <script type="module">
         import * as THREE from 'three';
 
-        const container = document.getElementById('three-container');
+        const clock = new THREE.Clock(); // Add clock for animation timing
+        // These will become arrays or objects to manage multiple scenes
+        // let activeSineAnimations = []; 
+        // const animatingEdges = new Set();
 
-        // Scene
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xffffff); // Set background to white
+        // Slider elements
+        const slides = document.querySelectorAll('.slide');
+        const prevButton = document.getElementById('prev-slide');
+        const nextButton = document.getElementById('next-slide');
+        const dots = document.querySelectorAll('.dot');
+        let currentSlide = 0;
 
-        // Camera
-        const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.z = 5;
+        // Scene-specific data storage
+        const sceneData = []; // To store { scene, camera, renderer, animationData, group, etc. } for each slide
 
-        // Renderer
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(container.clientWidth, container.clientHeight);
-        container.appendChild(renderer.domElement);
-
-        // Cube Group (for combined rotation of edges and vertices)
-        const cubeGroup = new THREE.Group();
-        scene.add(cubeGroup);
-
-        // Cube Geometry
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
-
-        // Cube Edges
-        const edges = new THREE.EdgesGeometry(geometry);
-        const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
-        const wireframe = new THREE.LineSegments(edges, lineMaterial);
-        cubeGroup.add(wireframe);
-
-        // Cube Vertices
-        const pointsMaterial = new THREE.PointsMaterial({ color: 0x000000, size: 0.05 }); // Adjust size as needed
-        const points = new THREE.Points(geometry, pointsMaterial);
-        cubeGroup.add(points);
-
-        // Pyramid Group
-        const pyramidGroup = new THREE.Group();
-        scene.add(pyramidGroup);
-
-        // Pyramid Geometry (Tetrahedron)
-        const pyramidGeometry = new THREE.TetrahedronGeometry(1.5); // Radius 1.5 to wrap cube
-
-        // Pyramid Edges
-        const pyramidEdges = new THREE.EdgesGeometry(pyramidGeometry);
-        // Re-use lineMaterial for black edges
-        const pyramidWireframe = new THREE.LineSegments(pyramidEdges, lineMaterial);
-        pyramidGroup.add(pyramidWireframe);
-
-        // Pyramid Vertices
-        // Re-use pointsMaterial for black vertices
-        const pyramidPoints = new THREE.Points(pyramidGeometry, pointsMaterial);
-        pyramidGroup.add(pyramidPoints);
-
-        // Octahedron Group
-        const octahedronGroup = new THREE.Group();
-        scene.add(octahedronGroup);
-
-        // Octahedron Geometry
-        const octahedronGeometry = new THREE.OctahedronGeometry(2.0); // Radius 2.0 to be outermost
-
-        // Octahedron Edges
-        const octahedronEdges = new THREE.EdgesGeometry(octahedronGeometry);
-        const octahedronWireframe = new THREE.LineSegments(octahedronEdges, lineMaterial);
-        octahedronGroup.add(octahedronWireframe);
-
-        // Octahedron Vertices
-        const octahedronPoints = new THREE.Points(octahedronGeometry, pointsMaterial);
-        octahedronGroup.add(octahedronPoints);
-
-        // Dodecahedron Group
-        const dodecahedronGroup = new THREE.Group();
-        scene.add(dodecahedronGroup);
-
-        // Dodecahedron Geometry
-        const dodecahedronGeometry = new THREE.DodecahedronGeometry(2.5); // Radius 2.5
-
-        // Dodecahedron Edges
-        const dodecahedronEdges = new THREE.EdgesGeometry(dodecahedronGeometry);
-        const dodecahedronWireframe = new THREE.LineSegments(dodecahedronEdges, lineMaterial);
-        dodecahedronGroup.add(dodecahedronWireframe);
-
-        // Dodecahedron Vertices
-        const dodecahedronPoints = new THREE.Points(dodecahedronGeometry, pointsMaterial);
-        dodecahedronGroup.add(dodecahedronPoints);
-
-        // Interaction variables (common for dragging)
-        let isDragging = false;
-        let previousMousePosition = { x: 0, y: 0 };
-        const dampingFactor = 0.95; 
-        const rotationSensitivity = 0.005;
-
-        // Cube-specific rotation and inertia
-        let cubeRotationSpeedX = 0;
-        let cubeRotationSpeedY = 0;
-        const cubeNeutralSpinSpeedY = 0.0005;
-        const cubeNeutralSpinSpeedX = 0.0003;
-
-        // Pyramid-specific rotation and inertia
-        let pyramidRotationSpeedX = 0;
-        let pyramidRotationSpeedY = 0;
-        const pyramidNeutralSpinSpeedY = -0.0004; // Different direction and speed
-        const pyramidNeutralSpinSpeedX = 0.0006;
-
-        // Octahedron-specific rotation and inertia
-        let octahedronRotationSpeedX = 0;
-        let octahedronRotationSpeedY = 0;
-        const octahedronNeutralSpinSpeedY = 0.0003; 
-        const octahedronNeutralSpinSpeedX = -0.0005;
-
-        // Dodecahedron-specific rotation and inertia
-        let dodecahedronRotationSpeedX = 0;
-        let dodecahedronRotationSpeedY = 0;
-        const dodecahedronNeutralSpinSpeedY = 0.0002;
-        const dodecahedronNeutralSpinSpeedX = 0.0004;
-
-        // Animation loop
-        function animate() {
-            requestAnimationFrame(animate);
-
-            // Apply neutral ambient rotation to cube
-            cubeGroup.rotation.y += cubeNeutralSpinSpeedY;
-            cubeGroup.rotation.x += cubeNeutralSpinSpeedX;
-
-            // Apply neutral ambient rotation to pyramid
-            pyramidGroup.rotation.y += pyramidNeutralSpinSpeedY;
-            pyramidGroup.rotation.x += pyramidNeutralSpinSpeedX;
-
-            // Apply neutral ambient rotation to octahedron
-            octahedronGroup.rotation.y += octahedronNeutralSpinSpeedY;
-            octahedronGroup.rotation.x += octahedronNeutralSpinSpeedX;
-
-            // Apply neutral ambient rotation to dodecahedron
-            dodecahedronGroup.rotation.y += dodecahedronNeutralSpinSpeedY;
-            dodecahedronGroup.rotation.x += dodecahedronNeutralSpinSpeedX;
-
-            if (!isDragging) {
-                // Apply inertial rotation to cube
-                cubeGroup.rotation.y += cubeRotationSpeedY;
-                cubeGroup.rotation.x += cubeRotationSpeedX;
-                cubeRotationSpeedY *= dampingFactor;
-                cubeRotationSpeedX *= dampingFactor;
-
-                // Apply inertial rotation to pyramid
-                pyramidGroup.rotation.y += pyramidRotationSpeedY;
-                pyramidGroup.rotation.x += pyramidRotationSpeedX;
-                pyramidRotationSpeedY *= dampingFactor;
-                pyramidRotationSpeedX *= dampingFactor;
-
-                // Apply inertial rotation to octahedron
-                octahedronGroup.rotation.y += octahedronRotationSpeedY;
-                octahedronGroup.rotation.x += octahedronRotationSpeedX;
-                octahedronRotationSpeedY *= dampingFactor;
-                octahedronRotationSpeedX *= dampingFactor;
-
-                // Apply inertial rotation to dodecahedron
-                dodecahedronGroup.rotation.y += dodecahedronRotationSpeedY;
-                dodecahedronGroup.rotation.x += dodecahedronRotationSpeedX;
-                dodecahedronRotationSpeedY *= dampingFactor;
-                dodecahedronRotationSpeedX *= dampingFactor;
+        function showSlide(index) {
+            // Stop animation and detach renderer of the PREVIOUS slide
+            if (sceneData[currentSlide] && currentSlide !== index) { // Only if switching to a different slide
+                if (sceneData[currentSlide].animationFrameId) {
+                    cancelAnimationFrame(sceneData[currentSlide].animationFrameId);
+                    sceneData[currentSlide].animationFrameId = null;
+                    console.log(`Stopped animation for slide ${currentSlide}`);
+                }
+                if (sceneData[currentSlide].renderer && sceneData[currentSlide].container) {
+                    if (sceneData[currentSlide].container.contains(sceneData[currentSlide].renderer.domElement)) {
+                        sceneData[currentSlide].container.removeChild(sceneData[currentSlide].renderer.domElement);
+                        console.log(`Detached renderer from slide ${currentSlide}`);
+                    }
+                }
             }
 
-            renderer.render(scene, camera);
+            slides.forEach((slide, i) => {
+                slide.classList.toggle('active', i === index);
+            });
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
+            
+            const oldSlideIndex = currentSlide;
+            currentSlide = index;
+
+            // Defer the scene initialization to allow the DOM to update and get correct dimensions
+            requestAnimationFrame(() => {
+                // Double check detachment of old slide's renderer after RAF, to be absolutely sure
+                if (oldSlideIndex !== currentSlide && sceneData[oldSlideIndex] && sceneData[oldSlideIndex].renderer && sceneData[oldSlideIndex].container) {
+                    if (sceneData[oldSlideIndex].container.contains(sceneData[oldSlideIndex].renderer.domElement)) {
+                        // sceneData[oldSlideIndex].container.removeChild(sceneData[oldSlideIndex].renderer.domElement);
+                        // console.log(`Re-checked and ensured renderer detached from slide ${oldSlideIndex} after RAF`);
+                        // Actually, the one above before setting currentSlide should be enough.
+                    }
+                }
+                initializeSceneForSlide(index);
+            });
         }
 
-        animate();
-
-        // Mouse Event Listeners
-        renderer.domElement.addEventListener('mousedown', (event) => {
-            isDragging = true;
-            previousMousePosition.x = event.clientX;
-            previousMousePosition.y = event.clientY;
-            // Stop inertia for all when starting a new drag
-            cubeRotationSpeedX = 0;
-            cubeRotationSpeedY = 0;
-            pyramidRotationSpeedX = 0;
-            pyramidRotationSpeedY = 0;
-            octahedronRotationSpeedX = 0;
-            octahedronRotationSpeedY = 0;
-            dodecahedronRotationSpeedX = 0;
-            dodecahedronRotationSpeedY = 0;
+        prevButton.addEventListener('click', () => {
+            showSlide(currentSlide > 0 ? currentSlide - 1 : slides.length - 1);
         });
 
-        renderer.domElement.addEventListener('mousemove', (event) => {
-            if (!isDragging) return;
-
-            const deltaX = event.clientX - previousMousePosition.x;
-            const deltaY = event.clientY - previousMousePosition.y;
-
-            // Apply drag rotation to cube
-            cubeGroup.rotation.y += deltaX * rotationSensitivity;
-            cubeGroup.rotation.x += deltaY * rotationSensitivity;
-            cubeRotationSpeedY = deltaX * rotationSensitivity; // Store speed for cube inertia
-            cubeRotationSpeedX = deltaY * rotationSensitivity;
-
-            // Apply drag rotation to pyramid
-            pyramidGroup.rotation.y += deltaX * rotationSensitivity * 0.7; // Slightly different sensitivity for variety
-            pyramidGroup.rotation.x += deltaY * rotationSensitivity * 0.7;
-            pyramidRotationSpeedY = deltaX * rotationSensitivity * 0.7; // Store speed for pyramid inertia
-            pyramidRotationSpeedX = deltaY * rotationSensitivity * 0.7;
-
-            // Apply drag rotation to octahedron
-            octahedronGroup.rotation.y += deltaX * rotationSensitivity * 0.5; // Even less sensitive
-            octahedronGroup.rotation.x += deltaY * rotationSensitivity * 0.5;
-            octahedronRotationSpeedY = deltaX * rotationSensitivity * 0.5; // Store speed for octahedron inertia
-            octahedronRotationSpeedX = deltaY * rotationSensitivity * 0.5;
-
-            // Apply drag rotation to dodecahedron
-            dodecahedronGroup.rotation.y += deltaX * rotationSensitivity * 0.4; // Adjust sensitivity
-            dodecahedronGroup.rotation.x += deltaY * rotationSensitivity * 0.4;
-            dodecahedronRotationSpeedY = deltaX * rotationSensitivity * 0.4; // Store speed for dodecahedron inertia
-            dodecahedronRotationSpeedX = deltaY * rotationSensitivity * 0.4;
-
-            previousMousePosition.x = event.clientX;
-            previousMousePosition.y = event.clientY;
+        nextButton.addEventListener('click', () => {
+            showSlide(currentSlide < slides.length - 1 ? currentSlide + 1 : 0);
         });
 
-        const stopDragging = () => {
-            if (isDragging) {
-                isDragging = false;
+        dots.forEach(dot => {
+            dot.addEventListener('click', () => {
+                showSlide(parseInt(dot.dataset.slideTo));
+            });
+        });
+        
+        // Function to initialize Three.js for a specific slide
+        // This will be significantly expanded
+        function initializeSceneForSlide(slideIndex) {
+            console.log("Initializing/switching to scene for slide:", slideIndex);
+            
+            let dataForSlide;
+            let rendererForSlide;
+            let cameraForSlide;
+            let containerForSlide;
+
+            if (sceneData[slideIndex] && sceneData[slideIndex].renderer) { // Existing scene
+                console.log(`Reactivating existing scene for slide ${slideIndex}`);
+                dataForSlide = sceneData[slideIndex];
+                rendererForSlide = dataForSlide.renderer;
+                cameraForSlide = dataForSlide.camera;
+                containerForSlide = document.getElementById(`three-container-slide${slideIndex}`); // Ensure fresh DOM ref
+                dataForSlide.container = containerForSlide; // Update stored container
+
+                if (containerForSlide && !containerForSlide.contains(rendererForSlide.domElement)) {
+                    console.log(`Re-attaching renderer to slide ${slideIndex}`);
+                    containerForSlide.appendChild(rendererForSlide.domElement);
+                }
+                
+                if (containerForSlide && cameraForSlide && rendererForSlide) {
+                    if (containerForSlide.clientWidth > 0 && containerForSlide.clientHeight > 0) {
+                         if(cameraForSlide.aspect !== containerForSlide.clientWidth / containerForSlide.clientHeight) {
+                            cameraForSlide.aspect = containerForSlide.clientWidth / containerForSlide.clientHeight;
+                            cameraForSlide.updateProjectionMatrix();
+                         }
+                         const currentSize = rendererForSlide.getSize(new THREE.Vector2());
+                         if(currentSize.x !== containerForSlide.clientWidth || currentSize.y !== containerForSlide.clientHeight){
+                            rendererForSlide.setSize(containerForSlide.clientWidth, containerForSlide.clientHeight);
+                         }
+                    }
+                }
+                if (dataForSlide.animate && !dataForSlide.animationFrameId) { 
+                    console.log(`Resuming animation for slide ${slideIndex}`);
+                    dataForSlide.animate(); 
+                }
+            } else { // New scene
+                console.log(`Creating new scene for slide ${slideIndex}`);
+                containerForSlide = document.getElementById(`three-container-slide${slideIndex}`);
+                if (!containerForSlide) {
+                    console.error("Container for new scene on slide " + slideIndex + " not found!");
+                    return;
+                }
+                console.log(`New scene for slide ${slideIndex} container dimensions: ${containerForSlide.clientWidth}x${containerForSlide.clientHeight}`);
+                containerForSlide.innerHTML = ''; 
+
+                const scene = new THREE.Scene();
+                scene.background = new THREE.Color(0xffffff);
+                const camera = new THREE.PerspectiveCamera(75, containerForSlide.clientWidth / containerForSlide.clientHeight, 0.1, 1000);
+                camera.position.z = 5;
+                const renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(containerForSlide.clientWidth, containerForSlide.clientHeight);
+                containerForSlide.appendChild(renderer.domElement);
+
+                let animationFrameId;
+
+                if (slideIndex === 0 || slideIndex === 1) {
+                    const isReversedOrder = slideIndex === 1;
+                    console.log(`Setting up Platonic Solids for slide ${slideIndex}, Reversed: ${isReversedOrder}`);
+                    const platonicSetupData = setupPlatonicSolidsScene(scene, camera, renderer, containerForSlide, isReversedOrder);
+                    scene.add(platonicSetupData.allSolidsGroup); 
+                    sceneData[slideIndex] = {
+                        ...platonicSetupData,
+                        scene, camera, renderer, container: containerForSlide,
+                        isDragging: false, previousMousePosition: { x: 0, y: 0 },
+                        cubeRotationSpeedX: 0, cubeRotationSpeedY: 0,
+                        pyramidRotationSpeedX: 0, pyramidRotationSpeedY: 0,
+                        octahedronRotationSpeedX: 0, octahedronRotationSpeedY: 0,
+                        dodecahedronRotationSpeedX: 0, dodecahedronRotationSpeedY: 0,
+                        icosahedronRotationSpeedX: 0, icosahedronRotationSpeedY: 0,
+                    };
+                    function animatePlatonic() {
+                        if (!sceneData[slideIndex] || !sceneData[slideIndex].animationLoopContent) return;
+                        sceneData[slideIndex].animationFrameId = requestAnimationFrame(animatePlatonic);
+                        sceneData[slideIndex].animationLoopContent(clock, sceneData[slideIndex].isDragging, sceneData[slideIndex]); 
+                        renderer.render(scene, camera);
+                    }
+                    sceneData[slideIndex].animate = animatePlatonic;
+                    animatePlatonic();
+                } else if (slideIndex === 2) {
+                    console.log(`Setting up Combined Platonic Solids for slide ${slideIndex}`);
+                    const combinedSetup = setupCombinedPlatonicSolidsScene(scene, camera, renderer, containerForSlide);
+                    scene.add(combinedSetup.combinedMasterGroup); // Add the master group to the scene
+
+                    const createSolidInteractionData = () => ({
+                        cubeRotationSpeedX: 0, cubeRotationSpeedY: 0,
+                        pyramidRotationSpeedX: 0, pyramidRotationSpeedY: 0,
+                        octahedronRotationSpeedX: 0, octahedronRotationSpeedY: 0,
+                        dodecahedronRotationSpeedX: 0, dodecahedronRotationSpeedY: 0,
+                        icosahedronRotationSpeedX: 0, icosahedronRotationSpeedY: 0,
+                    });
+
+                    sceneData[slideIndex] = {
+                        scene, camera, renderer, container: containerForSlide,
+                        combinedMasterGroup: combinedSetup.combinedMasterGroup,
+                        dataInner: { ...combinedSetup.dataInner, ...createSolidInteractionData() },
+                        dataOuter: { ...combinedSetup.dataOuter, ...createSolidInteractionData() },
+                        animationLoopContent: combinedSetup.animationLoopContent,
+                        dampingFactor: 0.95, // For combinedMasterGroup inertia
+                        combinedRotationSpeedX: 0,
+                        combinedRotationSpeedY: 0
+                        // isDragging, previousMousePosition will be initialized by addInteractionListeners
+                    };
+
+                    function animateCombined() {
+                        if (!sceneData[slideIndex] || !sceneData[slideIndex].animationLoopContent) return;
+                        sceneData[slideIndex].animationFrameId = requestAnimationFrame(animateCombined);
+                        // Pass clock, isDragging state from sceneData[slideIndex], and sceneData[slideIndex] itself
+                        sceneData[slideIndex].animationLoopContent(clock, sceneData[slideIndex].isDragging, sceneData[slideIndex]);
+                        renderer.render(scene, camera);
+                    }
+                    sceneData[slideIndex].animate = animateCombined;
+                    animateCombined();
+                }
+                dataForSlide = sceneData[slideIndex];
+                rendererForSlide = renderer;
+                cameraForSlide = camera;
+                // containerForSlide is already set
             }
-        };
 
-        renderer.domElement.addEventListener('mouseup', stopDragging);
-        renderer.domElement.addEventListener('mouseout', stopDragging); // Stop dragging if mouse leaves canvas
-
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            if (container.clientWidth > 0 && container.clientHeight > 0) { // Ensure container has dimensions
-                camera.aspect = container.clientWidth / container.clientHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(container.clientWidth, container.clientHeight);
+            // Common setup for both new and existing (re-activated) slides
+            if (rendererForSlide && rendererForSlide.domElement && dataForSlide && containerForSlide) {
+                addInteractionListeners(containerForSlide, dataForSlide, slideIndex);
             }
-        });
+            if (cameraForSlide && rendererForSlide && containerForSlide) {
+                handleResize(cameraForSlide, rendererForSlide, containerForSlide, slideIndex, dataForSlide);
+            }
+        }
+
+        function addInteractionListeners(eventTargetElement, slideDataInstance, slideIndex) {
+            // Clean up previous canvas-specific listeners if they were stored
+            if (slideDataInstance.eventHandlers) {
+                if (slideDataInstance.eventHandlers.mousedown) {
+                    eventTargetElement.removeEventListener('mousedown', slideDataInstance.eventHandlers.mousedown);
+                }
+                if (slideDataInstance.eventHandlers.mouseup) {
+                    eventTargetElement.removeEventListener('mouseup', slideDataInstance.eventHandlers.mouseup);
+                }
+                if (slideDataInstance.eventHandlers.mouseleave) {
+                    eventTargetElement.removeEventListener('mouseleave', slideDataInstance.eventHandlers.mouseleave);
+                }
+            }
+            slideDataInstance.eventHandlers = {}; // Initialize/reset storage for handlers on this instance
+
+            // Initialize interaction state for this slide
+            slideDataInstance.isDragging = false;
+            slideDataInstance.previousMousePosition = { x: 0, y: 0 };
+
+            if (slideIndex === 0 || slideIndex === 1) { // Platonic solids specific initialization
+                slideDataInstance.cubeRotationSpeedX = slideDataInstance.cubeRotationSpeedX || 0;
+                slideDataInstance.cubeRotationSpeedY = slideDataInstance.cubeRotationSpeedY || 0;
+                slideDataInstance.pyramidRotationSpeedX = slideDataInstance.pyramidRotationSpeedX || 0;
+                slideDataInstance.pyramidRotationSpeedY = slideDataInstance.pyramidRotationSpeedY || 0;
+                slideDataInstance.octahedronRotationSpeedX = slideDataInstance.octahedronRotationSpeedX || 0;
+                slideDataInstance.octahedronRotationSpeedY = slideDataInstance.octahedronRotationSpeedY || 0;
+                slideDataInstance.dodecahedronRotationSpeedX = slideDataInstance.dodecahedronRotationSpeedX || 0;
+                slideDataInstance.dodecahedronRotationSpeedY = slideDataInstance.dodecahedronRotationSpeedY || 0;
+                slideDataInstance.icosahedronRotationSpeedX = slideDataInstance.icosahedronRotationSpeedX || 0;
+                slideDataInstance.icosahedronRotationSpeedY = slideDataInstance.icosahedronRotationSpeedY || 0;
+            } else if (slideIndex === 2) { // Combined Platonic solids specific initialization
+                slideDataInstance.combinedRotationSpeedX = slideDataInstance.combinedRotationSpeedX || 0;
+                slideDataInstance.combinedRotationSpeedY = slideDataInstance.combinedRotationSpeedY || 0;
+                // Individual dataInner/dataOuter speeds are initialized in initializeSceneForSlide
+            }
+
+            // These functions are defined within addInteractionListeners to close over slideDataInstance and slideIndex
+            const windowMouseMoveHandler = (event) => {
+                if (!slideDataInstance.isDragging) return;
+
+                const deltaX = event.clientX - slideDataInstance.previousMousePosition.x;
+                const deltaY = event.clientY - slideDataInstance.previousMousePosition.y;
+                const rotationSensitivity = 0.005;
+
+                if (slideIndex === 0 || slideIndex === 1) { 
+                    // Platonic Solids rotation logic
+                    if (slideDataInstance.cubeGroup) {
+                        slideDataInstance.cubeGroup.rotation.y += deltaX * rotationSensitivity;
+                        slideDataInstance.cubeGroup.rotation.x += deltaY * rotationSensitivity;
+                        slideDataInstance.cubeRotationSpeedY = deltaX * rotationSensitivity;
+                        slideDataInstance.cubeRotationSpeedX = deltaY * rotationSensitivity;
+                    }
+                    if (slideDataInstance.pyramidGroup) {
+                        slideDataInstance.pyramidGroup.rotation.y += deltaX * rotationSensitivity * 0.7;
+                        slideDataInstance.pyramidGroup.rotation.x += deltaY * rotationSensitivity * 0.7;
+                        slideDataInstance.pyramidRotationSpeedY = deltaX * rotationSensitivity * 0.7;
+                        slideDataInstance.pyramidRotationSpeedX = deltaY * rotationSensitivity * 0.7;
+                    }
+                    if (slideDataInstance.octahedronGroup) {
+                        slideDataInstance.octahedronGroup.rotation.y += deltaX * rotationSensitivity * 0.5;
+                        slideDataInstance.octahedronGroup.rotation.x += deltaY * rotationSensitivity * 0.5;
+                        slideDataInstance.octahedronRotationSpeedY = deltaX * rotationSensitivity * 0.5;
+                        slideDataInstance.octahedronRotationSpeedX = deltaY * rotationSensitivity * 0.5;
+                    }
+                    if (slideDataInstance.dodecahedronGroup) {
+                        slideDataInstance.dodecahedronGroup.rotation.y += deltaX * rotationSensitivity * 0.4;
+                        slideDataInstance.dodecahedronGroup.rotation.x += deltaY * rotationSensitivity * 0.4;
+                        slideDataInstance.dodecahedronRotationSpeedY = deltaX * rotationSensitivity * 0.4;
+                        slideDataInstance.dodecahedronRotationSpeedX = deltaY * rotationSensitivity * 0.4;
+                    }
+                    if (slideDataInstance.icosahedronGroup) {
+                        slideDataInstance.icosahedronGroup.rotation.y += deltaX * rotationSensitivity * 0.3;
+                        slideDataInstance.icosahedronGroup.rotation.x += deltaY * rotationSensitivity * 0.3;
+                        slideDataInstance.icosahedronRotationSpeedY = deltaX * rotationSensitivity * 0.3;
+                        slideDataInstance.icosahedronRotationSpeedX = deltaY * rotationSensitivity * 0.3;
+                    }
+                } else if (slideIndex === 2 && slideDataInstance.combinedMasterGroup) { // Rotating Combined Assembly
+                    slideDataInstance.combinedMasterGroup.rotation.y += deltaX * rotationSensitivity;
+                    slideDataInstance.combinedMasterGroup.rotation.x += deltaY * rotationSensitivity;
+                    slideDataInstance.combinedRotationSpeedY = deltaX * rotationSensitivity;
+                    slideDataInstance.combinedRotationSpeedX = deltaY * rotationSensitivity;
+                }
+
+                slideDataInstance.previousMousePosition.x = event.clientX;
+                slideDataInstance.previousMousePosition.y = event.clientY;
+            };
+
+            const windowMouseUpHandler = (event) => {
+                if (slideDataInstance.isDragging) {
+                    console.log(`Drag ended (window mouseup) for slide ${slideIndex} of type ${event.type}`);
+                    slideDataInstance.isDragging = false;
+                }
+                window.removeEventListener('mousemove', windowMouseMoveHandler); 
+                window.removeEventListener('mouseup', windowMouseUpHandler);   
+            };
+
+            // Store the mousedown handler for potential removal
+            slideDataInstance.eventHandlers.mousedown = (event) => {
+                console.log(`[DEBUG] Mousedown HANDLER FIRED for slide ${slideIndex}. Active slide: ${currentSlide}. Canvas:`, event.target);
+                if (currentSlide !== slideIndex) {
+                    console.log(`[DEBUG] Mousedown on slide ${slideIndex} IGNORED (not the active slide: ${currentSlide}).`);
+                    return; 
+                }
+
+                console.log(`[DEBUG] Drag PREPARED for slide ${slideIndex}. Setting isDragging=true.`);
+                slideDataInstance.isDragging = true;
+                slideDataInstance.previousMousePosition.x = event.clientX;
+                slideDataInstance.previousMousePosition.y = event.clientY;
+
+                // Reset inertia for platonic solids when a new drag starts
+                if (slideIndex === 0 || slideIndex === 1) {
+                    slideDataInstance.cubeRotationSpeedX = 0; slideDataInstance.cubeRotationSpeedY = 0;
+                    slideDataInstance.pyramidRotationSpeedX = 0; slideDataInstance.pyramidRotationSpeedY = 0;
+                    slideDataInstance.octahedronRotationSpeedX = 0; slideDataInstance.octahedronRotationSpeedY = 0;
+                    slideDataInstance.dodecahedronRotationSpeedX = 0; slideDataInstance.dodecahedronRotationSpeedY = 0;
+                    slideDataInstance.icosahedronRotationSpeedX = 0; slideDataInstance.icosahedronRotationSpeedY = 0;
+                    console.log(`[DEBUG] Inertia reset for platonic slide ${slideIndex}.`);
+                } else if (slideIndex === 2) {
+                    slideDataInstance.combinedRotationSpeedX = 0;
+                    slideDataInstance.combinedRotationSpeedY = 0;
+                    
+                    const resetInnerOuterSpeeds = (data) => {
+                        if (!data) return;
+                        data.cubeRotationSpeedX = 0; data.cubeRotationSpeedY = 0;
+                        data.pyramidRotationSpeedX = 0; data.pyramidRotationSpeedY = 0;
+                        data.octahedronRotationSpeedX = 0; data.octahedronRotationSpeedY = 0;
+                        data.dodecahedronRotationSpeedX = 0; data.dodecahedronRotationSpeedY = 0;
+                        data.icosahedronRotationSpeedX = 0; data.icosahedronRotationSpeedY = 0;
+                    };
+                    resetInnerOuterSpeeds(slideDataInstance.dataInner);
+                    resetInnerOuterSpeeds(slideDataInstance.dataOuter);
+                    console.log(`[DEBUG] Inertia reset for combined slide ${slideIndex}.`);
+                }
+
+                console.log(`[DEBUG] Adding WINDOW mousemove/mouseup listeners for slide ${slideIndex}.`);
+                window.addEventListener('mousemove', windowMouseMoveHandler);
+                window.addEventListener('mouseup', windowMouseUpHandler);
+                console.log(`[DEBUG] Drag STARTED for slide ${slideIndex}.`);
+            };
+            eventTargetElement.addEventListener('mousedown', slideDataInstance.eventHandlers.mousedown);
+            console.log(`[DEBUG] Mousedown listener ATTACHED to element for slide ${slideIndex}:`, eventTargetElement);
+
+            // Store the mouseup handler for potential removal
+            slideDataInstance.eventHandlers.mouseup = (event) => {
+                 if (currentSlide !== slideIndex || !slideDataInstance.isDragging) return;
+                 console.log(`Drag ended (canvas mouseup) for slide ${slideIndex}`);
+                 slideDataInstance.isDragging = false;
+                 window.removeEventListener('mousemove', windowMouseMoveHandler); 
+                 window.removeEventListener('mouseup', windowMouseUpHandler); 
+            };
+            eventTargetElement.addEventListener('mouseup', slideDataInstance.eventHandlers.mouseup);
+            
+            // Store the mouseleave handler for potential removal
+            slideDataInstance.eventHandlers.mouseleave = (event) => {
+                 if (currentSlide !== slideIndex) return; // Ignore if not the active slide
+                 // For platonic solids slides (0,1), we might want to stop dragging if mouse leaves.
+                 // For combined slide (2), same logic might apply.
+                 if (slideDataInstance.isDragging) {
+                    console.log(`Mouse left canvas of slide ${slideIndex} while dragging.`);
+                    // Optionally, could treat this like a mouseup:
+                    // slideDataInstance.isDragging = false;
+                    // window.removeEventListener('mousemove', windowMouseMoveHandler); 
+                    // window.removeEventListener('mouseup', windowMouseUpHandler);
+                    // console.log(`Drag ended (canvas mouseleave) for slide ${slideIndex}`);
+                 }
+            };
+            eventTargetElement.addEventListener('mouseleave', slideDataInstance.eventHandlers.mouseleave);
+            console.log(`[DEBUG] Interaction listeners (re)set for slide ${slideIndex}. All event target handlers:`, slideDataInstance.eventHandlers);
+        }
+
+        function handleResize(camera, renderer, container, slideIndex, slideDataInstance) {
+            // Clean up previous resize listener for this slide if it was stored
+            if (slideDataInstance && slideDataInstance.resizeListener) {
+                window.removeEventListener('resize', slideDataInstance.resizeListener);
+                console.log(`Removed old resize listener for slide ${slideIndex}`);
+            }
+
+            const resizeListener = () => {
+                if (currentSlide === slideIndex && container.clientWidth > 0 && container.clientHeight > 0) {
+                    camera.aspect = container.clientWidth / container.clientHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(container.clientWidth, container.clientHeight);
+                }
+            };
+            window.addEventListener('resize', resizeListener);
+            
+            // Store the new listener on the slideDataInstance for future cleanup
+            if (slideDataInstance) {
+                slideDataInstance.resizeListener = resizeListener;
+                console.log(`New resize listener set for slide ${slideIndex}`);
+            }
+        }
+
+        function setupPlatonicSolidsScene(scene, camera, renderer, container, isReversed = false) {
+            const localClock = new THREE.Clock(); 
+            let activeSineAnimations = [];
+            const animatingEdges = new Set();
+            const dampingFactor = 0.95;
+
+            const allSolidsGroup = new THREE.Group(); // Master group for this instance
+
+            const stackRadii = [1.0, 1.5, 2.0, 2.5, 3.0]; 
+            const stackColors = [0x848484, 0x9E9E9E, 0xB8B8B8, 0xD2D2D2, 0xECECEC]; 
+
+            // Cube
+            const cubeRadius = isReversed ? stackRadii[4] : stackRadii[0];
+            const cubeColor = isReversed ? stackColors[4] : stackColors[0];
+            const cubeGroup = new THREE.Group();
+            // scene.add(cubeGroup); // Add to allSolidsGroup instead
+            allSolidsGroup.add(cubeGroup);
+            const geometry = new THREE.BoxGeometry(cubeRadius, cubeRadius, cubeRadius); 
+            const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+            const edges = new THREE.EdgesGeometry(geometry);
+            const wireframe = new THREE.LineSegments(edges, lineMaterial);
+            cubeGroup.add(wireframe);
+            const pointsMaterial = new THREE.PointsMaterial({ color: 0x000000, size: cubeRadius * 0.05 }); // Adjust point size with radius
+            const points = new THREE.Points(geometry, pointsMaterial);
+            cubeGroup.add(points);
+            const cubeFaceMaterial = new THREE.MeshBasicMaterial({
+                color: cubeColor, transparent: true, blending: THREE.MultiplyBlending // Use determined color
+            });
+            const cubeMesh = new THREE.Mesh(geometry, cubeFaceMaterial);
+            cubeGroup.add(cubeMesh);
+            // Cube's inherent motion properties remain the same
+            const cubeNeutralSpinSpeedY = 0.0005, cubeNeutralSpinSpeedX = 0.0003;
+
+            // Pyramid
+            const pyramidRadius = isReversed ? stackRadii[3] : stackRadii[1];
+            const pyramidColor = isReversed ? stackColors[3] : stackColors[1];
+            const pyramidGroup = new THREE.Group();
+            // scene.add(pyramidGroup);
+            allSolidsGroup.add(pyramidGroup);
+            const pyramidGeometry = new THREE.TetrahedronGeometry(pyramidRadius); 
+            const pyramidEdges = new THREE.EdgesGeometry(pyramidGeometry);
+            const pyramidWireframe = new THREE.LineSegments(pyramidEdges, lineMaterial);
+            pyramidGroup.add(pyramidWireframe);
+            const pyramidPoints = new THREE.Points(pyramidGeometry, pointsMaterial); // Re-use pointsMaterial, but ideally size it based on pyramidRadius
+            pyramidGroup.add(pyramidPoints);
+            const pyramidFaceMaterial = new THREE.MeshBasicMaterial({
+                color: pyramidColor, transparent: true, blending: THREE.MultiplyBlending // Use determined color
+            });
+            const pyramidMesh = new THREE.Mesh(pyramidGeometry, pyramidFaceMaterial);
+            pyramidGroup.add(pyramidMesh);
+            const pyramidNeutralSpinSpeedY = -0.0004, pyramidNeutralSpinSpeedX = 0.0006;
+
+            // Octahedron
+            const octahedronRadius = stackRadii[2]; 
+            const octahedronColor = stackColors[2];  
+            const octahedronGroup = new THREE.Group();
+            // scene.add(octahedronGroup);
+            allSolidsGroup.add(octahedronGroup);
+            const octahedronGeometry = new THREE.OctahedronGeometry(octahedronRadius); 
+            const octahedronEdges = new THREE.EdgesGeometry(octahedronGeometry);
+            const octahedronWireframe = new THREE.LineSegments(octahedronEdges, lineMaterial);
+            octahedronGroup.add(octahedronWireframe);
+            const octahedronPoints = new THREE.Points(octahedronGeometry, pointsMaterial); // Re-use
+            octahedronGroup.add(octahedronPoints);
+            const octahedronFaceMaterial = new THREE.MeshBasicMaterial({
+                color: octahedronColor, transparent: true, blending: THREE.MultiplyBlending // Use determined color
+            });
+            const octahedronMesh = new THREE.Mesh(octahedronGeometry, octahedronFaceMaterial);
+            octahedronGroup.add(octahedronMesh);
+            const octahedronNeutralSpinSpeedY = 0.0003, octahedronNeutralSpinSpeedX = -0.0005;
+
+            // Dodecahedron
+            const dodecahedronRadius = isReversed ? stackRadii[1] : stackRadii[3];
+            const dodecahedronColor = isReversed ? stackColors[1] : stackColors[3];
+            const dodecahedronGroup = new THREE.Group();
+            // scene.add(dodecahedronGroup);
+            allSolidsGroup.add(dodecahedronGroup);
+            const dodecahedronGeometry = new THREE.DodecahedronGeometry(dodecahedronRadius); 
+            const dodecahedronEdges = new THREE.EdgesGeometry(dodecahedronGeometry);
+            const dodecahedronWireframe = new THREE.LineSegments(dodecahedronEdges, lineMaterial);
+            dodecahedronGroup.add(dodecahedronWireframe);
+            const dodecahedronPoints = new THREE.Points(dodecahedronGeometry, pointsMaterial); // Re-use
+            dodecahedronGroup.add(dodecahedronPoints);
+            const dodecahedronFaceMaterial = new THREE.MeshBasicMaterial({
+                color: dodecahedronColor, transparent: true, blending: THREE.MultiplyBlending // Use determined color
+            });
+            const dodecahedronMesh = new THREE.Mesh(dodecahedronGeometry, dodecahedronFaceMaterial);
+            dodecahedronGroup.add(dodecahedronMesh);
+            const dodecahedronNeutralSpinSpeedY = 0.0002, dodecahedronNeutralSpinSpeedX = 0.0004;
+
+            // Icosahedron
+            const icosahedronRadius = isReversed ? stackRadii[0] : stackRadii[4];
+            const icosahedronColor = isReversed ? stackColors[0] : stackColors[4];
+            const icosahedronGroup = new THREE.Group();
+            // scene.add(icosahedronGroup);
+            allSolidsGroup.add(icosahedronGroup);
+            const icosahedronGeometry = new THREE.IcosahedronGeometry(icosahedronRadius); 
+            const icosahedronEdges = new THREE.EdgesGeometry(icosahedronGeometry);
+            const icosahedronWireframe = new THREE.LineSegments(icosahedronEdges, lineMaterial);
+            icosahedronGroup.add(icosahedronWireframe);
+            const icosahedronPoints = new THREE.Points(icosahedronGeometry, pointsMaterial); // Re-use
+            icosahedronGroup.add(icosahedronPoints);
+            const icosahedronFaceMaterial = new THREE.MeshBasicMaterial({
+                color: icosahedronColor, transparent: true, blending: THREE.MultiplyBlending // Use determined color
+            });
+            const icosahedronMesh = new THREE.Mesh(icosahedronGeometry, icosahedronFaceMaterial);
+            icosahedronGroup.add(icosahedronMesh);
+            const icosahedronNeutralSpinSpeedY = -0.00015, icosahedronNeutralSpinSpeedX = 0.00025;
+
+
+            function startSineWaveAnimation(targetSolidGroup, totalEdgesInSolid) {
+                const wireframeMesh = targetSolidGroup.children.find(child => child instanceof THREE.LineSegments);
+                    if (!wireframeMesh) return;
+                const positions = wireframeMesh.geometry.attributes.position;
+                const edgeIndex = Math.floor(Math.random() * totalEdgesInSolid);
+                const edgeId = wireframeMesh.uuid + '_' + edgeIndex;
+                    if (animatingEdges.has(edgeId)) return;
+
+                const vStart = new THREE.Vector3().fromBufferAttribute(positions, edgeIndex * 2);
+                const vEnd = new THREE.Vector3().fromBufferAttribute(positions, edgeIndex * 2 + 1);
+                    if (isNaN(vStart.x) || isNaN(vStart.y) || isNaN(vStart.z) || isNaN(vEnd.x) || isNaN(vEnd.y) || isNaN(vEnd.z)) return;
+
+                    animatingEdges.add(edgeId);
+                const numPointsOnSineWave = 30;
+                const sineWavePoints = new Float32Array(numPointsOnSineWave * 3);
+                const sineWaveGeom = new THREE.BufferGeometry();
+                sineWaveGeom.setAttribute('position', new THREE.BufferAttribute(sineWavePoints, 3));
+                    const sineWaveLine = new THREE.Line(sineWaveGeom, lineMaterial); // Ensure lineMaterial is defined in this scope
+                targetSolidGroup.add(sineWaveLine);
+
+                positions.setXYZ(edgeIndex * 2, NaN, NaN, NaN);
+                positions.setXYZ(edgeIndex * 2 + 1, NaN, NaN, NaN);
+                positions.needsUpdate = true;
+
+                    activeSineAnimations.push({
+                        lineMesh: sineWaveLine, originalStart: vStart.clone(), originalEnd: vEnd.clone(),
+                        targetGroup: targetSolidGroup, startTime: localClock.getElapsedTime(), duration: 2.5 + Math.random() * 1.5,
+                        numPoints: numPointsOnSineWave, amplitudeFactor: 0.03 + Math.random() * 0.07, frequency: 1 + Math.random() * 2,
+                        edgeIndexToModify: edgeIndex, wireframeToModify: wireframeMesh, edgeId: edgeId,
+                        baseRippleSpeed: 0.03 + Math.random() * 0.05, wobbleFrequency: 0.2 + Math.random() * 0.3,
+                        wobbleAmplitude: 0.15 + Math.random() * 0.2
+                    });
+                }
+                
+                // This is the content of the original animate() loop, refactored for a specific scene
+                function animationLoopContent(globalClock, isDraggingState, slideData) { 
+                    const elapsedTime = localClock.getElapsedTime(); 
+
+                    // Apply neutral ambient rotation (these speeds are inherent to the shape type)
+                    cubeGroup.rotation.y += cubeNeutralSpinSpeedY;
+                    cubeGroup.rotation.x += cubeNeutralSpinSpeedX;
+                    pyramidGroup.rotation.y += pyramidNeutralSpinSpeedY;
+                    pyramidGroup.rotation.x += pyramidNeutralSpinSpeedX;
+                    octahedronGroup.rotation.y += octahedronNeutralSpinSpeedY;
+                    octahedronGroup.rotation.x += octahedronNeutralSpinSpeedX;
+                    dodecahedronGroup.rotation.y += dodecahedronNeutralSpinSpeedY;
+                    dodecahedronGroup.rotation.x += dodecahedronNeutralSpinSpeedX;
+                    icosahedronGroup.rotation.y += icosahedronNeutralSpinSpeedY;
+                    icosahedronGroup.rotation.x += icosahedronNeutralSpinSpeedX;
+
+                    if (!isDraggingState) { 
+                        // Inertia also uses slideData properties which are specific to the 'group' of shape,
+                        // e.g., slideData.cubeRotationSpeedY affects cubeGroup.
+                        // This interaction logic is handled outside in addInteractionListeners which correctly
+                        // associates slideData.cubeRotationSpeedY with the cubeGroup, etc.
+                        // The actual sensitivity factors for drag were in addInteractionListeners and will continue to work correctly.
+                        if (slideData.cubeRotationSpeedX !== undefined) { // Check if properties exist
+                            cubeGroup.rotation.y += slideData.cubeRotationSpeedY;
+                            cubeGroup.rotation.x += slideData.cubeRotationSpeedX;
+                            slideData.cubeRotationSpeedY *= dampingFactor;
+                            slideData.cubeRotationSpeedX *= dampingFactor;
+                        }
+                        if (slideData.pyramidRotationSpeedX !== undefined) {
+                            pyramidGroup.rotation.y += slideData.pyramidRotationSpeedY;
+                            pyramidGroup.rotation.x += slideData.pyramidRotationSpeedX;
+                            slideData.pyramidRotationSpeedY *= dampingFactor;
+                            slideData.pyramidRotationSpeedX *= dampingFactor;
+                        }
+                        if (slideData.octahedronRotationSpeedX !== undefined) {
+                            octahedronGroup.rotation.y += slideData.octahedronRotationSpeedY;
+                            octahedronGroup.rotation.x += slideData.octahedronRotationSpeedX;
+                            slideData.octahedronRotationSpeedY *= dampingFactor;
+                            slideData.octahedronRotationSpeedX *= dampingFactor;
+                        }
+                        if (slideData.dodecahedronRotationSpeedX !== undefined) {
+                            dodecahedronGroup.rotation.y += slideData.dodecahedronRotationSpeedY;
+                            dodecahedronGroup.rotation.x += slideData.dodecahedronRotationSpeedX;
+                            slideData.dodecahedronRotationSpeedY *= dampingFactor;
+                            slideData.dodecahedronRotationSpeedX *= dampingFactor;
+                        }
+                        if (slideData.icosahedronRotationSpeedX !== undefined) {
+                            icosahedronGroup.rotation.y += slideData.icosahedronRotationSpeedY;
+                            icosahedronGroup.rotation.x += slideData.icosahedronRotationSpeedX;
+                            slideData.icosahedronRotationSpeedY *= dampingFactor;
+                            slideData.icosahedronRotationSpeedX *= dampingFactor;
+                        }
+                    }
+
+                     // Sine wave animation logic
+                for (let i = activeSineAnimations.length - 1; i >= 0; i--) {
+                    const anim = activeSineAnimations[i];
+                        const timeSinceStart = localClock.getElapsedTime() - anim.startTime;
+                    let progress = timeSinceStart / anim.duration;
+
+                    if (progress >= 1) {
+                        const posAttr = anim.wireframeToModify.geometry.attributes.position;
+                        if (anim.wireframeToModify.geometry && posAttr) {
+                            posAttr.setXYZ(anim.edgeIndexToModify * 2, anim.originalStart.x, anim.originalStart.y, anim.originalStart.z);
+                            posAttr.setXYZ(anim.edgeIndexToModify * 2 + 1, anim.originalEnd.x, anim.originalEnd.y, anim.originalEnd.z);
+                            posAttr.needsUpdate = true;
+                        }
+                            animatingEdges.delete(anim.edgeId);
+                        anim.targetGroup.remove(anim.lineMesh);
+                        anim.lineMesh.geometry.dispose();
+                        activeSineAnimations.splice(i, 1); 
+                    } else {
+                        const wavePositions = anim.lineMesh.geometry.attributes.position;
+                        const dir = new THREE.Vector3().subVectors(anim.originalEnd, anim.originalStart);
+                        const len = dir.length();
+                        const dirN = dir.clone().normalize();
+                        let axisForCross = new THREE.Vector3(0, 1, 0);
+                            if (Math.abs(dirN.y) > 0.99) axisForCross.set(1, 0, 0);
+                        const perp = new THREE.Vector3().crossVectors(dirN, axisForCross).normalize();
+                        const currentAmplitude = len * anim.amplitudeFactor * Math.sin(progress * Math.PI);
+                            const timePhase = localClock.getElapsedTime() * anim.baseRippleSpeed +
+                                            Math.sin(localClock.getElapsedTime() * anim.wobbleFrequency) * anim.wobbleAmplitude;
+
+                        for (let j = 0; j < anim.numPoints; j++) {
+                            const t = j / (anim.numPoints - 1); 
+                            const pointOnOriginalLine = new THREE.Vector3().copy(anim.originalStart).addScaledVector(dirN, t * len);
+                            const stringShapeFactor = Math.sin(t * Math.PI);
+                            const sineOffsetVal = currentAmplitude * stringShapeFactor * Math.sin(t * anim.frequency * 2 * Math.PI + timePhase);
+                            const finalPoint = new THREE.Vector3().copy(pointOnOriginalLine).addScaledVector(perp, sineOffsetVal);
+                            wavePositions.setXYZ(j, finalPoint.x, finalPoint.y, finalPoint.z);
+                        }
+                        wavePositions.needsUpdate = true;
+                    }
+                }
+
+                if (activeSineAnimations.length < 3 && Math.random() < 0.08) { 
+                    const solids = [
+                            { group: cubeGroup, edges: 12 }, { group: pyramidGroup, edges: 6 },
+                            { group: octahedronGroup, edges: 12 }, { group: dodecahedronGroup, edges: 30 },
+                        { group: icosahedronGroup, edges: 30 }
+                    ];
+                    if (solids.length > 0) {
+                        const choice = solids[Math.floor(Math.random() * solids.length)];
+                        startSineWaveAnimation(choice.group, choice.edges);
+                        }
+                    }
+                }
+
+                // Return objects and functions needed by the main slider logic
+                return {
+                    allSolidsGroup, // The main group containing all solids for this instance
+                    animationLoopContent, 
+                    // Individual groups for interaction targeting
+                    cubeGroup, pyramidGroup, octahedronGroup, dodecahedronGroup, icosahedronGroup,
+                    // Neutral spin speeds (could be part of group objects or separate as they are constants for type)
+                    cubeNeutralSpinSpeedY, cubeNeutralSpinSpeedX,
+                    pyramidNeutralSpinSpeedY, pyramidNeutralSpinSpeedX,
+                    octahedronNeutralSpinSpeedY, octahedronNeutralSpinSpeedX,
+                    dodecahedronNeutralSpinSpeedY, dodecahedronNeutralSpinSpeedX,
+                    icosahedronNeutralSpinSpeedY, icosahedronNeutralSpinSpeedX,
+                    // Functions for managing local animations if needed (though sine waves are self-managed with localClock)
+                    // activeSineAnimations, // These are local to the closure of setupPlatonicSolidsScene
+                    // animatingEdges 
+                };
+            }
+
+        function setupRotatingSquareScene(scene, camera, renderer, container) {
+            const geometry = new THREE.BoxGeometry(2, 2, 0.1); // A flat square
+            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+            const rotatingSquare = new THREE.Mesh(geometry, material);
+            scene.add(rotatingSquare);
+            camera.position.z = 5; // Ensure camera is positioned to see the square
+
+            function animationLoopContent() {
+                rotatingSquare.rotation.x += 0.01;
+                rotatingSquare.rotation.y += 0.01;
+            }
+            
+            return { 
+                animationLoopContent,
+                rotatingSquare // for potential interaction
+            };
+        }
+
+        function setupCombinedPlatonicSolidsScene(sceneForCombined, camera, renderer, container) {
+            const combinedMasterGroup = new THREE.Group();
+
+            // Setup inner solids (normal order, smaller)
+            const dataInner = setupPlatonicSolidsScene(sceneForCombined, camera, renderer, container, false); // false for isReversed
+            dataInner.allSolidsGroup.scale.set(0.4, 0.4, 0.4);
+            combinedMasterGroup.add(dataInner.allSolidsGroup);
+
+            // Setup outer solids (reversed order, larger)
+            const dataOuter = setupPlatonicSolidsScene(sceneForCombined, camera, renderer, container, true); // true for isReversed
+            combinedMasterGroup.add(dataOuter.allSolidsGroup);
+
+            function animationLoopContent(globalClock, isDraggingState, slideDataForCombined) {
+                // slideDataForCombined is sceneData[2]
+                // It contains dataInner and dataOuter which have their own animationLoopContent
+                // and their own sets of rotation speeds (e.g., dataInner.cubeRotationSpeedX)
+
+                // Call animation for inner solids.
+                // Pass isDraggingState of the combined group, and dataInner itself for its context.
+                if (slideDataForCombined.dataInner && slideDataForCombined.dataInner.animationLoopContent) {
+                    slideDataForCombined.dataInner.animationLoopContent(globalClock, isDraggingState, slideDataForCombined.dataInner);
+                }
+
+                // Call animation for outer solids.
+                if (slideDataForCombined.dataOuter && slideDataForCombined.dataOuter.animationLoopContent) {
+                    slideDataForCombined.dataOuter.animationLoopContent(globalClock, isDraggingState, slideDataForCombined.dataOuter);
+                }
+                
+                // Apply drag-induced rotation and inertia to the combinedMasterGroup
+                if (!isDraggingState && slideDataForCombined.combinedRotationSpeedX !== undefined) {
+                    slideDataForCombined.combinedMasterGroup.rotation.y += slideDataForCombined.combinedRotationSpeedY;
+                    slideDataForCombined.combinedMasterGroup.rotation.x += slideDataForCombined.combinedRotationSpeedX;
+                    slideDataForCombined.combinedRotationSpeedY *= slideDataForCombined.dampingFactor; // dampingFactor from sceneData[2]
+                    slideDataForCombined.combinedRotationSpeedX *= slideDataForCombined.dampingFactor;
+                }
+            }
+
+            return {
+                combinedMasterGroup,
+                dataInner, // This is the object returned by setupPlatonicSolidsScene for the inner set
+                dataOuter, // This is the object returned by setupPlatonicSolidsScene for the outer set
+                animationLoopContent // The new combined animation loop
+            };
+        }
+
+
+        // Initial setup
+        showSlide(0); // Show the first slide by default
+
+        // The old global animate() function is removed or its contents are moved into scene-specific animation loops.
+        // function animate() { ... } - THIS IS REMOVED/REPLACED
+
+        // The old global mouse event listeners are removed. They are now added per-slide.
+        // renderer.domElement.addEventListener('mousedown', ...); - REMOVED
+        // renderer.domElement.addEventListener('mousemove', ...); - REMOVED
+        // renderer.domElement.addEventListener('mouseup', ...); - REMOVED
+        // renderer.domElement.addEventListener('mouseout', ...); - REMOVED
+
+        // The old global resize listener is removed. It's now handled per-slide.
+        // window.addEventListener('resize', () => { ... }); - REMOVED
     </script>
 </body>
 </html> 

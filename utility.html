@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Utility - Theo Lebeaux</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-left">
+            <a href="index.html" class="back-button">
+                <img src="images/back-button.svg" alt="Back">
+            </a>
+            <nav class="main-nav">
+                <!-- Navigation links can be added if needed -->
+            </nav>
+        </div>
+        <div class="header-center">
+            <img src="images/theo-lebeaux-logo.png" alt="Theo Lebeaux Logo" class="logo">
+        </div>
+        <div class="header-right">
+            <!-- This can be empty or hold future right-aligned items -->
+        </div>
+    </header>
+
+    <main>
+        <h1>Utility</h1>
+
+        <div class="utility-section" style="width: 90%; max-width: 1200px; margin-left: auto; margin-right: auto;">
+            <h2 style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="margin-right: auto;">imageMog</span>
+            </h2>
+            <div id="pixelatorContent" style="position: relative; display: block; /* Ensure it is visible by default */">
+
+                <div class="canvas-stack" style="width: 100%; display: flex; flex-direction: row; justify-content: center; align-items: flex-start; /* flex-start helps if heights differ slightly due to rounding */">
+                    <canvas id="originalCanvas" width="580" height="400" style="display: block;"></canvas>
+                    <canvas id="pixelatedCanvas" width="580" height="400" style="display: block;"></canvas>
+                </div>
+
+                <div class="controls-sidebar" style="position: absolute; top: 20px; right: 20px; width: 300px; background-color: rgba(240, 240, 240, 0.92); padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 10; cursor: grab;">
+                    <h3 id="controlsHeader" style="margin-top: 0; border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 15px; cursor: grab;">Controls</h3>
+                    
+                    <div id="uploadSection">
+                        <label for="imageUpload" style="display: block; margin-bottom: 5px; font-weight: bold;">Upload Image:</label>
+                        <input type="file" id="imageUpload" accept="image/*" style="width: 100%;">
+                    </div>
+
+                    <div id="pixelationControlsSection" style="display: none; margin-top: 15px;">
+                        <label for="pixelationSlider" style="display: block; margin-bottom: 5px; font-weight: bold;">Pixelation Level:</label>
+                        <input type="range" id="pixelationSlider" min="1" max="100" value="10" style="width: calc(100% - 90px); vertical-align: middle;">
+                        <input type="number" id="pixelationInput" min="1" max="100" value="10" style="width: 40px; text-align: right; vertical-align: middle; margin-left: 5px;">
+                        <span id="pixelationValue" style="display: inline-block; width: 35px; text-align: right; vertical-align: middle; background-color: #fff; border: 1px solid #ccc; border-radius: 4px; padding: 2px 4px; display:none; /* Hidden as input now shows value */">10</span>
+                    </div>
+
+                    <div id="gradientControlsSection" style="display: none; margin-top: 15px;">
+                        <div style="margin-bottom: 10px;">
+                            <input type="checkbox" id="enableGradient" style="vertical-align: middle; margin-right: 5px;">
+                            <label for="enableGradient" style="font-weight: bold;">Enable Gradient Pixelation</label>
+                        </div>
+                        <div id="gradientControls" style="display: none; padding-left: 20px;">
+                            <label for="gradientDirection" style="display: block; margin-bottom: 5px; font-weight: bold;">Gradient Direction:</label>
+                            <select id="gradientDirection" style="width: 100%; padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
+                                <option value="left-to-right">Left to Right</option>
+                                <option value="right-to-left">Right to Left</option>
+                                <option value="top-to-bottom">Top to Bottom</option>
+                                <option value="bottom-to-top">Bottom to Top</option>
+                            </select>
+
+                            <div style="margin-top: 10px;">
+                                <label for="gradientStripsSlider" style="display: block; margin-bottom: 5px; font-weight: bold;">Gradient Strips:</label>
+                                <input type="range" id="gradientStripsSlider" min="2" max="150" value="30" style="width: calc(100% - 45px); vertical-align: middle;">
+                                <span id="gradientStripsValue" style="display: inline-block; width: 35px; text-align: right; vertical-align: middle; background-color: #fff; border: 1px solid #ccc; border-radius: 4px; padding: 2px 4px;">30</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="pulseControlsSection" style="display: none; margin-top: 15px;">
+                        <hr style="margin: 20px 0;">
+                        <div style="margin-bottom: 10px;">
+                            <input type="checkbox" id="enablePulseMode" style="vertical-align: middle; margin-right: 5px;">
+                            <label for="enablePulseMode" style="font-weight: bold;">Enable Pulse Mode</label>
+                        </div>
+                        <div id="pulseControls" style="display: none; padding-left: 20px;">
+                            <div style="margin-bottom: 10px;">
+                                <label for="pulseMinPixelation" style="display: block; margin-bottom: 3px;">Min Pixelation:</label>
+                                <input type="number" id="pulseMinPixelation" value="1" min="1" max="100" style="width: 60px; padding: 3px;">
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <label for="pulseMaxPixelation" style="display: block; margin-bottom: 3px;">Max Pixelation:</label>
+                                <input type="number" id="pulseMaxPixelation" value="12" min="1" max="100" style="width: 60px; padding: 3px;">
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <label for="pulseBPM" style="display: block; margin-bottom: 3px;">BPM:</label>
+                                <input type="number" id="pulseBPM" value="30" min="10" max="180" style="width: 60px; padding: 3px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="colorQuashControlsSection" style="display: none; margin-top: 15px;">
+                        <hr style="margin: 20px 0;">
+                        <div style="margin-bottom: 10px;">
+                            <input type="checkbox" id="enableColorQuash" style="vertical-align: middle; margin-right: 5px;">
+                            <label for="enableColorQuash" style="font-weight: bold;">Enable Color Quashing</label>
+                        </div>
+                        <div id="colorQuashControls" style="display: none; padding-left: 20px;">
+                            <label for="colorQuashSlider" style="display: block; margin-bottom: 5px; font-weight: bold;">Color Levels (per channel):</label>
+                            <input type="range" id="colorQuashSlider" min="2" max="32" value="4" style="width: calc(100% - 45px); vertical-align: middle;">
+                            <span id="colorQuashValue" style="display: inline-block; width: 35px; text-align: right; vertical-align: middle; background-color: #fff; border: 1px solid #ccc; border-radius: 4px; padding: 2px 4px;">4</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="utility-section" style="width: 90%; max-width: 1200px; margin-left: auto; margin-right: auto; margin-top: 30px;">
+            <h2 style="text-align: left;">pixelFlavor</h2>
+            <div id="pixelFlavorContent" style="width: 100%; aspect-ratio: 16/9; /* Or your preferred aspect ratio */ /* background-color: #eee; --- Removed for true transparency */ position: relative; /* For canvas positioning */">
+                <img id="pixelFlavorImage" src="images/art/art-image3.jpg" alt="Art Image 3" style="width: 100%; height: 100%; object-fit: contain; display: block;" crossorigin="anonymous">
+                <canvas id="pixelFlavorCanvas" style="display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0;"></canvas>
+                
+                <!-- New Controls Sidebar for Pixel Flavor -->
+                <div id="pixelFlavorControlsSidebar" style="position: absolute; top: 10px; right: 10px; width: 220px; background-color: rgba(240, 240, 240, 0.92); padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 10; cursor: grab;">
+                    <h3 id="pixelFlavorControlsHeader" style="margin-top: 0; border-bottom: 1px solid #ccc; padding-bottom: 8px; margin-bottom: 12px; cursor: grab;">Controls</h3>
+                    <div>
+                        <input type="checkbox" id="enablePixelBrushCheckbox" style="vertical-align: middle; margin-right: 5px;">
+                        <label for="enablePixelBrushCheckbox" style="font-weight: bold;">Enable Pixel Brush</label>
+                    </div>
+
+                    <div id="pixelBrushAdvancedControls" style="margin-top: 15px; display: none;"> <!-- Initially hidden -->
+                        <div style="margin-bottom: 10px;">
+                            <label for="brushSizeSlider" style="display: block; margin-bottom: 3px; font-size: 0.9em;">Brush Size:</label>
+                            <input type="range" id="brushSizeSlider" min="0.5" max="2.5" value="1" step="0.1" style="width: calc(100% - 45px); vertical-align: middle;">
+                            <span id="brushSizeValue" style="display: inline-block; width: 35px; text-align: right; vertical-align: middle; background-color: #fff; border: 1px solid #ccc; border-radius: 4px; padding: 2px 4px; font-size: 0.9em;">1</span>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <label for="pixelIntensitySlider" style="display: block; margin-bottom: 3px; font-size: 0.9em;">Pixel Intensity:</label>
+                            <input type="range" id="pixelIntensitySlider" min="0.2" max="3" value="1" step="0.1" style="width: calc(100% - 45px); vertical-align: middle;">
+                            <span id="pixelIntensityValue" style="display: inline-block; width: 35px; text-align: right; vertical-align: middle; background-color: #fff; border: 1px solid #ccc; border-radius: 4px; padding: 2px 4px; font-size: 0.9em;">1</span>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <label for="numLayersSlider" style="display: block; margin-bottom: 3px; font-size: 0.9em;">Detail Layers:</label>
+                            <input type="range" id="numLayersSlider" min="1" max="20" value="20" step="1" style="width: calc(100% - 45px); vertical-align: middle;">
+                            <span id="numLayersValue" style="display: inline-block; width: 35px; text-align: right; vertical-align: middle; background-color: #fff; border: 1px solid #ccc; border-radius: 4px; padding: 2px 4px; font-size: 0.9em;">20</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer>
+        <!-- Footer content can be added later -->
+    </footer>
+
+    <script>
+        // Image Pixelator Logic
+        const imageUpload = document.getElementById('imageUpload');
+        const originalCanvas = document.getElementById('originalCanvas');
+        const pixelatedCanvas = document.getElementById('pixelatedCanvas');
+        const pixelationSlider = document.getElementById('pixelationSlider');
+        const pixelationValue = document.getElementById('pixelationValue');
+        const pixelationInput = document.getElementById('pixelationInput');
+        const enableGradient = document.getElementById('enableGradient');
+        const gradientControls = document.getElementById('gradientControls');
+        const gradientDirection = document.getElementById('gradientDirection');
+        const gradientStripsSlider = document.getElementById('gradientStripsSlider');
+        const gradientStripsValue = document.getElementById('gradientStripsValue');
+        const controlsSidebar = document.querySelector('.controls-sidebar');
+        const controlsHeader = document.getElementById('controlsHeader');
+
+        // Control Sections for visibility
+        const uploadSection = document.getElementById('uploadSection');
+        const pixelationControlsSection = document.getElementById('pixelationControlsSection');
+        const gradientControlsSection = document.getElementById('gradientControlsSection');
+        const pulseControlsSection = document.getElementById('pulseControlsSection');
+
+        // Pulse Mode Elements
+        const enablePulseMode = document.getElementById('enablePulseMode');
+        const pulseControls = document.getElementById('pulseControls');
+        const pulseMinPixelation = document.getElementById('pulseMinPixelation');
+        const pulseMaxPixelation = document.getElementById('pulseMaxPixelation');
+        const pulseBPM = document.getElementById('pulseBPM');
+
+        // Color Quashing Elements
+        const enableColorQuash = document.getElementById('enableColorQuash');
+        const colorQuashControls = document.getElementById('colorQuashControls');
+        const colorQuashSlider = document.getElementById('colorQuashSlider');
+        const colorQuashValue = document.getElementById('colorQuashValue');
+        const colorQuashControlsSection = document.getElementById('colorQuashControlsSection');
+
+        let originalImage = null;
+        let isDragging = false;
+        let dragStartX, dragStartY;
+        let sidebarStartX, sidebarStartY;
+
+        // Pulse State - Updated Defaults
+        let isPulsing = false;
+        let pulseRequestId = null;
+        let pulseStartTime = 0;
+        let pulseDurationPerHalfCycle = (60000 / 30) / 2; // Default BPM 30
+        let pulseMin = 1;   // Default Min 1
+        let pulseMax = 12;  // Default Max 12
+        let pulsingForward = true; 
+
+        if (imageUpload) {
+            imageUpload.addEventListener('change', function(e) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    originalImage = new Image();
+                    originalImage.onload = function() {
+                        resizeCanvases(originalImage);
+                        // Show controls now that image is loaded
+                        if(pixelationControlsSection) pixelationControlsSection.style.display = 'block';
+                        if(gradientControlsSection) gradientControlsSection.style.display = 'block';
+                        if(pulseControlsSection) pulseControlsSection.style.display = 'block';
+                        if(colorQuashControlsSection) colorQuashControlsSection.style.display = 'block';
+
+                        if (enableGradient) {
+                            enableGradient.checked = false;
+                            gradientControls.style.display = 'none';
+                        }
+                        if (enablePulseMode) { 
+                            enablePulseMode.checked = false;
+                            pulseControls.style.display = 'none';
+                            stopPulse();
+                        }
+                        if (enableColorQuash) {
+                            enableColorQuash.checked = false;
+                            colorQuashControls.style.display = 'none';
+                        }
+                        updatePulseParameters(); // Ensure JS state matches HTML defaults on first load
+                        drawImageOnCanvas(originalImage, originalCanvas);
+                        applyPixelation(); 
+                    }
+                    originalImage.src = event.target.result;
+                }
+                if (e.target.files[0]) {
+                    reader.readAsDataURL(e.target.files[0]);
+                } else {
+                    clearCanvases(); 
+                    originalCanvas.width = 580; originalCanvas.height = 400;
+                    pixelatedCanvas.width = 580; pixelatedCanvas.height = 400;
+                    // Hide controls if image is cleared
+                    if(pixelationControlsSection) pixelationControlsSection.style.display = 'none';
+                    if(gradientControlsSection) gradientControlsSection.style.display = 'none';
+                    if(pulseControlsSection) pulseControlsSection.style.display = 'none';
+                    if(colorQuashControlsSection) colorQuashControlsSection.style.display = 'none';
+
+                    if (enableGradient) {
+                        enableGradient.checked = false; 
+                        gradientControls.style.display = 'none';
+                    }
+                    if (enablePulseMode) { 
+                        enablePulseMode.checked = false;
+                        pulseControls.style.display = 'none';
+                        stopPulse(); 
+                    }
+                    if (enableColorQuash) {
+                        enableColorQuash.checked = false;
+                        colorQuashControls.style.display = 'none';
+                    }
+                    originalImage = null;
+                }
+            });
+        }
+
+        if (pixelationSlider) {
+            pixelationSlider.addEventListener('input', function() {
+                pixelationValue.textContent = this.value;
+                pixelationInput.value = this.value;
+                applyPixelation();
+            });
+        }
+        
+        if (pixelationInput) {
+            pixelationInput.addEventListener('input', function() {
+                let value = parseInt(this.value);
+                const min = parseInt(this.min);
+                const max = parseInt(this.max);
+                if (isNaN(value)) value = min;
+                if (value < min) value = min;
+                if (value > max) value = max;
+                this.value = value;
+                pixelationSlider.value = value;
+                pixelationValue.textContent = value;
+                applyPixelation();
+            });
+        }
+        
+        if (enableGradient) {
+            enableGradient.addEventListener('change', function() {
+                gradientControls.style.display = this.checked ? 'block' : 'none';
+                applyPixelation();
+            });
+        }
+
+        if (gradientDirection) {
+            gradientDirection.addEventListener('change', applyPixelation);
+        }
+
+        if (gradientStripsSlider) {
+            gradientStripsSlider.addEventListener('input', function() {
+                gradientStripsValue.textContent = this.value;
+                applyPixelation();
+            });
+        }
+
+        // Pulse Mode Event Listeners
+        if (enablePulseMode) {
+            enablePulseMode.addEventListener('change', function() {
+                pulseControls.style.display = this.checked ? 'block' : 'none';
+                if (this.checked && originalImage) {
+                    startPulse();
+                } else {
+                    stopPulse();
+                }
+            });
+        }
+        function updatePulseParameters() {
+            pulseMin = parseInt(pulseMinPixelation.value) || 1;
+            pulseMax = parseInt(pulseMaxPixelation.value) || 100;
+            const bpm = parseInt(pulseBPM.value) || 60;
+            pulseDurationPerHalfCycle = (60000 / bpm) / 2;
+            // Ensure min is not greater than max
+            if (pulseMin > pulseMax) { 
+                [pulseMin, pulseMax] = [pulseMax, pulseMin]; // Swap them
+                pulseMinPixelation.value = pulseMin;
+                pulseMaxPixelation.value = pulseMax;
+            }
+            if (isPulsing) { // If already pulsing, restart with new params for immediate effect
+                pulseStartTime = performance.now();
+                pulsingForward = true; // Always start forward when params change
+            }
+        }
+        if (pulseMinPixelation) pulseMinPixelation.addEventListener('change', updatePulseParameters);
+        if (pulseMaxPixelation) pulseMaxPixelation.addEventListener('change', updatePulseParameters);
+        if (pulseBPM) pulseBPM.addEventListener('change', updatePulseParameters);
+
+        // Color Quashing Event Listeners
+        if (enableColorQuash) {
+            enableColorQuash.addEventListener('change', function() {
+                colorQuashControls.style.display = this.checked ? 'block' : 'none';
+                applyPixelation();
+            });
+        }
+        if (colorQuashSlider) {
+            colorQuashSlider.addEventListener('input', function() {
+                colorQuashValue.textContent = this.value;
+                applyPixelation();
+            });
+        }
+
+        function easeInOutCubic(t) {
+            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        }
+
+        function startPulse() {
+            if (isPulsing || !originalImage) return;
+            isPulsing = true;
+            updatePulseParameters(); 
+            pulseStartTime = performance.now();
+            pulsingForward = true; 
+            pixelationSlider.disabled = true; 
+            pixelationInput.disabled = true; // Disable input field during pulse
+            animatePulse();
+        }
+
+        function stopPulse() {
+            if (!isPulsing && pulseRequestId == null) return;
+            isPulsing = false;
+            if (pulseRequestId) {
+                cancelAnimationFrame(pulseRequestId);
+                pulseRequestId = null;
+            }
+            pixelationSlider.disabled = false; 
+            pixelationInput.disabled = false; // Re-enable input field
+        }
+
+        function animatePulse() {
+            if (!isPulsing) return;
+
+            const currentTime = performance.now();
+            let elapsedTime = currentTime - pulseStartTime;
+
+            if (elapsedTime >= pulseDurationPerHalfCycle) {
+                pulsingForward = !pulsingForward;
+                pulseStartTime = currentTime; 
+                elapsedTime = 0; 
+            }
+
+            const normalizedTime = elapsedTime / pulseDurationPerHalfCycle;
+            const easedProgress = easeInOutCubic(normalizedTime);
+
+            let currentPixelation;
+            if (pulsingForward) {
+                currentPixelation = pulseMin + (pulseMax - pulseMin) * easedProgress;
+            } else {
+                currentPixelation = pulseMax - (pulseMax - pulseMin) * easedProgress;
+            }
+            
+            const newPixelationValue = Math.round(currentPixelation);
+            pixelationSlider.value = newPixelationValue;
+            pixelationInput.value = newPixelationValue; // Directly update the input field
+            pixelationValue.textContent = newPixelationValue; // Update hidden span too
+            applyPixelation();
+
+            pulseRequestId = requestAnimationFrame(animatePulse);
+        }
+
+        function resizeCanvases(img) {
+            const pixelatorContentWidth = document.getElementById('pixelatorContent').offsetWidth;
+            const maxCombinedCanvasWidth = Math.min(1200, pixelatorContentWidth * 0.95); // e.g., 95% of parent or 1200px max
+            const maxIndividualCanvasHeight = 500; // Max height for a single canvas
+
+            const imgAspectRatio = img.width / img.height;
+
+            let canvasWidth, canvasHeight;
+
+            // Calculate dimensions for one canvas, aiming to fill height first, then check width constraints
+            canvasHeight = maxIndividualCanvasHeight;
+            canvasWidth = canvasHeight * imgAspectRatio;
+
+            // If this makes the combined width too large, recalculate based on width constraint
+            if (canvasWidth * 2 > maxCombinedCanvasWidth) {
+                canvasWidth = maxCombinedCanvasWidth / 2;
+                canvasHeight = canvasWidth / imgAspectRatio;
+            }
+            
+            // Ensure calculated height doesn't exceed maxIndividualCanvasHeight if width was the primary constraint
+            if (canvasHeight > maxIndividualCanvasHeight) {
+                 canvasHeight = maxIndividualCanvasHeight;
+                 canvasWidth = canvasHeight * imgAspectRatio; 
+                 // This might make combined width smaller than maxCombinedCanvasWidth but respects height
+            }
+
+            canvasWidth = Math.round(canvasWidth);
+            canvasHeight = Math.round(canvasHeight);
+
+            originalCanvas.width = canvasWidth;
+            originalCanvas.height = canvasHeight;
+            pixelatedCanvas.width = canvasWidth;
+            pixelatedCanvas.height = canvasHeight;
+        }
+
+        function drawImageOnCanvas(img, canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Image is drawn to fill the canvas, as canvas is now sized to image aspect ratio
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        }
+
+        function applyPixelation() {
+            if (!originalImage) return;
+
+            // Create a temporary canvas to hold the potentially color-quashed image data
+            const tempProcessingCanvas = document.createElement('canvas');
+            tempProcessingCanvas.width = originalImage.width;
+            tempProcessingCanvas.height = originalImage.height;
+            const tempProcessingCtx = tempProcessingCanvas.getContext('2d');
+            tempProcessingCtx.drawImage(originalImage, 0, 0); // Start with the original image
+
+            // Apply Color Quashing if enabled
+            if (enableColorQuash && enableColorQuash.checked) {
+                const levels = parseInt(colorQuashSlider.value);
+                const imageData = tempProcessingCtx.getImageData(0, 0, tempProcessingCanvas.width, tempProcessingCanvas.height);
+                const data = imageData.data;
+                const factor = 255 / (levels - 1); // Calculate factor to map colors to new levels
+
+                for (let i = 0; i < data.length; i += 4) {
+                    data[i] = Math.round(Math.round(data[i] / factor) * factor);     // Red
+                    data[i + 1] = Math.round(Math.round(data[i + 1] / factor) * factor); // Green
+                    data[i + 2] = Math.round(Math.round(data[i + 2] / factor) * factor); // Blue
+                    // Alpha (data[i + 3]) remains unchanged
+                }
+                tempProcessingCtx.putImageData(imageData, 0, 0);
+            }
+
+            // The rest of the pixelation logic will now use tempProcessingCanvas as the source image
+            const imageToPixelate = tempProcessingCanvas; // Use the (potentially) quashed image
+
+            const pCtx = pixelatedCanvas.getContext('2d');
+            pCtx.clearRect(0, 0, pixelatedCanvas.width, pixelatedCanvas.height);
+
+            const mainBlockSize = parseInt(pixelationInput.value);
+            
+            const targetDisplayWidth = pixelatedCanvas.width;
+            const targetDisplayHeight = pixelatedCanvas.height;
+
+            pCtx.imageSmoothingEnabled = false;
+            pCtx.mozImageSmoothingEnabled = false;
+            pCtx.webkitImageSmoothingEnabled = false;
+            pCtx.msImageSmoothingEnabled = false;
+
+            if (enableGradient && enableGradient.checked) {
+                const direction = gradientDirection.value;
+                const NUM_STRIPS = parseInt(gradientStripsSlider.value);
+                let effectiveMaxForGradient = Math.max(1, (2 * mainBlockSize) - 1); 
+                effectiveMaxForGradient = Math.min(100, effectiveMaxForGradient); 
+
+                // Existing Linear Gradient Logic (Radial/Conical part removed)
+                for (let i = 0; i < NUM_STRIPS; i++) {
+                    let normalizedPosition;
+                    if (NUM_STRIPS === 1) {
+                        normalizedPosition = 1;
+                    } else {
+                        switch (direction) {
+                            case 'left-to-right': case 'top-to-bottom':
+                                normalizedPosition = i / (NUM_STRIPS - 1);
+                                break;
+                            case 'right-to-left': case 'bottom-to-top':
+                                normalizedPosition = (NUM_STRIPS - 1 - i) / (NUM_STRIPS - 1);
+                                break;
+                            default: // Should not happen with fixed options, but good fallback
+                                normalizedPosition = i / (NUM_STRIPS - 1);
+                        }
+                    }
+                    const currentBlockSize = Math.max(1, Math.floor(1 + (effectiveMaxForGradient - 1) * normalizedPosition));
+                    const isLastStrip = i === NUM_STRIPS - 1;
+                    let stripSx, stripSy, stripSWidth, stripSHeight;
+                    let stripDx, stripDy, stripDWidth, stripDHeight;
+
+                    if (direction === 'left-to-right' || direction === 'right-to-left') {
+                        stripSy = 0; stripSHeight = originalImage.height;
+                        const currentSourceXBoundary = Math.round((i * imageToPixelate.width) / NUM_STRIPS);
+                        const nextSourceXBoundary = isLastStrip ? imageToPixelate.width : Math.round(((i + 1) * imageToPixelate.width) / NUM_STRIPS);
+                        stripSx = currentSourceXBoundary;
+                        stripSWidth = nextSourceXBoundary - currentSourceXBoundary;
+
+                        stripDy = 0; stripDHeight = targetDisplayHeight;
+                        const currentTargetXBoundary = Math.round((i * targetDisplayWidth) / NUM_STRIPS);
+                        const nextTargetXBoundary = isLastStrip ? targetDisplayWidth : Math.round(((i + 1) * targetDisplayWidth) / NUM_STRIPS);
+                        stripDx = currentTargetXBoundary;
+                        stripDWidth = nextTargetXBoundary - currentTargetXBoundary;
+                    } else { // top-to-bottom or bottom-to-top
+                        stripSx = 0; stripSWidth = originalImage.width;
+                        const currentSourceYBoundary = Math.round((i * imageToPixelate.height) / NUM_STRIPS);
+                        const nextSourceYBoundary = isLastStrip ? imageToPixelate.height : Math.round(((i + 1) * imageToPixelate.height) / NUM_STRIPS);
+                        stripSy = currentSourceYBoundary;
+                        stripSHeight = nextSourceYBoundary - currentSourceYBoundary;
+
+                        stripDx = 0; stripDWidth = targetDisplayWidth;
+                        const currentTargetYBoundary = Math.round((i * targetDisplayHeight) / NUM_STRIPS);
+                        const nextTargetYBoundary = isLastStrip ? targetDisplayHeight : Math.round(((i + 1) * targetDisplayHeight) / NUM_STRIPS);
+                        stripDy = currentTargetYBoundary;
+                        stripDHeight = nextTargetYBoundary - currentTargetYBoundary;
+                    }
+
+                    if (stripSWidth <= 0 || stripSHeight <= 0 || stripDWidth <= 0 || stripDHeight <= 0) continue;
+                    const stripSourceCanvas = document.createElement('canvas');
+                    stripSourceCanvas.width = stripSWidth;
+                    stripSourceCanvas.height = stripSHeight;
+                    const stripSourceCtx = stripSourceCanvas.getContext('2d');
+                    stripSourceCtx.drawImage(imageToPixelate, stripSx, stripSy, stripSWidth, stripSHeight, 0, 0, stripSWidth, stripSHeight);
+
+                    if (currentBlockSize <= 1) {
+                        pCtx.drawImage(stripSourceCanvas, 0, 0, stripSWidth, stripSHeight, stripDx, stripDy, stripDWidth, stripDHeight);
+                    } else {
+                        const tempStripPixelatedCanvas = document.createElement('canvas');
+                        const tempSPCtx = tempStripPixelatedCanvas.getContext('2d');
+                        const tempW = Math.max(1, Math.floor(stripSWidth / currentBlockSize));
+                        const tempH = Math.max(1, Math.floor(stripSHeight / currentBlockSize));
+                        tempStripPixelatedCanvas.width = tempW;
+                        tempStripPixelatedCanvas.height = tempH;
+                        tempSPCtx.drawImage(stripSourceCanvas, 0, 0, stripSWidth, stripSHeight, 0, 0, tempW, tempH);
+                        pCtx.drawImage(tempStripPixelatedCanvas, 0, 0, tempW, tempH, stripDx, stripDy, stripDWidth, stripDHeight);
+                    }
+                }
+            } else { // Uniform Pixelation (No Gradient)
+                if (mainBlockSize <= 0) { // Corrected condition: should be mainBlockSize not currentBlockSize
+                    pCtx.imageSmoothingEnabled = true;
+                    pCtx.drawImage(imageToPixelate, 0, 0, targetDisplayWidth, targetDisplayHeight);
+                    return;
+                }
+                const tempW = Math.max(1, Math.floor(targetDisplayWidth / mainBlockSize)); 
+                const tempH = Math.max(1, Math.floor(targetDisplayHeight / mainBlockSize)); 
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = tempW;
+                tempCanvas.height = tempH;
+                tempCtx.drawImage(imageToPixelate, 0, 0, imageToPixelate.width, imageToPixelate.height, 0, 0, tempW, tempH);
+                pCtx.drawImage(tempCanvas, 0, 0, tempW, tempH, 0, 0, targetDisplayWidth, targetDisplayHeight);
+            }
+
+            // After pixelation is done and pixelatedCanvas is updated:
+            // Get the data URL from pixelatedCanvas and update pixelFlavorImage
+            if (pixelatedCanvas.width > 0 && pixelatedCanvas.height > 0) {
+                const pixelatedImageDataUrl = pixelatedCanvas.toDataURL();
+                updatePixelFlavorWithNewImage(pixelatedImageDataUrl);
+            }
+        }
+
+        function clearCanvases() {
+            const oCtx = originalCanvas.getContext('2d');
+            const pCtx = pixelatedCanvas.getContext('2d');
+            oCtx.clearRect(0, 0, originalCanvas.width, originalCanvas.height);
+            pCtx.clearRect(0, 0, pixelatedCanvas.width, pixelatedCanvas.height);
+            pixelationValue.textContent = pixelationSlider.value;
+        }
+
+        // Draggable Controls Panel Logic (Restored)
+        if (controlsHeader && controlsSidebar) {
+            controlsHeader.addEventListener('mousedown', function(e) {
+                isDragging = true;
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+                // Get the current computed style for left/top
+                const style = window.getComputedStyle(controlsSidebar);
+                sidebarStartX = parseFloat(style.left) || controlsSidebar.offsetLeft; // Use offsetLeft as fallback
+                sidebarStartY = parseFloat(style.top) || controlsSidebar.offsetTop;
+                controlsSidebar.style.cursor = 'grabbing';
+                document.body.style.userSelect = 'none';
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+                // Prevent default drag behavior for the header itself if it was, e.g., an image
+                e.preventDefault(); 
+            });
+        }
+
+        function onMouseMove(e) {
+            if (!isDragging) return;
+            const dx = e.clientX - dragStartX;
+            const dy = e.clientY - dragStartY;
+            controlsSidebar.style.left = (sidebarStartX + dx) + 'px';
+            controlsSidebar.style.top = (sidebarStartY + dy) + 'px';
+            controlsSidebar.style.right = 'auto'; // Important: allow left to take precedence
+        }
+
+        function onMouseUp() {
+            if (!isDragging) return;
+            isDragging = false;
+            controlsSidebar.style.cursor = 'grab';
+            document.body.style.userSelect = 'auto';
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        }
+        // End of Draggable Controls Panel Logic
+
+        // Function to update Pixel Flavor with a new image
+        function updatePixelFlavorWithNewImage(imageDataUrl) {
+            if (pixelFlavorImg && pixelFlavorCanvas) {
+                // Ensure canvas is hidden and image is visible to facilitate loading
+                pixelFlavorImg.style.display = 'block';
+                pixelFlavorCanvas.style.display = 'none';
+
+                // Define named handlers to be able to remove them
+                const handleNewImageLoad = () => {
+                    // console.log("New image loaded for PixelFlavor, re-initializing effect.");
+                    initPixelFlavorEffect();
+                    // Listeners with { once: true } remove themselves, but explicit removal is safer
+                    // if we weren't using { once: true } or to ensure no old ones are lingering
+                    // from a hypothetical previous failed attempt.
+                    pixelFlavorImg.removeEventListener('load', handleNewImageLoad);
+                    pixelFlavorImg.removeEventListener('error', handleNewImageError);
+                };
+
+                const handleNewImageError = () => {
+                    console.error("Error loading new image dataURL into pixelFlavorImg.");
+                    // Potentially revert to a default state or show an error
+                    pixelFlavorImg.style.display = 'block'; // Show the (broken) image or a placeholder
+                    pixelFlavorCanvas.style.display = 'none';
+                    if(document.getElementById('pixelFlavorControlsSidebar')) document.getElementById('pixelFlavorControlsSidebar').style.display = 'none';
+
+                    pixelFlavorImg.removeEventListener('load', handleNewImageLoad);
+                    pixelFlavorImg.removeEventListener('error', handleNewImageError);
+                };
+                
+                // Remove any pre-existing listeners from previous calls to this function, just in case.
+                // This is good practice if this function could be called rapidly.
+                pixelFlavorImg.removeEventListener('load', handleNewImageLoad); // Might need to store references if these were not anonymous
+                pixelFlavorImg.removeEventListener('error', handleNewImageError); // For this structure, anonymous is fine with {once: true}
+
+                // Add new one-time listeners
+                pixelFlavorImg.addEventListener('load', handleNewImageLoad, { once: true });
+                pixelFlavorImg.addEventListener('error', handleNewImageError, { once: true });
+
+                pixelFlavorImg.src = imageDataUrl;
+
+                // In some edge cases, especially with cached data URLs or very fast processing,
+                // 'complete' might be true immediately after setting src.
+                // The { once: true } load listener should still fire in the next microtask.
+                // If issues persist, uncommenting a direct call for 'complete' could be a fallback:
+                // if (pixelFlavorImg.complete) {
+                //     handleNewImageLoad();
+                // }
+            }
+        }
+
+        // Pixel Flavor Mouseover Effect
+        const pixelFlavorImg = document.getElementById('pixelFlavorImage');
+        const pixelFlavorCanvas = document.getElementById('pixelFlavorCanvas');
+        const enablePixelBrushCheckbox = document.getElementById('enablePixelBrushCheckbox');
+        let isPixelBrushEnabled = false; // Default: brush is disabled
+        
+        // New Controls for Pixel Brush
+        const pixelBrushAdvancedControls = document.getElementById('pixelBrushAdvancedControls');
+        const brushSizeSlider = document.getElementById('brushSizeSlider');
+        const brushSizeValue = document.getElementById('brushSizeValue');
+        const pixelIntensitySlider = document.getElementById('pixelIntensitySlider');
+        const pixelIntensityValue = document.getElementById('pixelIntensityValue');
+        const numLayersSlider = document.getElementById('numLayersSlider');
+        const numLayersValue = document.getElementById('numLayersValue');
+
+        let currentBrushSize = 1;
+        let currentPixelIntensity = 1;
+        let currentNumLayers = 20; // Max value of the slider
+        
+        if (pixelFlavorImg && pixelFlavorCanvas) {
+            const pixelFlavorCtx = pixelFlavorCanvas.getContext('2d');
+            let pixelFlavorOriginalImageData = null;
+            let pixelFlavorOriginalCanvas = null; 
+
+            // Define pixelation layers: shape ('square' or 'circle'), dimension (side length or radius),
+            // and level (pixelation intensity).
+            // Processed in reverse order for drawing (outermost/least pixelated first).
+            const PIXELATION_BRUSH_LAYERS = [
+                // First 15 layers (dimensions as before, levels adjusted if needed for smoothness)
+                { shape: 'square', dimension: 1.5, level: 26 },
+                { shape: 'square', dimension: 5,   level: 25 },
+                { shape: 'square', dimension: 10,  level: 24 },
+                { shape: 'square', dimension: 20,  level: 23 },
+                { shape: 'square', dimension: 35,  level: 22 },
+                { shape: 'square', dimension: 50,  level: 21 },
+                { shape: 'square', dimension: 65,  level: 20 },
+                { shape: 'square', dimension: 80,  level: 19 },
+                { shape: 'square', dimension: 95,  level: 18 },
+                { shape: 'square', dimension: 110, level: 17 },
+                { shape: 'square', dimension: 125, level: 16 },
+                { shape: 'square', dimension: 140, level: 15 },
+                { shape: 'square', dimension: 155, level: 14  },
+                { shape: 'square', dimension: 170, level: 13  },
+                { shape: 'square', dimension: 185, level: 12  },
+                // Outermost 5 layers with increasing dimension steps
+                { shape: 'square', dimension: 200, level: 11  },
+                { shape: 'square', dimension: 220, level: 10  },
+                { shape: 'square', dimension: 245, level: 9   },
+                { shape: 'circle', dimension: 275, level: 8   },
+                { shape: 'circle', dimension: 310, level: 7   }
+            ];
+
+            if (enablePixelBrushCheckbox) {
+                enablePixelBrushCheckbox.addEventListener('change', function() {
+                    isPixelBrushEnabled = this.checked;
+                    if (pixelBrushAdvancedControls) {
+                        pixelBrushAdvancedControls.style.display = this.checked ? 'block' : 'none';
+                    }
+                    if (!isPixelBrushEnabled && pixelFlavorOriginalImageData && pixelFlavorCtx) {
+                        // If disabling, immediately clear any pixelation by redrawing original
+                        pixelFlavorCtx.putImageData(pixelFlavorOriginalImageData, 0, 0);
+                    }
+                });
+            }
+
+            // Event listeners for new sliders
+            if (brushSizeSlider && brushSizeValue) {
+                brushSizeSlider.addEventListener('input', function() {
+                    currentBrushSize = parseFloat(this.value);
+                    brushSizeValue.textContent = this.value;
+                    // No need to redraw here, will be used on next mousemove
+                });
+            }
+            if (pixelIntensitySlider && pixelIntensityValue) {
+                pixelIntensitySlider.addEventListener('input', function() {
+                    currentPixelIntensity = parseFloat(this.value);
+                    pixelIntensityValue.textContent = this.value;
+                });
+            }
+            if (numLayersSlider && numLayersValue) {
+                // Set max for numLayersSlider dynamically based on PIXELATION_BRUSH_LAYERS length
+                numLayersSlider.max = PIXELATION_BRUSH_LAYERS.length;
+                numLayersSlider.value = PIXELATION_BRUSH_LAYERS.length; // Default to all layers
+                numLayersValue.textContent = numLayersSlider.value;
+                currentNumLayers = parseInt(numLayersSlider.value);
+
+                numLayersSlider.addEventListener('input', function() {
+                    currentNumLayers = parseInt(this.value);
+                    numLayersValue.textContent = this.value;
+                });
+            }
+
+            function initPixelFlavorEffect() {
+                if (pixelFlavorImg.naturalWidth === 0 || pixelFlavorImg.naturalHeight === 0) {
+                    console.error("PixelFlavor image has zero dimensions. Path: ", pixelFlavorImg.src, "Is the image path correct and the file valid?");
+                    pixelFlavorImg.style.display = 'block';
+                    pixelFlavorCanvas.style.display = 'none';
+                    if(document.getElementById('pixelFlavorControlsSidebar')) document.getElementById('pixelFlavorControlsSidebar').style.display = 'none'; // Hide controls if image fails
+                    return;
+                }
+
+                const container = document.getElementById('pixelFlavorContent');
+                const canvasWidth = container.offsetWidth;
+                const canvasHeight = container.offsetHeight;
+
+                pixelFlavorCanvas.width = canvasWidth;
+                pixelFlavorCanvas.height = canvasHeight;
+                pixelFlavorCtx.clearRect(0, 0, canvasWidth, canvasHeight); // Ensure canvas starts transparent
+                
+                // Calculate drawing parameters for object-fit: contain behavior
+                const imgNaturalWidth = pixelFlavorImg.naturalWidth;
+                const imgNaturalHeight = pixelFlavorImg.naturalHeight;
+                const imgAspect = imgNaturalWidth / imgNaturalHeight;
+                const canvasAspect = canvasWidth / canvasHeight;
+
+                let drawWidth, drawHeight, dx, dy;
+
+                if (imgAspect > canvasAspect) { // Image is wider than canvas (letterbox - fit to width)
+                    drawWidth = canvasWidth;
+                    drawHeight = drawWidth / imgAspect;
+                    dx = 0;
+                    dy = (canvasHeight - drawHeight) / 2;
+                } else { // Image is taller than canvas (pillarbox - fit to height)
+                    drawHeight = canvasHeight;
+                    drawWidth = drawHeight * imgAspect;
+                    dy = 0;
+                    dx = (canvasWidth - drawWidth) / 2;
+                }
+
+                pixelFlavorCtx.drawImage(pixelFlavorImg, dx, dy, drawWidth, drawHeight);
+                
+                try {
+                    pixelFlavorOriginalImageData = pixelFlavorCtx.getImageData(0, 0, canvasWidth, canvasHeight);
+                } catch (e) {
+                    console.error("Error getting ImageData for pixelFlavor (possibly tainted canvas or zero-dimension issue):", e);
+                    pixelFlavorImg.style.display = 'block';
+                    pixelFlavorCanvas.style.display = 'none';
+                    return; 
+                }
+
+                if (!pixelFlavorOriginalImageData || !pixelFlavorOriginalImageData.data || pixelFlavorOriginalImageData.data.length === 0) {
+                    console.error("Failed to get valid ImageData for pixelFlavor. Image might be empty or corrupted.");
+                    pixelFlavorImg.style.display = 'block';
+                    pixelFlavorCanvas.style.display = 'none';
+                    return;
+                }
+
+                pixelFlavorOriginalCanvas = document.createElement('canvas');
+                pixelFlavorOriginalCanvas.width = canvasWidth;
+                pixelFlavorOriginalCanvas.height = canvasHeight;
+                const originalCtx = pixelFlavorOriginalCanvas.getContext('2d');
+                originalCtx.clearRect(0, 0, canvasWidth, canvasHeight); // Ensure hidden canvas also starts transparent
+                originalCtx.drawImage(pixelFlavorImg, dx, dy, drawWidth, drawHeight);
+                
+                pixelFlavorImg.style.display = 'none';
+                pixelFlavorCanvas.style.display = 'block';
+
+                // Remove existing listeners before adding new ones to prevent duplicates
+                pixelFlavorCanvas.removeEventListener('mousemove', handlePixelFlavorMouseMove);
+                pixelFlavorCanvas.removeEventListener('mouseleave', handlePixelFlavorMouseLeave);
+
+                pixelFlavorCanvas.addEventListener('mousemove', handlePixelFlavorMouseMove);
+                pixelFlavorCanvas.addEventListener('mouseleave', handlePixelFlavorMouseLeave);
+            }
+
+            function handlePixelFlavorMouseMove(event) {
+                if (!isPixelBrushEnabled || !pixelFlavorOriginalImageData || !pixelFlavorOriginalCanvas) return;
+
+                const rect = pixelFlavorCanvas.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+
+                pixelFlavorCtx.putImageData(pixelFlavorOriginalImageData, 0, 0); // Start with the clean image
+
+                const activeLayers = PIXELATION_BRUSH_LAYERS.slice(0, currentNumLayers);
+
+                for (let i = activeLayers.length - 1; i >= 0; i--) {
+                    const layerConfig = activeLayers[i];
+                    // Create a new layer object to avoid modifying the original PIXELATION_BRUSH_LAYERS
+                    const layer = { ...layerConfig }; 
+                    
+                    // Apply multipliers
+                    layer.dimension *= currentBrushSize;
+                    layer.level = Math.max(1, Math.round(layer.level * currentPixelIntensity)); // Ensure level is at least 1
+
+                    const blockLevel = layer.level;
+
+                    if (blockLevel <= 1 && i < activeLayers.length - 1) continue;
+
+                    const fullLayerDim = (layer.shape === 'square' ? layer.dimension : layer.dimension * 2);
+                    const intendedTopLeftX = Math.floor(mouseX - fullLayerDim / 2);
+                    const intendedTopLeftY = Math.floor(mouseY - fullLayerDim / 2);
+
+                    const tempLayerCanvas = document.createElement('canvas');
+                    tempLayerCanvas.width = fullLayerDim;
+                    tempLayerCanvas.height = fullLayerDim;
+                    const tempLayerCtx = tempLayerCanvas.getContext('2d');
+                    // tempLayerCtx is already transparent by default or due to clearRect if we add it.
+
+                    // Calculate source rect from pixelFlavorOriginalCanvas (clipped)
+                    const sX = Math.max(0, intendedTopLeftX);
+                    const sY = Math.max(0, intendedTopLeftY);
+                    const sW = Math.max(0, Math.min(intendedTopLeftX + fullLayerDim, pixelFlavorOriginalCanvas.width) - sX);
+                    const sH = Math.max(0, Math.min(intendedTopLeftY + fullLayerDim, pixelFlavorOriginalCanvas.height) - sY);
+
+                    // Calculate destination rect on tempLayerCanvas
+                    const dX = Math.max(0, -intendedTopLeftX);
+                    const dY = Math.max(0, -intendedTopLeftY);
+
+                    if (sW > 0 && sH > 0) {
+                        tempLayerCtx.drawImage(
+                            pixelFlavorOriginalCanvas,
+                            sX, sY, sW, sH,         // Source rect from original full image (clipped)
+                            dX, dY, sW, sH          // Destination rect on tempLayerCanvas (offset if needed)
+                        );
+                    }
+
+                    if (blockLevel > 1) {
+                        const tempDownscaledCanvas = document.createElement('canvas');
+                        // Pixelate the entire tempLayerCanvas based on its fullLayerDim
+                        const tempW = Math.max(1, Math.floor(fullLayerDim / blockLevel));
+                        const tempH = Math.max(1, Math.floor(fullLayerDim / blockLevel));
+                        tempDownscaledCanvas.width = tempW;
+                        tempDownscaledCanvas.height = tempH;
+                        const tempDownscaledCtx = tempDownscaledCanvas.getContext('2d');
+                        
+                        tempDownscaledCtx.imageSmoothingEnabled = false;
+                        tempDownscaledCtx.drawImage(tempLayerCanvas, 0, 0, fullLayerDim, fullLayerDim, 0, 0, tempW, tempH);
+                        
+                        tempLayerCtx.imageSmoothingEnabled = false;
+                        tempLayerCtx.clearRect(0,0, fullLayerDim, fullLayerDim); // Clear before drawing scaled up
+                        tempLayerCtx.drawImage(tempDownscaledCanvas, 0, 0, tempW, tempH, 0, 0, fullLayerDim, fullLayerDim);
+                    }
+                    
+                    if (layer.shape === 'circle') {
+                        const imageData = tempLayerCtx.getImageData(0, 0, fullLayerDim, fullLayerDim);
+                        const data = imageData.data;
+                        const centerX = fullLayerDim / 2;
+                        const centerY = fullLayerDim / 2;
+                        const layerRadius = layer.dimension;
+
+                        for (let y = 0; y < fullLayerDim; y++) {
+                            for (let x = 0; x < fullLayerDim; x++) {
+                                const dx_from_center = x - centerX;
+                                const dy_from_center = y - centerY;
+                                const distanceSquared = dx_from_center * dx_from_center + dy_from_center * dy_from_center;
+                                if (distanceSquared > layerRadius * layerRadius) {
+                                    data[(y * fullLayerDim + x) * 4 + 3] = 0; 
+                                }
+                            }
+                        }
+                        tempLayerCtx.putImageData(imageData, 0, 0);
+                    }
+
+                    // Final draw onto the main canvas
+                    // Draw tempLayerCanvas at its intended top-left, letting drawImage handle clipping.
+                    pixelFlavorCtx.drawImage(tempLayerCanvas, intendedTopLeftX, intendedTopLeftY);
+                }
+            }
+
+            function handlePixelFlavorMouseLeave() {
+                if (!pixelFlavorOriginalImageData || !pixelFlavorCtx) return;
+                pixelFlavorCtx.imageSmoothingEnabled = true; 
+                pixelFlavorCtx.mozImageSmoothingEnabled = true;
+                pixelFlavorCtx.webkitImageSmoothingEnabled = true;
+                pixelFlavorCtx.msImageSmoothingEnabled = true;
+                pixelFlavorCtx.putImageData(pixelFlavorOriginalImageData, 0, 0);
+            }
+
+            if (pixelFlavorImg.complete) {
+                initPixelFlavorEffect();
+            } else {
+                pixelFlavorImg.addEventListener('load', initPixelFlavorEffect);
+                pixelFlavorImg.addEventListener('error', () => {
+                    console.error("PixelFlavor image failed to load.");
+                    pixelFlavorImg.style.display = 'block'; 
+                    pixelFlavorCanvas.style.display = 'none';
+                    if(document.getElementById('pixelFlavorControlsSidebar')) document.getElementById('pixelFlavorControlsSidebar').style.display = 'none'; // Hide controls if image fails
+                });
+            }
+        }
+
+        // Draggable Controls Panel Logic for Pixel Flavor
+        const pixelFlavorControlsSidebar = document.getElementById('pixelFlavorControlsSidebar');
+        const pixelFlavorControlsHeader = document.getElementById('pixelFlavorControlsHeader');
+        let isPixelFlavorDragging = false;
+        let pixelFlavorDragStartX, pixelFlavorDragStartY;
+        let pixelFlavorSidebarStartX, pixelFlavorSidebarStartY;
+
+        if (pixelFlavorControlsHeader && pixelFlavorControlsSidebar) {
+            pixelFlavorControlsHeader.addEventListener('mousedown', function(e) {
+                isPixelFlavorDragging = true;
+                pixelFlavorDragStartX = e.clientX;
+                pixelFlavorDragStartY = e.clientY;
+                const style = window.getComputedStyle(pixelFlavorControlsSidebar);
+                pixelFlavorSidebarStartX = parseFloat(style.left) || pixelFlavorControlsSidebar.offsetLeft;
+                pixelFlavorSidebarStartY = parseFloat(style.top) || pixelFlavorControlsSidebar.offsetTop;
+                pixelFlavorControlsSidebar.style.cursor = 'grabbing';
+                document.body.style.userSelect = 'none';
+
+                document.addEventListener('mousemove', onPixelFlavorControlsMouseMove);
+                document.addEventListener('mouseup', onPixelFlavorControlsMouseUp, { once: true }); // Ensure mouseup is captured once
+                e.preventDefault(); 
+            });
+        }
+
+        function onPixelFlavorControlsMouseMove(e) {
+            if (!isPixelFlavorDragging) return;
+            const dx = e.clientX - pixelFlavorDragStartX;
+            const dy = e.clientY - pixelFlavorDragStartY;
+            pixelFlavorControlsSidebar.style.left = (pixelFlavorSidebarStartX + dx) + 'px';
+            pixelFlavorControlsSidebar.style.top = (pixelFlavorSidebarStartY + dy) + 'px';
+            pixelFlavorControlsSidebar.style.right = 'auto'; 
+        }
+
+        function onPixelFlavorControlsMouseUp() {
+            if (!isPixelFlavorDragging) return;
+            isPixelFlavorDragging = false;
+            pixelFlavorControlsSidebar.style.cursor = 'grab';
+            document.body.style.userSelect = 'auto';
+            document.removeEventListener('mousemove', onPixelFlavorControlsMouseMove);
+            // mouseup listener is already set to {once: true}
+        }
+        // End of Draggable Controls Panel Logic for Pixel Flavor
+
+    </script>
+    <script src="script.js" defer></script>
+</body>
+</html> 
