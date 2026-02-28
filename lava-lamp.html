@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lava Lamp - Theo Lebeaux</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        html, body { overflow: hidden; }
+        .site-header { position: relative; z-index: 10; }
+        .click-zone {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40vw;
+            height: 40vh;
+            z-index: 1;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <a href="projects.html" class="back-button">
+            <img src="images/back-button.svg" alt="Back to Projects">
+        </a>
+        <nav class="main-nav"></nav>
+        <img src="images/theo-lebeaux-logo.png" alt="Theo Lebeaux Logo" class="logo">
+    </header>
+
+    <canvas id="bg"></canvas>
+    <img id="lava-logo" src="images/lava-lamp-logo.gif" alt=""
+        style="position:fixed;top:20px;left:20px;width:160px;height:160px;pointer-events:none;z-index:1;visibility:hidden;">
+    <div class="coming-soon click-zone"></div>
+
+    <script src="lava-lamp-bg.js"></script>
+</body>
+</html>
