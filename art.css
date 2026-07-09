@@ -17,6 +17,12 @@ h1 {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Responsive grid */
     gap: 25px;
     padding: 20px;
+    /* Default stretch would override each item's aspect-ratio with the
+       row's tallest computed height whenever fr-unit rounding gives one
+       column a fraction of a pixel more than another (common at odd
+       mobile/tablet widths) — squishing the circle. Keep items at their
+       own aspect-ratio size instead. */
+    align-items: start;
 }
 
 .art-item {
