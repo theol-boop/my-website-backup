@@ -188,9 +188,10 @@ body {
     margin-bottom: 2em;
 }
 
-.site-logo {
-    mix-blend-mode: multiply; /* Attempt to make white background transparent */
-}
+/* .site-logo previously used mix-blend-mode: multiply to fake a
+   transparent background; the logo <img>/canvas now carry real alpha
+   (see hlUnmatteFromWhite in script.js), which works reliably on iOS
+   where the blend mode did not reach through the fixed lava-lamp canvas. */
 
 .logo {
     height: 80px;

@@ -42,10 +42,17 @@ h1 {
     overflow: hidden;
     border-radius: 50%;
     filter: blur(3px);
+    /* Keep this element permanently on its own compositing layer (rather
+       than only while scaled). iOS Safari has a long-standing bug where an
+       element with border-radius + overflow:hidden that gains/loses a
+       transform miscalculates its circular clip afterwards, leaving part
+       of the circle visibly cut off. Never toggling the 3D-ness of the
+       transform avoids that re-layerization entirely. */
+    transform: scale(1) translateZ(0);
 }
 
 .art-item:focus .preview {
-    transform: scale(1.05);
+    transform: scale(1.05) translateZ(0);
     box-shadow: 0 5px 15px rgba(0,0,0,0.2);
     filter: blur(0);
 }
@@ -55,7 +62,7 @@ h1 {
    expanded view, since there's no mouseleave to clear it. */
 @media (hover: hover) and (pointer: fine) {
     .art-item:hover .preview {
-        transform: scale(1.05);
+        transform: scale(1.05) translateZ(0);
         box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         filter: blur(0);
     }

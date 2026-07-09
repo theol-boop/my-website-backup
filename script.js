@@ -20,6 +20,26 @@ document.addEventListener('DOMContentLoaded', () => {
     let leaveTimeout; // Variable to hold the timeout ID
     const leaveDelay = 300; // Delay in milliseconds before hiding
 
+    // Touch devices have no hover, so mouseenter/mouseleave-driven info
+    // boxes below either never show (icon just navigates away instantly)
+    // or never hide. On touch, use tap-to-toggle instead — see
+    // setupInfoBoxEventListeners' touch branch.
+    const HOVER_CAPABLE = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const touchInfoBoxes = [];
+    let hlActivatePixelation = () => {};
+    let hlDeactivatePixelation = () => {};
+
+    function closeTouchInfoBox(triggerElement, infoBoxElement, onClose) {
+        infoBoxElement.classList.remove('visible');
+        if (onClose) onClose();
+    }
+
+    function closeTouchInfoBoxesExcept(exceptTrigger) {
+        touchInfoBoxes.forEach(({ trigger, box, onClose }) => {
+            if (trigger !== exceptTrigger) closeTouchInfoBox(trigger, box, onClose);
+        });
+    }
+
     // Generic function to show info box
     function showInfoBox(triggerElement, infoBoxElement) {
         if (!triggerElement || !infoBoxElement) return;
@@ -74,20 +94,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Setup event listeners for an info box trigger
-    function setupInfoBoxEventListeners(triggerElement, infoBoxElement) {
+    function setupInfoBoxEventListeners(triggerElement, infoBoxElement, options = {}) {
         if (!triggerElement || !infoBoxElement) return;
 
-        triggerElement.addEventListener('mouseenter', () => showInfoBox(triggerElement, infoBoxElement));
-        triggerElement.addEventListener('mouseleave', () => hideInfoBox(triggerElement, infoBoxElement));
-        infoBoxElement.addEventListener('mouseenter', () => clearTimeout(triggerElement.leaveTimeoutId));
-        infoBoxElement.addEventListener('mouseleave', () => hideInfoBox(triggerElement, infoBoxElement));
+        if (HOVER_CAPABLE) {
+            triggerElement.addEventListener('mouseenter', () => showInfoBox(triggerElement, infoBoxElement));
+            triggerElement.addEventListener('mouseleave', () => hideInfoBox(triggerElement, infoBoxElement));
+            infoBoxElement.addEventListener('mouseenter', () => clearTimeout(triggerElement.leaveTimeoutId));
+            infoBoxElement.addEventListener('mouseleave', () => hideInfoBox(triggerElement, infoBoxElement));
+            return;
+        }
+
+        // Touch: first tap opens the box as a preview instead of following
+        // the link immediately (interceptNav holds off navigation for that
+        // first tap only — a second tap on the trigger, or on a link inside
+        // the box, goes through as normal). Tapping anywhere else closes it.
+        const { interceptNav = false, onOpen, onClose } = options;
+        touchInfoBoxes.push({ trigger: triggerElement, box: infoBoxElement, onClose });
+
+        triggerElement.addEventListener('click', (event) => {
+            if (infoBoxElement.classList.contains('visible')) return; // already open — let this tap proceed
+            if (interceptNav) event.preventDefault();
+            closeTouchInfoBoxesExcept(triggerElement);
+            showInfoBox(triggerElement, infoBoxElement);
+            if (onOpen) onOpen();
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!infoBoxElement.classList.contains('visible')) return;
+            if (triggerElement.contains(event.target) || infoBoxElement.contains(event.target)) return;
+            closeTouchInfoBox(triggerElement, infoBoxElement, onClose);
+        });
     }
 
     // JKBX Info Box Logic
-    setupInfoBoxEventListeners(jkbxLink, jkbxInfoBox);
+    setupInfoBoxEventListeners(jkbxLink, jkbxInfoBox, { interceptNav: true });
 
-    // Header Logo Info Box Logic
-    setupInfoBoxEventListeners(headerLogoElement, headerLogoInfoBox);
+    // Header Logo Info Box Logic — also drives the pixelation mosaic on
+    // touch, since there's no separate hover state to trigger it there.
+    setupInfoBoxEventListeners(headerLogoElement, headerLogoInfoBox, {
+        onOpen: () => hlActivatePixelation(),
+        onClose: () => hlDeactivatePixelation(),
+    });
 
     // --- Header Logo Hover Pixelation ---
     // A canvas sits directly over the logo (pointer-events: none, so the
@@ -190,14 +238,67 @@ document.addEventListener('DOMContentLoaded', () => {
             hlShowReal();
         }
 
-        if (headerLogoElement.complete && headerLogoElement.naturalWidth > 0) {
-            hlSetupCanvas();
-        } else {
-            headerLogoElement.addEventListener('load', hlSetupCanvas);
+        // The source PNG has its background flattened to opaque white (no
+        // real alpha there) — desktop faked transparency via CSS
+        // mix-blend-mode: multiply, but that blend reaching through the
+        // fixed-position lava-lamp canvas behind it is unreliable on iOS,
+        // so the white box shows through. Instead, unmatte the image
+        // against white ourselves (recover true alpha + ink color per
+        // pixel) and swap the <img> to that real-transparency version,
+        // which composites correctly everywhere regardless of blend mode.
+        function hlUnmatteFromWhite(imgEl) {
+            const c = document.createElement('canvas');
+            c.width = imgEl.naturalWidth;
+            c.height = imgEl.naturalHeight;
+            const cctx = c.getContext('2d');
+            cctx.drawImage(imgEl, 0, 0);
+            const imgData = cctx.getImageData(0, 0, c.width, c.height);
+            const d = imgData.data;
+            for (let i = 0; i < d.length; i += 4) {
+                const r = d[i], g = d[i + 1], b = d[i + 2];
+                const alpha = 255 - Math.min(r, g, b);
+                if (alpha === 0) {
+                    d[i + 3] = 0;
+                } else {
+                    const af = alpha / 255;
+                    d[i]     = Math.max(0, Math.min(255, Math.round((r - 255 * (1 - af)) / af)));
+                    d[i + 1] = Math.max(0, Math.min(255, Math.round((g - 255 * (1 - af)) / af)));
+                    d[i + 2] = Math.max(0, Math.min(255, Math.round((b - 255 * (1 - af)) / af)));
+                    d[i + 3] = alpha;
+                }
+            }
+            cctx.putImageData(imgData, 0, 0);
+            return c.toDataURL('image/png');
         }
 
-        headerLogoElement.addEventListener('mouseenter', () => hlGoTo(HL_MAX_LEVEL));
-        headerLogoElement.addEventListener('mouseleave', () => hlGoTo(HL_MIN_LEVEL));
+        function hlProcessThenSetup() {
+            try {
+                const transparentSrc = hlUnmatteFromWhite(headerLogoElement);
+                headerLogoElement.addEventListener('load', hlSetupCanvas, { once: true });
+                headerLogoElement.src = transparentSrc;
+            } catch (e) {
+                // Canvas tainted (e.g. served from file://) — fall back to
+                // the original image; mix-blend-mode still approximates it.
+                console.warn('Header logo unmatte skipped:', e);
+                hlSetupCanvas();
+            }
+        }
+
+        if (headerLogoElement.complete && headerLogoElement.naturalWidth > 0) {
+            hlProcessThenSetup();
+        } else {
+            headerLogoElement.addEventListener('load', hlProcessThenSetup, { once: true });
+        }
+
+        if (HOVER_CAPABLE) {
+            headerLogoElement.addEventListener('mouseenter', () => hlGoTo(HL_MAX_LEVEL));
+            headerLogoElement.addEventListener('mouseleave', () => hlGoTo(HL_MIN_LEVEL));
+        } else {
+            // No hover on touch — the info box's tap-to-toggle handler
+            // drives the mosaic instead (see setupInfoBoxEventListeners call above).
+            hlActivatePixelation = () => hlGoTo(HL_MAX_LEVEL);
+            hlDeactivatePixelation = () => hlGoTo(HL_MIN_LEVEL);
+        }
     }
 
     // --- Video Theater Mode --- //
