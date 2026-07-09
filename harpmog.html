@@ -1,0 +1,1903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>HarpMog</title>
+<style>
+:root {
+  --pf: -apple-system,'Helvetica Neue',Arial,sans-serif;
+  --mf: -apple-system,'Helvetica Neue',Arial,sans-serif;
+  --bg:       #000000;
+  --bg2:      #0a0a0a;
+  --bg3:      #0f0f0f;
+  --border:   #1e2040;
+  --border-b: #0a0c20;
+  --neon-c:   #00ffcc;   /* cyan — primary accent */
+  --neon-r:   #ff2244;   /* red */
+  --neon-y:   #ffe600;   /* yellow */
+  --neon-o:   #ff6600;   /* orange */
+  --neon-p:   #cc00ff;   /* purple */
+  --neon-pk:  #ff2288;   /* pink */
+  --neon-tl:  #00ddbb;   /* teal */
+  --neon-b:   #0088ff;   /* blue */
+  --dim:      #1a2a2a;   /* dimmed surface */
+  --text:     #ffb347;   /* primary text */
+  --text-d:   #8a5a1a;   /* dimmed text */
+  --red:#ff2244; --red-d:#660011;
+  --blue:#0088ff; --blue-d:#003366;
+  --blue-lt:#44aaff; --blue-lt-d:#1155aa;
+  --green:#00ffcc; --green-d:#004433;
+  --yellow:#ffe600; --yellow-d:#554400;
+  --orange:#ff6600; --orange-d:#552200;
+  --teal:#00ddbb; --teal-d:#004433;
+  --pink:#ff2288; --pink-d:#660033;
+  --purple:#cc00ff; --purple-d:#440066;
+  --screen:#00000a; --screen-b:#0a0a1a;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;touch-action:manipulation;}
+html,body{width:100%;height:100%;height:100dvh;overflow:hidden;touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%;background:#000;}
+#app{touch-action:none;}
+a,button,input,select,textarea,div,span{touch-action:manipulation;}
+#app{position:fixed;top:0;left:0;right:0;bottom:0;
+  width:100%;height:100%;height:100dvh;
+  display:grid;grid-template-columns:62% 38%;
+  padding:max(env(safe-area-inset-top),10px) max(env(safe-area-inset-right),10px)
+          max(env(safe-area-inset-bottom),24px) max(env(safe-area-inset-left),10px);
+  gap:10px;
+  box-sizing:border-box;}
+
+/* ── CRT OVERLAY ── */
+#crt-overlay{
+  position:fixed;inset:0;
+  width:100%;height:100%;
+  pointer-events:none;
+  z-index:999;
+  display:block;
+}
+body::after{
+  content:'';
+  position:fixed;inset:0;
+  pointer-events:none;
+  z-index:998;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 5px,
+      rgba(0,0,0,0.10) 5px,
+      rgba(0,0,0,0.10) 6px
+    );
+  mix-blend-mode:multiply;
+}
+
+/* ── LEFT PANEL ── */
+#left-panel{display:flex;flex-direction:column;gap:6px;min-height:0;overflow:hidden;height:100%;}
+#bottom-dock{display:flex;flex-direction:column;gap:6px;margin-top:auto;flex-shrink:0;}
+
+
+.block-label{
+  font-family:var(--pf);font-size:9px;letter-spacing:.05em;
+  color:#ffb347;text-transform:uppercase;
+  border-left:2px solid #ffb347;
+  padding-left:6px;margin-bottom:2px;
+  font-weight:700;
+  text-shadow:0 0 8px rgba(255,179,71,.7);
+}
+#chord-block{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+#inst-block{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+#fx-block{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
+#fx-knobs{display:flex;gap:6px;}
+.fx-unit{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.fx-name{
+  font-family:var(--pf);font-size:8px;letter-spacing:-.01em;
+  color:#8a5a1a;text-align:center;text-transform:uppercase;font-weight:600;
+}
+
+/* ── FADER BARS ── */
+.fader-wrap{
+  width:100%;height:26px;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:2px;
+  position:relative;
+  cursor:pointer;touch-action:none;
+  overflow:hidden;
+}
+.fader-fill{
+  position:absolute;top:0;left:0;bottom:0;width:0%;
+  background:linear-gradient(90deg,rgba(255,140,0,.3),rgba(255,179,71,.7));
+  transition:width .05s linear;
+  z-index:1;
+  pointer-events:none;
+}
+.fader-line{
+  position:absolute;top:0;bottom:0;width:2px;
+  background:#fff;
+  box-shadow:0 0 10px #ffb347,0 0 20px rgba(255,179,71,.5);
+  pointer-events:none;
+  z-index:2;
+  left:0%;transform:translateX(-1px);
+}
+
+/* ── RIGHT PANEL ── */
+#right-panel{display:flex;flex-direction:column;gap:6px;min-height:0;overflow:hidden;}
+#screen-housing{
+  flex:1;min-height:0;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:6px;
+  display:flex;flex-direction:column;gap:4px;
+  overflow:hidden;
+}
+#screen-label{
+  font-family:var(--mf);font-size:7px;letter-spacing:.3em;
+  color:#8a5a1a;text-align:center;text-transform:uppercase;
+}
+#led-panel{
+  background:transparent;
+  padding:0;
+  flex-shrink:0;
+  width:96px;
+  align-self:flex-end;
+  overflow:hidden;
+  position:relative;
+  margin-top:3px;
+  border:1px solid var(--border);
+  border-radius:4px;
+  opacity:0.88;
+}
+#led-panel:hover{opacity:1;}
+#led-text-row{display:none;}
+#scope-wrap{
+  display:grid;
+  grid-template-columns:1fr 28px;
+  width:100%;
+}
+#waveform-canvas{
+  display:block;
+  width:100%;
+  height:auto;
+  aspect-ratio:1/1;
+}
+/* ── SCOPE (right-side dials) ── */
+#scope-side{
+  display:flex;flex-direction:column;justify-content:space-evenly;align-items:center;
+  padding:2px 2px;
+  background:rgba(0,0,0,.25);
+  border-left:1px solid var(--border);
+  align-self:stretch;
+  overflow:hidden;
+}
+.scope-unit{
+  display:flex;flex-direction:column;align-items:center;gap:0;min-width:0;
+  flex:1;justify-content:center;
+}
+.scope-dial{
+  width:16px;height:16px;flex-shrink:0;
+  border-radius:50%;
+  position:relative;
+  cursor:pointer;touch-action:none;
+  -webkit-tap-highlight-color:transparent;
+  background:
+    radial-gradient(circle at 35% 28%,rgba(60,80,90,.35),transparent 45%),
+    radial-gradient(circle at 50% 50%,#0c1014 0%,#050608 72%,#000 100%);
+  border:1px solid var(--border);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 1px 4px rgba(0,0,0,.5);
+}
+.scope-dial:active{filter:brightness(1.08);}
+.scope-dial-ring{
+  position:absolute;inset:1px;border-radius:50%;
+  border:1px solid rgba(0,255,204,.12);
+  pointer-events:none;
+  background:repeating-conic-gradient(
+    from -90deg,
+    transparent 0deg 24deg,
+    rgba(0,255,204,.07) 24deg 26deg
+  );
+}
+.scope-dial-pointer{
+  position:absolute;left:50%;top:50%;
+  width:1px;height:5px;margin-left:-.5px;margin-top:-4px;
+  background:linear-gradient(180deg,var(--neon-c),rgba(0,255,204,.4));
+  border-radius:1px;
+  transform-origin:50% 4px;
+  transform:rotate(var(--scope-rot,-135deg));
+  box-shadow:0 0 3px rgba(0,255,204,.9);
+  pointer-events:none;
+}
+.scope-dial-name{
+  display:none;
+}
+
+/* ── BUTTONS ── */
+.gb-btn{
+  position:relative;border:none;background:none;cursor:pointer;outline:none;
+  -webkit-touch-callout:none;user-select:none;
+  flex:1;display:flex;align-items:center;justify-content:center;
+}
+.gb-btn .well{position:absolute;inset:0;border-radius:5px;}
+.gb-btn .ring{display:none;}
+.gb-btn .face{
+  position:absolute;inset:0;
+  border-radius:5px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--pf);
+  font-size:90%;   /* fills ~90% of button height */
+  letter-spacing:-.02em;
+  font-weight:600;
+  text-transform:uppercase;
+  line-height:1;
+  transition:filter .04s,opacity .04s;
+}
+.gb-btn.sunken .face,.gb-btn.pressed .face{opacity:.7;filter:brightness(.8);}
+.gb-btn.active .face{filter:brightness(1.2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.5);}
+
+/* Color variants — neon on dark */
+.gb-red   .well{background:rgba(255,34,68,.12);border:1px solid var(--neon-r);}
+.gb-red   .face{color:var(--neon-r);text-shadow:0 0 10px var(--neon-r);}
+.gb-blue  .well{background:rgba(0,136,255,.12);border:1px solid var(--neon-b);}
+.gb-blue  .face{color:var(--neon-b);text-shadow:0 0 10px var(--neon-b);}
+.gb-bluelt .well{background:rgba(68,170,255,.10);border:1px solid var(--blue-lt);}
+.gb-bluelt .face{color:var(--blue-lt);text-shadow:0 0 8px var(--blue-lt);}
+.gb-green .well{background:rgba(0,255,204,.10);border:1px solid var(--neon-c);}
+.gb-green .face{color:var(--neon-c);text-shadow:0 0 10px var(--neon-c);}
+.gb-yellow.well{background:rgba(255,230,0,.10);border:1px solid var(--neon-y);}
+.gb-yellow .face{color:var(--neon-y);text-shadow:0 0 10px var(--neon-y);}
+.gb-orange.well{background:rgba(255,102,0,.10);border:1px solid var(--neon-o);}
+.gb-orange .face{color:var(--neon-o);text-shadow:0 0 8px var(--neon-o);}
+.gb-purple.well{background:rgba(204,0,255,.10);border:1px solid var(--neon-p);}
+.gb-purple .face{color:var(--neon-p);text-shadow:0 0 10px var(--neon-p);}
+.gb-teal  .well{background:rgba(0,221,187,.10);border:1px solid var(--neon-tl);}
+.gb-teal  .face{color:var(--neon-tl);text-shadow:0 0 8px var(--neon-tl);}
+.gb-pink  .well{background:rgba(255,34,136,.10);border:1px solid var(--neon-pk);}
+.gb-pink  .face{color:var(--neon-pk);text-shadow:0 0 10px var(--neon-pk);}
+
+/* Active state: filled background */
+.gb-btn.active .well{filter:brightness(2.5);}
+
+/* ── SIZE VARIANTS ── */
+#chord-btns{display:flex;gap:6px;}
+#chromatic-btns{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-top:2px;}
+#fifths-btns{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-top:2px;}
+#ong-btns{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-top:2px;}
+#pink-btns{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-top:2px;}
+.chr-gb{height:32px;flex:none;width:100%;}
+.chr-gb .face{font-size:15px;letter-spacing:-.02em;}
+#chord-btns .gb-btn{height:36px;flex:1;}
+#chord-btns .gb-btn .face{font-size:20px;letter-spacing:-.03em;}
+#sub-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
+  max-height:0;opacity:0;pointer-events:none;overflow:hidden;
+  transition:max-height .22s ease,opacity .15s;}
+#sub-buttons.visible{max-height:400px;opacity:1;pointer-events:all;}
+.sub-gb{height:36px;flex:none;width:100%;}
+.sub-gb .face{font-size:16px;letter-spacing:-.02em;}
+#inst-btns{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;}
+.inst-gb{height:32px;width:100%;flex:none;}
+.inst-gb .face{font-size:13px;letter-spacing:-.02em;}
+
+/* ── LOOPER PANEL ── */
+#looper-panel{
+  flex-shrink:0;
+  background:var(--screen);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:6px 8px;
+  display:flex;flex-direction:column;gap:5px;
+}
+#looper-transport{display:flex;gap:5px;}
+.lp-btn{
+  flex:1;height:32px;border:1px solid #ffb347;background:transparent;border-radius:5px;
+  color:#ffb347;font-family:var(--pf);font-size:15px;letter-spacing:-.02em;font-weight:600;
+  cursor:pointer;outline:none;
+  transition:background .08s,color .08s;
+}
+.lp-btn:active{background:rgba(0,255,204,.15);}
+.lp-btn.active{background:rgba(255,179,71,.18);color:#fff;text-shadow:0 0 8px rgba(255,179,71,.8);box-shadow:inset 0 0 8px rgba(255,179,71,.15);}
+.lp-btn.rec-armed{border-color:#ff4466;color:#ff4466;text-shadow:0 0 8px rgba(255,68,102,.8);animation:blink .7s infinite;}
+.lp-btn.rec-active{background:rgba(255,68,102,.22);border-color:#ff4466;color:#fff;text-shadow:0 0 8px rgba(255,68,102,.8);}
+.lp-clear{border-color:var(--text-d)!important;color:var(--text-d)!important;text-shadow:none!important;}
+.lp-clear:active{background:rgba(255,255,255,.08)!important;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ── HARP BOARD ── */
+#harp-board{
+  flex:1;min-height:0;
+  background:var(--screen);
+  border:1px solid var(--border);
+  display:flex;flex-direction:column;
+  padding:4px 8px 4px 8px;
+  overflow:hidden;position:relative;touch-action:none;
+}
+/* Scan-line overlay */
+#harp-board::before{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:1;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.18) 2px,rgba(0,0,0,.18) 4px);
+}
+.string-row{display:flex;align-items:center;flex:1;min-height:0;}
+.string-label{
+  font-family:var(--pf);font-size:7px;color:var(--text-d);letter-spacing:-.01em;
+  width:22px;text-align:right;padding-right:4px;
+  flex-shrink:0;user-select:none;pointer-events:none;
+}
+.string-line-wrap{flex:1;height:100%;position:relative;}
+.string-line{position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);border-radius:0;pointer-events:none;}
+
+/* ── UNLOCK SCREEN ── */
+#unlock-overlay{
+  position:fixed;inset:0;background:var(--bg);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:20px;z-index:100;
+}
+#unlock-overlay::before{
+  content:'';position:fixed;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,255,204,.015) 3px,rgba(0,255,204,.015) 4px);
+}
+.ul-title{
+  font-family:var(--pf);font-size:36px;color:#ffb347;letter-spacing:.05em;font-weight:800;
+  text-shadow:0 0 30px rgba(255,179,71,.9),0 0 80px rgba(255,140,0,.5),0 0 2px #fff;
+  position:relative;
+}
+.ul-sub{font-family:var(--pf);font-size:11px;color:#8a5a1a;letter-spacing:.12em;font-weight:600;position:relative;}
+#unlock-btn{position:relative;width:200px;height:56px;border:none;background:none;cursor:pointer;outline:none;border-radius:6px;}
+#unlock-btn .well{position:absolute;inset:0;border-radius:6px;background:rgba(255,179,71,.08);border:2px solid #ffb347;box-shadow:0 0 20px rgba(255,179,71,.35),inset 0 0 12px rgba(255,179,71,.05);}
+#unlock-btn .face{position:absolute;inset:0;border-radius:6px;background:transparent;color:#ffb347;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--pf);font-size:18px;letter-spacing:.1em;font-weight:700;
+  text-shadow:0 0 16px rgba(255,179,71,.9),0 0 40px rgba(255,140,0,.4);}
+#unlock-btn:active .face{opacity:.6;}
+</style>
+</head>
+<body>
+<div id="unlock-overlay">
+  <div class="ul-title">HARPMOG</div>
+  <div style="font-family:var(--pf);font-size:9px;letter-spacing:.2em;color:#666;margin-top:-8px;">HARMONIC STRING INSTRUMENT</div>
+  <div class="ul-sub">PRESS START</div>
+  <button id="unlock-btn"><div class="well"></div><div class="face">START</div></button>
+</div>
+<div id="app" style="visibility:hidden">
+  <div id="left-panel">
+    <div id="chord-block">
+      <div class="block-label">· chord ·</div>
+      <div id="chord-btns">
+        <button class="gb-btn gb-yellow" id="btn-cmin" data-chord="cmin"><div class="well"></div><div class="face">C-</div></button>
+        <button class="gb-btn gb-yellow" id="btn-fmin" data-chord="fmin"><div class="well"></div><div class="face">F-</div></button>
+      </div>
+      <div id="sub-buttons">
+        <button class="gb-btn sub-gb gb-red" data-sub="base"><div class="well"></div><div class="face">BASE</div></button>
+        <button class="gb-btn sub-gb gb-red" data-sub="deep"><div class="well"></div><div class="face">DEEP</div></button>
+        <button class="gb-btn sub-gb gb-red" data-sub="shimmer"><div class="well"></div><div class="face">SHIM</div></button>
+        <button class="gb-btn sub-gb gb-red" data-sub="blue"><div class="well"></div><div class="face">BLUE</div></button>
+        <button class="gb-btn sub-gb gb-red" data-sub="45"><div class="well"></div><div class="face">45</div></button>
+        <button class="gb-btn sub-gb gb-red" data-sub="fminarp"><div class="well"></div><div class="face">F-</div></button>
+        <button class="gb-btn sub-gb gb-red" data-sub="copper"><div class="well"></div><div class="face">COPR</div></button>
+        <button class="gb-btn sub-gb gb-red" data-sub="darp"><div class="well"></div><div class="face">D</div></button>
+        <button class="gb-btn sub-gb gb-red" data-sub="garp"><div class="well"></div><div class="face">G</div></button>
+        <button class="gb-btn sub-gb gb-red" data-sub="bbarp"><div class="well"></div><div class="face">Bb</div></button>
+        <button class="gb-btn sub-gb gb-red" data-sub="abmaj7"><div class="well"></div><div class="face">Ab^7</div></button>
+        <button class="gb-btn sub-gb gb-red" data-sub="ebmaj"><div class="well"></div><div class="face">Eb^</div></button>
+      </div>
+    </div>
+      <div id="chromatic-btns">
+        <button class="gb-btn chr-gb gb-purple" data-chord="k45_c"><div class="well"></div><div class="face">C</div></button>
+        <button class="gb-btn chr-gb gb-purple" data-chord="k45_db"><div class="well"></div><div class="face">Db</div></button>
+        <button class="gb-btn chr-gb gb-purple" data-chord="k45_d"><div class="well"></div><div class="face">D</div></button>
+        <button class="gb-btn chr-gb gb-purple" data-chord="k45_eb"><div class="well"></div><div class="face">Eb</div></button>
+        <button class="gb-btn chr-gb gb-purple" data-chord="k45_e"><div class="well"></div><div class="face">E</div></button>
+        <button class="gb-btn chr-gb gb-purple" data-chord="k45_f"><div class="well"></div><div class="face">F</div></button>
+        <button class="gb-btn chr-gb gb-purple" data-chord="k45_gb"><div class="well"></div><div class="face">Gb</div></button>
+        <button class="gb-btn chr-gb gb-purple" data-chord="k45_g"><div class="well"></div><div class="face">G</div></button>
+        <button class="gb-btn chr-gb gb-purple" data-chord="k45_ab"><div class="well"></div><div class="face">Ab</div></button>
+        <button class="gb-btn chr-gb gb-purple" data-chord="k45_a"><div class="well"></div><div class="face">A</div></button>
+        <button class="gb-btn chr-gb gb-purple" data-chord="k45_bb"><div class="well"></div><div class="face">Bb</div></button>
+        <button class="gb-btn chr-gb gb-purple" data-chord="k45_b"><div class="well"></div><div class="face">B</div></button>
+      </div>
+
+      <div id="fifths-btns">
+        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_c"><div class="well"></div><div class="face">C</div></button>
+        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_db"><div class="well"></div><div class="face">Db</div></button>
+        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_d"><div class="well"></div><div class="face">D</div></button>
+        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_eb"><div class="well"></div><div class="face">Eb</div></button>
+        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_e"><div class="well"></div><div class="face">E</div></button>
+        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_f"><div class="well"></div><div class="face">F</div></button>
+        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_gb"><div class="well"></div><div class="face">Gb</div></button>
+        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_g"><div class="well"></div><div class="face">G</div></button>
+        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_ab"><div class="well"></div><div class="face">Ab</div></button>
+        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_a"><div class="well"></div><div class="face">A</div></button>
+        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_bb"><div class="well"></div><div class="face">Bb</div></button>
+        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_b"><div class="well"></div><div class="face">B</div></button>
+      </div>
+
+      <div id="ong-btns">
+        <button class="gb-btn chr-gb gb-orange" data-chord="kong_c"><div class="well"></div><div class="face">C</div></button>
+        <button class="gb-btn chr-gb gb-orange" data-chord="kong_db"><div class="well"></div><div class="face">Db</div></button>
+        <button class="gb-btn chr-gb gb-orange" data-chord="kong_d"><div class="well"></div><div class="face">D</div></button>
+        <button class="gb-btn chr-gb gb-orange" data-chord="kong_eb"><div class="well"></div><div class="face">Eb</div></button>
+        <button class="gb-btn chr-gb gb-orange" data-chord="kong_e"><div class="well"></div><div class="face">E</div></button>
+        <button class="gb-btn chr-gb gb-orange" data-chord="kong_f"><div class="well"></div><div class="face">F</div></button>
+        <button class="gb-btn chr-gb gb-orange" data-chord="kong_gb"><div class="well"></div><div class="face">Gb</div></button>
+        <button class="gb-btn chr-gb gb-orange" data-chord="kong_g"><div class="well"></div><div class="face">G</div></button>
+        <button class="gb-btn chr-gb gb-orange" data-chord="kong_ab"><div class="well"></div><div class="face">Ab</div></button>
+        <button class="gb-btn chr-gb gb-orange" data-chord="kong_a"><div class="well"></div><div class="face">A</div></button>
+        <button class="gb-btn chr-gb gb-orange" data-chord="kong_bb"><div class="well"></div><div class="face">Bb</div></button>
+        <button class="gb-btn chr-gb gb-orange" data-chord="kong_b"><div class="well"></div><div class="face">B</div></button>
+      </div>
+
+      <div id="pink-btns">
+        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_c"><div class="well"></div><div class="face">C</div></button>
+        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_db"><div class="well"></div><div class="face">Db</div></button>
+        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_d"><div class="well"></div><div class="face">D</div></button>
+        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_eb"><div class="well"></div><div class="face">Eb</div></button>
+        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_e"><div class="well"></div><div class="face">E</div></button>
+        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_f"><div class="well"></div><div class="face">F</div></button>
+        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_gb"><div class="well"></div><div class="face">Gb</div></button>
+        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_g"><div class="well"></div><div class="face">G</div></button>
+        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_ab"><div class="well"></div><div class="face">Ab</div></button>
+        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_a"><div class="well"></div><div class="face">A</div></button>
+        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_bb"><div class="well"></div><div class="face">Bb</div></button>
+        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_b"><div class="well"></div><div class="face">B</div></button>
+      </div>
+    <div id="bottom-dock">
+      <div id="inst-block">
+        <div class="block-label">· instrument ·</div>
+        <div id="inst-btns">
+          <button class="gb-btn inst-gb gb-bluelt active" data-inst="harp"> <div class="well"></div><div class="face">HARP</div></button>
+          <button class="gb-btn inst-gb gb-bluelt"        data-inst="bell"> <div class="well"></div><div class="face">BELL</div></button>
+          <button class="gb-btn inst-gb gb-bluelt"        data-inst="sine"> <div class="well"></div><div class="face">SINE</div></button>
+          <button class="gb-btn inst-gb gb-bluelt"        data-inst="bass"> <div class="well"></div><div class="face">BASS</div></button>
+          <button class="gb-btn inst-gb gb-bluelt"        data-inst="pad">  <div class="well"></div><div class="face">PAD</div></button>
+          <button class="gb-btn inst-gb gb-bluelt"        data-inst="organ"><div class="well"></div><div class="face">ORGN</div></button>
+          <button class="gb-btn inst-gb gb-bluelt"        data-inst="choir"><div class="well"></div><div class="face">CHIR</div></button>
+          <button class="gb-btn inst-gb gb-bluelt"        data-inst="cello"><div class="well"></div><div class="face">CELO</div></button>
+          <button class="gb-btn inst-gb gb-bluelt"        data-inst="wood"> <div class="well"></div><div class="face">WOOD</div></button>
+          <button class="gb-btn inst-gb gb-bluelt"        data-inst="thumb"><div class="well"></div><div class="face">THMB</div></button>
+          <button class="gb-btn inst-gb gb-red"           data-inst="laser"><div class="well"></div><div class="face">LAZR</div></button>
+        </div>
+      </div>
+    </div>
+    <div style="padding:4px 4px 2px;flex-shrink:0;">
+      <span style="font-family:var(--pf);font-size:8px;letter-spacing:.15em;style="font-family:-apple-system,'Helvetica Neue',Arial,sans-serif;font-weight:700;font-size:9px;letter-spacing:.02em;text-transform:uppercase;color:var(--text-d);">HARPMOG</span>
+    </div>
+  </div>
+  <div id="right-panel">
+    <div id="screen-housing">
+      <div id="screen-label">· · · S T R I N G S · · ·</div>
+      <div id="harp-board"></div>
+    </div>
+    <div id="fx-block">
+      <div class="block-label">· fx ·</div>
+      <div id="fx-knobs">
+        <div class="fx-unit">
+        <div class="fader-wrap" id="knob-verb" data-val="50" data-min="0" data-max="100">
+          <div class="fader-fill" id="fader-fill-verb"></div>
+          <div class="fader-line"></div>
+        </div>
+        <div class="fx-name" style="margin-top:3px;">reverb</div>
+        </div>
+        <div class="fx-unit">
+        <div class="fader-wrap" id="knob-delay" data-val="0" data-min="0" data-max="100">
+          <div class="fader-fill" id="fader-fill-delay"></div>
+          <div class="fader-line"></div>
+        </div>
+        <div class="fx-name" style="margin-top:3px;">delay</div>
+        </div>
+        <div class="fx-unit">
+        <div class="fader-wrap" id="knob-ping" data-val="0" data-min="0" data-max="100">
+          <div class="fader-fill" id="fader-fill-ping"></div>
+          <div class="fader-line"></div>
+        </div>
+        <div class="fx-name" style="margin-top:3px;">ping</div>
+        </div>
+        <div class="fx-unit">
+        <div class="fader-wrap" id="knob-warble" data-val="0" data-min="0" data-max="100">
+          <div class="fader-fill" id="fader-fill-warble"></div>
+          <div class="fader-line"></div>
+        </div>
+        <div class="fx-name" style="margin-top:3px;">warble</div>
+        </div>
+        <div class="fx-unit">
+        <div class="fader-wrap" id="knob-crush" data-val="0" data-min="0" data-max="100">
+          <div class="fader-fill" id="fader-fill-crush"></div>
+          <div class="fader-line"></div>
+        </div>
+        <div class="fx-name" style="margin-top:3px;">crush</div>
+        </div>
+        <div class="fx-unit">
+        <div class="fader-wrap" id="knob-tape" data-val="0" data-min="0" data-max="100">
+          <div class="fader-fill" id="fader-fill-tape"></div>
+          <div class="fader-line"></div>
+        </div>
+        <div class="fx-name" style="margin-top:3px;">twang</div>
+        </div>
+      </div>
+      </div>
+    <div id="looper-panel">
+      <div id="looper-transport">
+        <button class="lp-btn" id="lp-rec">REC</button>
+        <button class="lp-btn" id="lp-play">PLAY</button>
+        <button class="lp-btn lp-clear" id="lp-clear">CLR</button>
+      </div>
+      <div id="led-panel">
+        <div id="led-text-row">
+          <div id="led-chord">— — —</div>
+          <div id="led-mode">SELECT CHORD</div>
+          <div id="led-inst">HARP · V:50 D:0 T:0</div>
+        </div>
+        <div id="scope-wrap">
+          <canvas id="waveform-canvas"></canvas>
+          <div id="scope-side">
+            <div class="scope-unit">
+              <div class="scope-dial" id="scope-dial-time" data-scope-key="time" data-val="50" role="slider" aria-valuenow="50" aria-label="Time base">
+                <div class="scope-dial-ring"></div>
+                <div class="scope-dial-pointer"></div>
+              </div>
+              <div class="scope-dial-name">time</div>
+            </div>
+            <div class="scope-unit">
+              <div class="scope-dial" id="scope-dial-volts" data-scope-key="gain" data-val="55" role="slider" aria-valuenow="55" aria-label="Full-scale per division">
+                <div class="scope-dial-ring"></div>
+                <div class="scope-dial-pointer"></div>
+              </div>
+              <div class="scope-dial-name">fs/div</div>
+            </div>
+            <div class="scope-unit">
+              <div class="scope-dial" id="scope-dial-phos" data-scope-key="persist" data-val="28" role="slider" aria-valuenow="28" aria-label="Phosphor persistence">
+                <div class="scope-dial-ring"></div>
+                <div class="scope-dial-pointer"></div>
+              </div>
+              <div class="scope-dial-name">phos</div>
+            </div>
+            <div class="scope-unit">
+              <div class="scope-dial" id="scope-dial-xy" data-scope-key="xy" data-val="18" role="slider" aria-valuenow="18" aria-label="X-Y mix and phase">
+                <div class="scope-dial-ring"></div>
+                <div class="scope-dial-pointer"></div>
+              </div>
+              <div class="scope-dial-name">x-y</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+  </div>
+</div>
+<canvas id="crt-overlay"></canvas>
+<script>
+(function(){
+'use strict';
+
+// ── NOTE / SCALE HELPERS ──────────────────────────────────────
+const NN=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+const NM={C:0,Db:1,D:2,Eb:3,E:4,F:5,Gb:6,G:7,Ab:8,A:9,Bb:10,B:11};
+const C2=36,C8=108;
+function pm(n,o){return(o+1)*12+(NM[n]??0);}
+function ml(m){return NN[((m%12)+12)%12]+(Math.floor(m/12)-1);}
+function cascade(cell,root,count){
+  const out=[];
+  for(let r=0;out.length<count;r++){
+    for(const n of cell){if(out.length>=count)break;const m=pm(n,root+r);if(m>=C2&&m<=C8)out.push(m);}
+    if(root+r>8)break;
+  }
+  return out;
+}
+
+// ── DYNAMIC CASCADE ──────────────────────────────────────────
+// Cycles the cell across all octaves within C2–C8 to build the
+// natural unique pitch set for that cell. String count varies
+// per cell (13–42) — always zero dupes, full range, ascending.
+function buildRange(cell){
+  const pc=NM[cell[0]]??0;
+  let last=(3)*12+pc; // start near C2
+  if(last<C2)last+=12;
+  if(last>C2+11)last-=12;
+  const out=[];
+  if(last>=C2&&last<=C8)out.push(last);
+  let idx=0;
+  while(true){
+    idx=(idx+1)%cell.length;
+    const p=NM[cell[idx]]??0;
+    let m=Math.floor(last/12)*12+p;
+    if(m<=last)m+=12;
+    last=m;
+    if(m>C8)break;
+    out.push(m);
+  }
+  return out;
+}
+function autoSlide(cell,_ignored,_ignored2){
+  // _ignored params kept for API compat — we ignore maxCount/startOctave
+  const range=buildRange(cell);
+  const n=range.length;
+  if(n===0)return[60];
+  // Take all unique pitches — no thinning, no dupes
+  return range.slice(0,42);
+}
+function scale(root,count){
+  const iv=[0,2,3,5,7,8,10],rp=NM[root],out=[];
+  for(let m=C2;m<=C8&&out.length<count;m++)if(iv.includes(((m-rp)%12+12)%12))out.push(m);
+  return out;
+}
+function xp(c){return c.map(n=>NN[(NM[n]+5)%12]);}
+
+const CBC=['C','G','D','Eb','G','Bb','D','Eb','Bb','D','G','Bb','D','F'];
+const CDC=['C','G','D','Eb','Bb','F','D','G','C','D','G','Bb','Eb','F'];
+const T=42;
+const ABMAJ7_CELL=['Ab','C','Eb','G','C','F','Bb','D','Eb','G','Ab','C','Eb','F','G','Bb','F','G','Bb'];
+const ABMAJ7_BASE=autoSlide(ABMAJ7_CELL,T);
+
+const D_CELL   =['D','G','A','D','G','A','D','G','A','D','G','A','D','G','A','D','G','A','D','G','A','D','G','A','D','G','A','D','G','A','D'];
+const G_CELL   =['G','Bb','D','F','B','Bb','D','F','G','Bb','D','F','A','C','D','F','G','Bb','A','C','D','F'];
+const BB_CELL  =['Bb','D','F','A','Bb','D','Eb','F','A','C','E','G','A','Bb','D','F','G','G','A','A','Bb','C','D'];
+const D_SET =autoSlide(D_CELL,T,4);
+const G_SET =autoSlide(G_CELL,T);
+const BB_SET=autoSlide(BB_CELL,T);
+
+const COPPER_CELL=['C','G','D','F','C','G','D','A','C','G','D','G','C','D','C','F','A'];
+const COPPER_SET=autoSlide(COPPER_CELL,T);
+
+const FMIN_ARP_CELL=['F','Ab','C','Eb','F','G','Ab','Bb','C','D','Eb','F','G','Bb','D','Eb','F','Ab','C','Eb','G','Ab'];
+const FMIN_ARP=autoSlide(FMIN_ARP_CELL,T);
+
+const EBMAJ_CELL=['Eb','G','Bb','D','F','G','Bb','C','D','F','G','Bb','D','Eb','G','A','D','F','G','C','Eb','D'];
+const EBMAJ_SET=autoSlide(EBMAJ_CELL,T);
+
+const C_BLUE_CELL=['C','F','Bb','Eb','G','C','F','Bb','D','F','Bb','Eb','G','C','F','Bb','D','F','G','C'];
+const C_45_CELL  =['C','F','G','C','F','G','C','F','Bb','C','F','G','C','D','G','Bb','Eb','F','Bb','D','G','A','D','Eb','Ab','Bb','Eb','G','C','D','G','C','F','G','C'];
+const C_BLUE  =autoSlide(C_BLUE_CELL,T,3);
+const C_45    =autoSlide(C_45_CELL,T,4);
+const F_BLUE  =autoSlide(xp(C_BLUE_CELL),T,3);
+const F_45    =autoSlide(xp(C_45_CELL),T,4);
+
+const C_SHIMMER_CELL=['C','G','D','Eb','G','A','Bb','D','F','Bb','C','D','A','D','F','G','D','Eb','F','A'];
+const C_SHIMMER=autoSlide(C_SHIMMER_CELL,T);
+const F_SHIMMER=autoSlide(xp(C_SHIMMER_CELL),T);
+
+
+// ── 45 IN ALL 12 KEYS ──────────────────────────────────────
+const BASE_45_CELL=['C','F','G','C','F','G','C','F','Bb','C','F','G','C','D','G','Bb','Eb','F','Bb','D','G','A','D','Eb','Ab','Bb','Eb','G','C','D','G','C','F','G','C'];
+function xpCell(cell,s){return cell.map(n=>NN[(NM[n]+s+12)%12]);}
+const K45_C=autoSlide(xpCell(BASE_45_CELL,0),T,4);
+const K45_DB=autoSlide(xpCell(BASE_45_CELL,1),T,4);
+const K45_D=autoSlide(xpCell(BASE_45_CELL,2),T,4);
+const K45_EB=autoSlide(xpCell(BASE_45_CELL,3),T,4);
+const K45_E=autoSlide(xpCell(BASE_45_CELL,4),T,4);
+const K45_F=autoSlide(xpCell(BASE_45_CELL,5),T,4);
+const K45_GB=autoSlide(xpCell(BASE_45_CELL,6),T,4);
+const K45_G=autoSlide(xpCell(BASE_45_CELL,7),T,4);
+const K45_AB=autoSlide(xpCell(BASE_45_CELL,8),T,4);
+const K45_A=autoSlide(xpCell(BASE_45_CELL,9),T,4);
+const K45_BB=autoSlide(xpCell(BASE_45_CELL,10),T,4);
+const K45_B=autoSlide(xpCell(BASE_45_CELL,11),T,4);
+
+// ── CFBBEBG PATTERN IN ALL 12 KEYS ──────────────────────────
+const BASE_PINK_CELL=['C','G','D','Eb','Ab','G','B','D','F','G','Ab','B'];
+const KPNK_C=autoSlide(BASE_PINK_CELL.map(x=>NN[(NM[x]+0+12)%12]),T);
+const KPNK_DB=autoSlide(BASE_PINK_CELL.map(x=>NN[(NM[x]+1+12)%12]),T);
+const KPNK_D=autoSlide(BASE_PINK_CELL.map(x=>NN[(NM[x]+2+12)%12]),T);
+const KPNK_EB=autoSlide(BASE_PINK_CELL.map(x=>NN[(NM[x]+3+12)%12]),T);
+const KPNK_E=autoSlide(BASE_PINK_CELL.map(x=>NN[(NM[x]+4+12)%12]),T);
+const KPNK_F=autoSlide(BASE_PINK_CELL.map(x=>NN[(NM[x]+5+12)%12]),T);
+const KPNK_GB=autoSlide(BASE_PINK_CELL.map(x=>NN[(NM[x]+6+12)%12]),T);
+const KPNK_G=autoSlide(BASE_PINK_CELL.map(x=>NN[(NM[x]+7+12)%12]),T);
+const KPNK_AB=autoSlide(BASE_PINK_CELL.map(x=>NN[(NM[x]+8+12)%12]),T);
+const KPNK_A=autoSlide(BASE_PINK_CELL.map(x=>NN[(NM[x]+9+12)%12]),T);
+const KPNK_BB=autoSlide(BASE_PINK_CELL.map(x=>NN[(NM[x]+10+12)%12]),T);
+const KPNK_B=autoSlide(BASE_PINK_CELL.map(x=>NN[(NM[x]+11+12)%12]),T);
+const BASE_ONG_CELL=['C','G','D','E','A','E','B'];
+function xpCellO(cell,s){return cell.map(n=>NN[(NM[n]+s+12)%12]);}
+const KONG_C=autoSlide(xpCellO(BASE_ONG_CELL,0),T);
+const KONG_DB=autoSlide(xpCellO(BASE_ONG_CELL,1),T);
+const KONG_D=autoSlide(xpCellO(BASE_ONG_CELL,2),T);
+const KONG_EB=autoSlide(xpCellO(BASE_ONG_CELL,3),T);
+const KONG_E=autoSlide(xpCellO(BASE_ONG_CELL,4),T);
+const KONG_F=autoSlide(xpCellO(BASE_ONG_CELL,5),T);
+const KONG_GB=autoSlide(xpCellO(BASE_ONG_CELL,6),T);
+const KONG_G=autoSlide(xpCellO(BASE_ONG_CELL,7),T);
+const KONG_AB=autoSlide(xpCellO(BASE_ONG_CELL,8),T);
+const KONG_A=autoSlide(xpCellO(BASE_ONG_CELL,9),T);
+const KONG_BB=autoSlide(xpCellO(BASE_ONG_CELL,10),T);
+const KONG_B=autoSlide(xpCellO(BASE_ONG_CELL,11),T);
+const BASE_5TH_CELL=['C','F','Bb','Eb','G'];
+const K5TH_C=autoSlide(xpCell(BASE_5TH_CELL,0),T);
+const K5TH_DB=autoSlide(xpCell(BASE_5TH_CELL,1),T);
+const K5TH_D=autoSlide(xpCell(BASE_5TH_CELL,2),T);
+const K5TH_EB=autoSlide(xpCell(BASE_5TH_CELL,3),T);
+const K5TH_E=autoSlide(xpCell(BASE_5TH_CELL,4),T);
+const K5TH_F=autoSlide(xpCell(BASE_5TH_CELL,5),T);
+const K5TH_GB=autoSlide(xpCell(BASE_5TH_CELL,6),T);
+const K5TH_G=autoSlide(xpCell(BASE_5TH_CELL,7),T);
+const K5TH_AB=autoSlide(xpCell(BASE_5TH_CELL,8),T);
+const K5TH_A=autoSlide(xpCell(BASE_5TH_CELL,9),T);
+const K5TH_BB=autoSlide(xpCell(BASE_5TH_CELL,10),T);
+const K5TH_B=autoSlide(xpCell(BASE_5TH_CELL,11),T);
+
+// Slide variants
+const SETS={
+  kpnk_c:{scale:KPNK_C,base:KPNK_C,deep:KPNK_C,shimmer:KPNK_C,blue:KPNK_C,'45':KPNK_C,fminarp:KPNK_C,copper:KPNK_C,darp:KPNK_C,garp:KPNK_C,bbarp:KPNK_C,abmaj7:KPNK_C,ebmaj:KPNK_C},
+  kpnk_db:{scale:KPNK_DB,base:KPNK_DB,deep:KPNK_DB,shimmer:KPNK_DB,blue:KPNK_DB,'45':KPNK_DB,fminarp:KPNK_DB,copper:KPNK_DB,darp:KPNK_DB,garp:KPNK_DB,bbarp:KPNK_DB,abmaj7:KPNK_DB,ebmaj:KPNK_DB},
+  kpnk_d:{scale:KPNK_D,base:KPNK_D,deep:KPNK_D,shimmer:KPNK_D,blue:KPNK_D,'45':KPNK_D,fminarp:KPNK_D,copper:KPNK_D,darp:KPNK_D,garp:KPNK_D,bbarp:KPNK_D,abmaj7:KPNK_D,ebmaj:KPNK_D},
+  kpnk_eb:{scale:KPNK_EB,base:KPNK_EB,deep:KPNK_EB,shimmer:KPNK_EB,blue:KPNK_EB,'45':KPNK_EB,fminarp:KPNK_EB,copper:KPNK_EB,darp:KPNK_EB,garp:KPNK_EB,bbarp:KPNK_EB,abmaj7:KPNK_EB,ebmaj:KPNK_EB},
+  kpnk_e:{scale:KPNK_E,base:KPNK_E,deep:KPNK_E,shimmer:KPNK_E,blue:KPNK_E,'45':KPNK_E,fminarp:KPNK_E,copper:KPNK_E,darp:KPNK_E,garp:KPNK_E,bbarp:KPNK_E,abmaj7:KPNK_E,ebmaj:KPNK_E},
+  kpnk_f:{scale:KPNK_F,base:KPNK_F,deep:KPNK_F,shimmer:KPNK_F,blue:KPNK_F,'45':KPNK_F,fminarp:KPNK_F,copper:KPNK_F,darp:KPNK_F,garp:KPNK_F,bbarp:KPNK_F,abmaj7:KPNK_F,ebmaj:KPNK_F},
+  kpnk_gb:{scale:KPNK_GB,base:KPNK_GB,deep:KPNK_GB,shimmer:KPNK_GB,blue:KPNK_GB,'45':KPNK_GB,fminarp:KPNK_GB,copper:KPNK_GB,darp:KPNK_GB,garp:KPNK_GB,bbarp:KPNK_GB,abmaj7:KPNK_GB,ebmaj:KPNK_GB},
+  kpnk_g:{scale:KPNK_G,base:KPNK_G,deep:KPNK_G,shimmer:KPNK_G,blue:KPNK_G,'45':KPNK_G,fminarp:KPNK_G,copper:KPNK_G,darp:KPNK_G,garp:KPNK_G,bbarp:KPNK_G,abmaj7:KPNK_G,ebmaj:KPNK_G},
+  kpnk_ab:{scale:KPNK_AB,base:KPNK_AB,deep:KPNK_AB,shimmer:KPNK_AB,blue:KPNK_AB,'45':KPNK_AB,fminarp:KPNK_AB,copper:KPNK_AB,darp:KPNK_AB,garp:KPNK_AB,bbarp:KPNK_AB,abmaj7:KPNK_AB,ebmaj:KPNK_AB},
+  kpnk_a:{scale:KPNK_A,base:KPNK_A,deep:KPNK_A,shimmer:KPNK_A,blue:KPNK_A,'45':KPNK_A,fminarp:KPNK_A,copper:KPNK_A,darp:KPNK_A,garp:KPNK_A,bbarp:KPNK_A,abmaj7:KPNK_A,ebmaj:KPNK_A},
+  kpnk_bb:{scale:KPNK_BB,base:KPNK_BB,deep:KPNK_BB,shimmer:KPNK_BB,blue:KPNK_BB,'45':KPNK_BB,fminarp:KPNK_BB,copper:KPNK_BB,darp:KPNK_BB,garp:KPNK_BB,bbarp:KPNK_BB,abmaj7:KPNK_BB,ebmaj:KPNK_BB},
+  kpnk_b:{scale:KPNK_B,base:KPNK_B,deep:KPNK_B,shimmer:KPNK_B,blue:KPNK_B,'45':KPNK_B,fminarp:KPNK_B,copper:KPNK_B,darp:KPNK_B,garp:KPNK_B,bbarp:KPNK_B,abmaj7:KPNK_B,ebmaj:KPNK_B},
+  kong_c:{scale:KONG_C,base:KONG_C,deep:KONG_C,shimmer:KONG_C,blue:KONG_C,'45':KONG_C,fminarp:KONG_C,copper:KONG_C,darp:KONG_C,garp:KONG_C,bbarp:KONG_C,abmaj7:KONG_C,ebmaj:KONG_C},
+  kong_db:{scale:KONG_DB,base:KONG_DB,deep:KONG_DB,shimmer:KONG_DB,blue:KONG_DB,'45':KONG_DB,fminarp:KONG_DB,copper:KONG_DB,darp:KONG_DB,garp:KONG_DB,bbarp:KONG_DB,abmaj7:KONG_DB,ebmaj:KONG_DB},
+  kong_d:{scale:KONG_D,base:KONG_D,deep:KONG_D,shimmer:KONG_D,blue:KONG_D,'45':KONG_D,fminarp:KONG_D,copper:KONG_D,darp:KONG_D,garp:KONG_D,bbarp:KONG_D,abmaj7:KONG_D,ebmaj:KONG_D},
+  kong_eb:{scale:KONG_EB,base:KONG_EB,deep:KONG_EB,shimmer:KONG_EB,blue:KONG_EB,'45':KONG_EB,fminarp:KONG_EB,copper:KONG_EB,darp:KONG_EB,garp:KONG_EB,bbarp:KONG_EB,abmaj7:KONG_EB,ebmaj:KONG_EB},
+  kong_e:{scale:KONG_E,base:KONG_E,deep:KONG_E,shimmer:KONG_E,blue:KONG_E,'45':KONG_E,fminarp:KONG_E,copper:KONG_E,darp:KONG_E,garp:KONG_E,bbarp:KONG_E,abmaj7:KONG_E,ebmaj:KONG_E},
+  kong_f:{scale:KONG_F,base:KONG_F,deep:KONG_F,shimmer:KONG_F,blue:KONG_F,'45':KONG_F,fminarp:KONG_F,copper:KONG_F,darp:KONG_F,garp:KONG_F,bbarp:KONG_F,abmaj7:KONG_F,ebmaj:KONG_F},
+  kong_gb:{scale:KONG_GB,base:KONG_GB,deep:KONG_GB,shimmer:KONG_GB,blue:KONG_GB,'45':KONG_GB,fminarp:KONG_GB,copper:KONG_GB,darp:KONG_GB,garp:KONG_GB,bbarp:KONG_GB,abmaj7:KONG_GB,ebmaj:KONG_GB},
+  kong_g:{scale:KONG_G,base:KONG_G,deep:KONG_G,shimmer:KONG_G,blue:KONG_G,'45':KONG_G,fminarp:KONG_G,copper:KONG_G,darp:KONG_G,garp:KONG_G,bbarp:KONG_G,abmaj7:KONG_G,ebmaj:KONG_G},
+  kong_ab:{scale:KONG_AB,base:KONG_AB,deep:KONG_AB,shimmer:KONG_AB,blue:KONG_AB,'45':KONG_AB,fminarp:KONG_AB,copper:KONG_AB,darp:KONG_AB,garp:KONG_AB,bbarp:KONG_AB,abmaj7:KONG_AB,ebmaj:KONG_AB},
+  kong_a:{scale:KONG_A,base:KONG_A,deep:KONG_A,shimmer:KONG_A,blue:KONG_A,'45':KONG_A,fminarp:KONG_A,copper:KONG_A,darp:KONG_A,garp:KONG_A,bbarp:KONG_A,abmaj7:KONG_A,ebmaj:KONG_A},
+  kong_bb:{scale:KONG_BB,base:KONG_BB,deep:KONG_BB,shimmer:KONG_BB,blue:KONG_BB,'45':KONG_BB,fminarp:KONG_BB,copper:KONG_BB,darp:KONG_BB,garp:KONG_BB,bbarp:KONG_BB,abmaj7:KONG_BB,ebmaj:KONG_BB},
+  kong_b:{scale:KONG_B,base:KONG_B,deep:KONG_B,shimmer:KONG_B,blue:KONG_B,'45':KONG_B,fminarp:KONG_B,copper:KONG_B,darp:KONG_B,garp:KONG_B,bbarp:KONG_B,abmaj7:KONG_B,ebmaj:KONG_B},
+  k5th_c:{scale:K5TH_C,base:K5TH_C,deep:K5TH_C,shimmer:K5TH_C,blue:K5TH_C,'45':K5TH_C,fminarp:K5TH_C,copper:K5TH_C,darp:K5TH_C,garp:K5TH_C,bbarp:K5TH_C,abmaj7:K5TH_C,ebmaj:K5TH_C},
+  k5th_db:{scale:K5TH_DB,base:K5TH_DB,deep:K5TH_DB,shimmer:K5TH_DB,blue:K5TH_DB,'45':K5TH_DB,fminarp:K5TH_DB,copper:K5TH_DB,darp:K5TH_DB,garp:K5TH_DB,bbarp:K5TH_DB,abmaj7:K5TH_DB,ebmaj:K5TH_DB},
+  k5th_d:{scale:K5TH_D,base:K5TH_D,deep:K5TH_D,shimmer:K5TH_D,blue:K5TH_D,'45':K5TH_D,fminarp:K5TH_D,copper:K5TH_D,darp:K5TH_D,garp:K5TH_D,bbarp:K5TH_D,abmaj7:K5TH_D,ebmaj:K5TH_D},
+  k5th_eb:{scale:K5TH_EB,base:K5TH_EB,deep:K5TH_EB,shimmer:K5TH_EB,blue:K5TH_EB,'45':K5TH_EB,fminarp:K5TH_EB,copper:K5TH_EB,darp:K5TH_EB,garp:K5TH_EB,bbarp:K5TH_EB,abmaj7:K5TH_EB,ebmaj:K5TH_EB},
+  k5th_e:{scale:K5TH_E,base:K5TH_E,deep:K5TH_E,shimmer:K5TH_E,blue:K5TH_E,'45':K5TH_E,fminarp:K5TH_E,copper:K5TH_E,darp:K5TH_E,garp:K5TH_E,bbarp:K5TH_E,abmaj7:K5TH_E,ebmaj:K5TH_E},
+  k5th_f:{scale:K5TH_F,base:K5TH_F,deep:K5TH_F,shimmer:K5TH_F,blue:K5TH_F,'45':K5TH_F,fminarp:K5TH_F,copper:K5TH_F,darp:K5TH_F,garp:K5TH_F,bbarp:K5TH_F,abmaj7:K5TH_F,ebmaj:K5TH_F},
+  k5th_gb:{scale:K5TH_GB,base:K5TH_GB,deep:K5TH_GB,shimmer:K5TH_GB,blue:K5TH_GB,'45':K5TH_GB,fminarp:K5TH_GB,copper:K5TH_GB,darp:K5TH_GB,garp:K5TH_GB,bbarp:K5TH_GB,abmaj7:K5TH_GB,ebmaj:K5TH_GB},
+  k5th_g:{scale:K5TH_G,base:K5TH_G,deep:K5TH_G,shimmer:K5TH_G,blue:K5TH_G,'45':K5TH_G,fminarp:K5TH_G,copper:K5TH_G,darp:K5TH_G,garp:K5TH_G,bbarp:K5TH_G,abmaj7:K5TH_G,ebmaj:K5TH_G},
+  k5th_ab:{scale:K5TH_AB,base:K5TH_AB,deep:K5TH_AB,shimmer:K5TH_AB,blue:K5TH_AB,'45':K5TH_AB,fminarp:K5TH_AB,copper:K5TH_AB,darp:K5TH_AB,garp:K5TH_AB,bbarp:K5TH_AB,abmaj7:K5TH_AB,ebmaj:K5TH_AB},
+  k5th_a:{scale:K5TH_A,base:K5TH_A,deep:K5TH_A,shimmer:K5TH_A,blue:K5TH_A,'45':K5TH_A,fminarp:K5TH_A,copper:K5TH_A,darp:K5TH_A,garp:K5TH_A,bbarp:K5TH_A,abmaj7:K5TH_A,ebmaj:K5TH_A},
+  k5th_bb:{scale:K5TH_BB,base:K5TH_BB,deep:K5TH_BB,shimmer:K5TH_BB,blue:K5TH_BB,'45':K5TH_BB,fminarp:K5TH_BB,copper:K5TH_BB,darp:K5TH_BB,garp:K5TH_BB,bbarp:K5TH_BB,abmaj7:K5TH_BB,ebmaj:K5TH_BB},
+  k5th_b:{scale:K5TH_B,base:K5TH_B,deep:K5TH_B,shimmer:K5TH_B,blue:K5TH_B,'45':K5TH_B,fminarp:K5TH_B,copper:K5TH_B,darp:K5TH_B,garp:K5TH_B,bbarp:K5TH_B,abmaj7:K5TH_B,ebmaj:K5TH_B},
+  k45_c:{scale:K45_C,base:K45_C,deep:K45_C,shimmer:K45_C,blue:K45_C,'45':K45_C,fminarp:K45_C,copper:K45_C,darp:K45_C,garp:K45_C,bbarp:K45_C,abmaj7:K45_C,ebmaj:K45_C},
+  k45_db:{scale:K45_DB,base:K45_DB,deep:K45_DB,shimmer:K45_DB,blue:K45_DB,'45':K45_DB,fminarp:K45_DB,copper:K45_DB,darp:K45_DB,garp:K45_DB,bbarp:K45_DB,abmaj7:K45_DB,ebmaj:K45_DB},
+  k45_d:{scale:K45_D,base:K45_D,deep:K45_D,shimmer:K45_D,blue:K45_D,'45':K45_D,fminarp:K45_D,copper:K45_D,darp:K45_D,garp:K45_D,bbarp:K45_D,abmaj7:K45_D,ebmaj:K45_D},
+  k45_eb:{scale:K45_EB,base:K45_EB,deep:K45_EB,shimmer:K45_EB,blue:K45_EB,'45':K45_EB,fminarp:K45_EB,copper:K45_EB,darp:K45_EB,garp:K45_EB,bbarp:K45_EB,abmaj7:K45_EB,ebmaj:K45_EB},
+  k45_e:{scale:K45_E,base:K45_E,deep:K45_E,shimmer:K45_E,blue:K45_E,'45':K45_E,fminarp:K45_E,copper:K45_E,darp:K45_E,garp:K45_E,bbarp:K45_E,abmaj7:K45_E,ebmaj:K45_E},
+  k45_f:{scale:K45_F,base:K45_F,deep:K45_F,shimmer:K45_F,blue:K45_F,'45':K45_F,fminarp:K45_F,copper:K45_F,darp:K45_F,garp:K45_F,bbarp:K45_F,abmaj7:K45_F,ebmaj:K45_F},
+  k45_gb:{scale:K45_GB,base:K45_GB,deep:K45_GB,shimmer:K45_GB,blue:K45_GB,'45':K45_GB,fminarp:K45_GB,copper:K45_GB,darp:K45_GB,garp:K45_GB,bbarp:K45_GB,abmaj7:K45_GB,ebmaj:K45_GB},
+  k45_g:{scale:K45_G,base:K45_G,deep:K45_G,shimmer:K45_G,blue:K45_G,'45':K45_G,fminarp:K45_G,copper:K45_G,darp:K45_G,garp:K45_G,bbarp:K45_G,abmaj7:K45_G,ebmaj:K45_G},
+  k45_ab:{scale:K45_AB,base:K45_AB,deep:K45_AB,shimmer:K45_AB,blue:K45_AB,'45':K45_AB,fminarp:K45_AB,copper:K45_AB,darp:K45_AB,garp:K45_AB,bbarp:K45_AB,abmaj7:K45_AB,ebmaj:K45_AB},
+  k45_a:{scale:K45_A,base:K45_A,deep:K45_A,shimmer:K45_A,blue:K45_A,'45':K45_A,fminarp:K45_A,copper:K45_A,darp:K45_A,garp:K45_A,bbarp:K45_A,abmaj7:K45_A,ebmaj:K45_A},
+  k45_bb:{scale:K45_BB,base:K45_BB,deep:K45_BB,shimmer:K45_BB,blue:K45_BB,'45':K45_BB,fminarp:K45_BB,copper:K45_BB,darp:K45_BB,garp:K45_BB,bbarp:K45_BB,abmaj7:K45_BB,ebmaj:K45_BB},
+  k45_b:{scale:K45_B,base:K45_B,deep:K45_B,shimmer:K45_B,blue:K45_B,'45':K45_B,fminarp:K45_B,copper:K45_B,darp:K45_B,garp:K45_B,bbarp:K45_B,abmaj7:K45_B,ebmaj:K45_B},
+  cmin:{scale:scale('C',T), base:autoSlide(CBC,T), deep:autoSlide(CDC,T), shimmer:C_SHIMMER, blue:C_BLUE, '45':C_45, abmaj7:ABMAJ7_BASE, ebmaj:EBMAJ_SET, fminarp:FMIN_ARP, copper:COPPER_SET, darp:D_SET, garp:G_SET, bbarp:BB_SET},
+  fmin:{scale:scale('F',T), base:autoSlide(xp(CBC),T), deep:autoSlide(xp(CDC),T), shimmer:F_SHIMMER, blue:F_BLUE, '45':F_45, abmaj7:ABMAJ7_BASE, ebmaj:EBMAJ_SET, fminarp:FMIN_ARP, copper:COPPER_SET, darp:D_SET, garp:G_SET, bbarp:BB_SET}
+};
+
+const state={chord:'cmin',mode:'scale',insts:new Set(['harp']),ds:[],vis:[]};
+function getSet(){return SETS[state.chord][state.mode];}
+function applySet(){
+  state.ds=[...getSet()].reverse(); // real notes, low count, high→low
+  // Build 42 visual strings mapped to nearest real note
+  const VIS=42;
+  state.vis=[];
+  for(let i=0;i<VIS;i++){
+    // Map visual index to real note index (evenly distributed)
+    const ri=Math.round(i*(state.ds.length-1)/Math.max(1,VIS-1));
+    state.vis.push(state.ds[ri]);
+  }
+  buildBoard();updateLED();
+}
+
+// ── HARP BOARD ────────────────────────────────────────────────
+function buildBoard(){
+  const board=document.getElementById('harp-board');board.innerHTML='';
+  const vis=state.vis||state.ds;
+  const NUM=vis.length;
+  for(let i=0;i<NUM;i++){
+    const row=document.createElement('div');row.className='string-row';
+    // No label — just the line
+    const wrap=document.createElement('div');wrap.className='string-line-wrap';
+    const line=document.createElement('div');line.className='string-line';line.id='S'+i;
+    line.dataset.midi=vis[i]||60;
+    const mid=(NUM-1)/2,dist=Math.abs(i-mid)/Math.max(1,mid);
+    const thick=(1.7-dist*.8).toFixed(1);
+    line.style.cssText=`height:${thick}px;margin-top:${(-thick/2).toFixed(1)}px;`;
+    const g=Math.round(60+(1-dist)*40);
+    line.style.background=`rgba(180,${g+60},0,0.45)`;line.dataset.g=g;
+    wrap.appendChild(line);row.appendChild(wrap);board.appendChild(row);
+  }
+}
+function updateLabels(){/* labels removed — buildBoard handles midi data */}
+function flash(i){
+  const s=document.getElementById('S'+i);if(!s)return;
+  s.style.background='rgba(255,200,80,0.98)';
+  s.style.boxShadow='0 0 12px rgba(255,179,71,1),0 0 24px rgba(255,140,0,0.6)';
+  setTimeout(()=>{if(!s)return;const g=s.dataset.g||138;
+    s.style.background=`rgba(180,${parseInt(s.dataset.g)+60},0,0.42)`;s.style.boxShadow='none';},170);
+}
+function updateLED(){
+  const nn_map={c:'C',db:'Db',d:'D',eb:'Eb',e:'E',f:'F',gb:'Gb',g:'G',ab:'Ab',a:'A',bb:'Bb',b:'B'};
+  const cn={cmin:'C-',fmin:'F-'};
+  // dynamic label for k45_ keys handled below
+  const mn={scale:'SCALE',base:'BASE ARP',deep:'DEEP ARP',shimmer:'SHIMMER',fminarp:'F MINOR',copper:'COPPER',darp:'D',garp:'G',bbarp:'Bb',blue:'BLUE','45':'45',abmaj7:'Ab MAJ 7',ebmaj:'Eb MAJ'};
+  const chordLabel=cn[state.chord]||(state.chord.startsWith('k45_')?('45/'+state.chord.slice(4).toUpperCase()):(state.chord.startsWith('k5th_')?state.chord.slice(5).toUpperCase():(state.chord.startsWith('kong_')?state.chord.slice(5).toUpperCase():(state.chord.startsWith('kpnk_')?state.chord.slice(5).toUpperCase():'—'))));
+  document.getElementById('led-chord').textContent=chordLabel;
+  document.getElementById('led-mode').textContent=mn[state.mode]||'';
+  document.getElementById('led-inst').textContent=[...state.insts].map(s=>s.toUpperCase()).join('+');
+}
+
+// ── AUDIO — pre-baked buffer cache, distinct synthesis per voice ─
+let actx=null,master=null,reverbConv=null,reverbSend=null,delayNode=null,delaySend=null;
+let analyser=null,waveRaf=null;
+let scopeWaveBuf=null;
+const scopeState={time:50,gain:55,persist:28,xy:18};
+function scopeFftFromTime(t){
+  const sizes=[512,1024,2048];
+  return sizes[Math.min(2,Math.floor(Number(t)/34.001))];
+}
+let tapeDelay=null,tapeLFO=null,tapeLFOGain=null,tapeFilter=null,tapeSend=null;
+let pingDelay=null,pingSend=null,warbleLFO=null,warbleLFOGain=null,warbleDelay=null,warbleSend=null,crushSend=null,crushWS=null;
+const bufCache=new Map();
+
+// HARP — standard Karplus-Strong, warm pluck
+function bakeHarp(freq,sr){
+  const period=Math.max(2,Math.floor(sr/freq));
+  const dur=2.8,bufLen=Math.ceil(sr*dur);
+  const buf=actx.createBuffer(1,bufLen,sr);
+  const data=buf.getChannelData(0);
+  const dl=new Float32Array(period);
+  for(let i=0;i<period;i++)dl[i]=(Math.random()*2-1)*0.92;
+  const alpha=5500/(5500+sr/(2*Math.PI));
+  let lp=0,ix=0;
+  for(let i=0;i<bufLen;i++){
+    const ks=0.4965*(dl[ix]+dl[(ix+1)%period]);
+    dl[ix]=ks;ix=(ix+1)%period;
+    lp=alpha*ks+(1-alpha)*lp;data[i]=lp;
+  }
+  return buf;
+}
+
+// BELL — additive harmonics with inharmonic partials, metallic shimmer
+function bakeBell(freq,sr){
+  const dur=3.5,bufLen=Math.ceil(sr*dur);
+  const buf=actx.createBuffer(1,bufLen,sr);
+  const data=buf.getChannelData(0);
+  // bell partials: ratios and relative amplitudes (slightly inharmonic)
+  const partials=[
+    {r:1.0,  a:0.60, d:3.5},
+    {r:2.756,a:0.25, d:1.8},
+    {r:5.404,a:0.12, d:1.0},
+    {r:8.933,a:0.06, d:0.6},
+    {r:13.46,a:0.03, d:0.4},
+  ];
+  for(let i=0;i<bufLen;i++){
+    let s=0;
+    for(const p of partials){
+      const env=Math.exp(-i/(sr*p.d));
+      s+=Math.sin(2*Math.PI*freq*p.r*i/sr)*p.a*env;
+    }
+    data[i]=s*0.5;
+  }
+  return buf;
+}
+
+// SINE — pure sine with fast exponential decay, marimba-like
+function bakeSine(freq,sr){
+  const dur=1.6,bufLen=Math.ceil(sr*dur);
+  const buf=actx.createBuffer(1,bufLen,sr);
+  const data=buf.getChannelData(0);
+  // fundamental + weak second harmonic for warmth
+  for(let i=0;i<bufLen;i++){
+    const t=i/sr;
+    const env=Math.exp(-t*4.5);
+    const env2=Math.exp(-t*8.0);
+    data[i]=(Math.sin(2*Math.PI*freq*t)*env + Math.sin(2*Math.PI*freq*2*t)*0.18*env2)*0.7;
+  }
+  return buf;
+}
+
+// BASS — KS with heavy low-pass, long decay
+function bakeBass(freq,sr){
+  const period=Math.max(2,Math.floor(sr/freq));
+  const dur=3.5,bufLen=Math.ceil(sr*dur);
+  const buf=actx.createBuffer(1,bufLen,sr);
+  const data=buf.getChannelData(0);
+  const dl=new Float32Array(period);
+  for(let i=0;i<period;i++)dl[i]=(Math.random()*2-1)*0.92;
+  const alpha=1200/(1200+sr/(2*Math.PI));
+  let lp=0,ix=0;
+  for(let i=0;i<bufLen;i++){
+    const ks=0.4952*(dl[ix]+dl[(ix+1)%period]);
+    dl[ix]=ks;ix=(ix+1)%period;
+    lp=alpha*ks+(1-alpha)*lp;data[i]=lp;
+  }
+  return buf;
+}
+
+// PAD — additive sines with slow attack baked in
+function bakePad(freq,sr){
+  const dur=4.0,bufLen=Math.ceil(sr*dur);
+  const buf=actx.createBuffer(1,bufLen,sr);
+  const data=buf.getChannelData(0);
+  const attackSamples=Math.ceil(sr*0.08);
+  const partials=[{r:1,a:0.55},{r:1.5,a:0.25},{r:2,a:0.12},{r:2.5,a:0.06},{r:3,a:0.03}];
+  for(let i=0;i<bufLen;i++){
+    let s=0;
+    for(const p of partials)s+=Math.sin(2*Math.PI*freq*p.r*i/sr)*p.a;
+    const atk=Math.min(1,i/attackSamples);
+    const dec=Math.exp(-i/(sr*3.8));
+    data[i]=s*atk*dec*0.4;
+  }
+  return buf;
+}
+
+// ORGAN — Hammond-style: integer harmonics, no decay, steady drawbar mix
+function bakeOrgan(freq,sr){
+  const dur=2.5,bufLen=Math.ceil(sr*dur);
+  const buf=actx.createBuffer(1,bufLen,sr);
+  const data=buf.getChannelData(0);
+  // drawbar harmonics: 16',8',4',2',1' + 2⅔',1⅗' (rotary shimmer via slow AM)
+  const drawbars=[
+    {r:0.5, a:0.20},{r:1,   a:0.70},{r:2,   a:0.50},
+    {r:3,   a:0.12},{r:4,   a:0.35},{r:6,   a:0.08},
+    {r:8,   a:0.20},{r:10,  a:0.04},{r:16,  a:0.08},
+  ];
+  const rotaryHz=6.1; // Leslie cabinet rotation
+  const atk=Math.ceil(sr*0.008);
+  const rel=Math.ceil(sr*0.12);
+  for(let i=0;i<bufLen;i++){
+    let s=0;
+    for(const d of drawbars)s+=Math.sin(2*Math.PI*freq*d.r*i/sr)*d.a;
+    // rotary AM
+    s*=1+0.18*Math.sin(2*Math.PI*rotaryHz*i/sr);
+    // click attack + soft release
+    const env=i<atk?(i/atk):(i>bufLen-rel?((bufLen-i)/rel):1);
+    data[i]=s*env*0.18;
+  }
+  return buf;
+}
+
+// CHOIR — formant synthesis: two vowel formants (ah/oh) per note
+function bakeChoir(freq,sr){
+  // Optimised: all per-harmonic constants pre-computed outside sample loop
+  // Inner loop is just sinf additions — no exp/formant math per sample
+  const dur=3.0,bufLen=Math.ceil(sr*dur);
+  const buf=actx.createBuffer(1,bufLen,sr);
+  const data=buf.getChannelData(0);
+  const formants=[
+    {f:800,  bw:80,  g:1.0},
+    {f:1200, bw:90,  g:0.7},
+    {f:2500, bw:120, g:0.4},
+    {f:3500, bw:200, g:0.15},
+  ];
+  // Pre-compute amplitude and phase-increment per harmonic
+  const NUM_H=12;
+  const phaseInc=new Float64Array(NUM_H);
+  const amps=new Float64Array(NUM_H);
+  for(let h=1;h<=NUM_H;h++){
+    const hfreq=freq*h;
+    let fgain=0;
+    for(const fm of formants){
+      const dist=hfreq-fm.f;
+      fgain+=fm.g*Math.exp(-(dist*dist)/(2*fm.bw*fm.bw));
+    }
+    amps[h-1]=(1/h)*(fgain+0.05);
+    phaseInc[h-1]=2*Math.PI*hfreq/sr;
+  }
+  // Running phase accumulators (avoid i*phaseInc which loses precision at large i)
+  const phase=new Float64Array(NUM_H);
+  const atk=Math.ceil(sr*0.10);
+  const rel=Math.ceil(sr*0.25);
+  const decayRate=1/(sr*2.8);
+  for(let i=0;i<bufLen;i++){
+    let s=0;
+    for(let h=0;h<NUM_H;h++){
+      s+=Math.sin(phase[h])*amps[h];
+      phase[h]+=phaseInc[h];
+    }
+    const env=i<atk?(i/atk):(i>bufLen-rel?((bufLen-i)/rel):1);
+    const breathEnv=Math.exp(-i*decayRate);
+    data[i]=s*env*breathEnv*0.55;
+  }
+  return buf;
+}
+
+
+// CELLO — bowed string: sawtooth via additive with bow attack noise burst
+function bakeCello(freq,sr){
+  const dur=3.0,bufLen=Math.ceil(sr*dur);
+  const buf=actx.createBuffer(1,bufLen,sr);
+  const data=buf.getChannelData(0);
+  const bowAtk=Math.ceil(sr*0.055);
+  const harmonics=14;
+  // Cello spectral envelope: strong 1st, dip at 2nd, peak at 3rd-4th
+  const spectralEnv=[0,0.85,0.45,0.90,0.75,0.55,0.40,0.28,0.20,0.14,0.10,0.07,0.05,0.03,0.02];
+  for(let i=0;i<bufLen;i++){
+    const t=i/sr;
+    let s=0;
+    for(let h=1;h<=harmonics;h++){
+      const amp=spectralEnv[h]||0;
+      // slight odd/even asymmetry for bow character
+      const phaseOdd=h%2===1?0:Math.PI*0.12;
+      s+=Math.sin(2*Math.PI*freq*h*t+phaseOdd)*amp;
+    }
+    // bow attack: noise burst that fades into tone
+    const bowNoise=(Math.random()*2-1)*Math.exp(-i/(sr*0.03));
+    const bowAmt=Math.exp(-i/(bowAtk*0.7));
+    const toneAmt=1-Math.exp(-i/(bowAtk*0.5));
+    const bodyEnv=Math.exp(-t*1.1);
+    data[i]=(s*toneAmt + bowNoise*bowAmt*0.5)*bodyEnv*0.32;
+  }
+  return buf;
+}
+
+// WOOD — log drum / woodblock: strong fundamental + 3rd harmonic + very fast noise attack
+function bakeWood(freq,sr){
+  const dur=1.2,bufLen=Math.ceil(sr*dur);
+  const buf=actx.createBuffer(1,bufLen,sr);
+  const data=buf.getChannelData(0);
+  // hollow wood resonance: odd harmonics with specific envelope
+  const partials=[
+    {r:1.0, a:0.70, d:1.2},
+    {r:2.76,a:0.20, d:0.4}, // slight inharmonicity for wood character
+    {r:5.0, a:0.10, d:0.2},
+  ];
+  for(let i=0;i<bufLen;i++){
+    let s=0;
+    for(const p of partials){
+      const env=Math.exp(-i/(sr*p.d));
+      s+=Math.sin(2*Math.PI*freq*p.r*i/sr)*p.a*env;
+    }
+    // sharp transient click
+    const click=(Math.random()*2-1)*Math.exp(-i/(sr*0.004))*0.4;
+    data[i]=(s+click)*0.6;
+  }
+  return buf;
+}
+
+// THUMB — kalimba/thumb piano: inharmonic tine + body resonance + metallic rattle partial
+function bakeThumb(freq,sr){
+  const dur=2.2,bufLen=Math.ceil(sr*dur);
+  const buf=actx.createBuffer(1,bufLen,sr);
+  const data=buf.getChannelData(0);
+  // kalimba: fundamental with inharmonic tine partials
+  const tinePartials=[
+    {r:1.0,   a:0.65, d:2.2},
+    {r:4.0,   a:0.22, d:0.8},  // tine second mode (2× the 2nd = unusual)
+    {r:10.8,  a:0.08, d:0.3},  // high tine rattle
+    {r:0.998, a:0.30, d:1.8},  // very slight detune for beating
+  ];
+  // body resonance (warm box)
+  const bodyFreq=freq*0.92;
+  for(let i=0;i<bufLen;i++){
+    let s=0;
+    for(const p of tinePartials){
+      const env=Math.exp(-i/(sr*p.d));
+      s+=Math.sin(2*Math.PI*freq*p.r*i/sr)*p.a*env;
+    }
+    // body thump
+    const body=Math.sin(2*Math.PI*bodyFreq*i/sr)*Math.exp(-i/(sr*0.18))*0.25;
+    // sharp pluck transient
+    const pluck=(Math.random()*2-1)*Math.exp(-i/(sr*0.003))*0.3;
+    data[i]=(s+body+pluck)*0.55;
+  }
+  return buf;
+}
+
+// LASER — descending frequency sweep on sawtooth/triangle, sci-fi zap
+function bakeLaser(freq,sr){
+  const dur=1.8,bufLen=Math.ceil(sr*dur);
+  const buf=actx.createBuffer(1,bufLen,sr);
+  const data=buf.getChannelData(0);
+  // Start 3 octaves above target, sweep down exponentially
+  const startFreq=freq*8;
+  const k=Math.log(startFreq/freq)/dur; // exponential decay constant
+  let phase=0;
+  for(let i=0;i<bufLen;i++){
+    const t=i/sr;
+    const f=startFreq*Math.exp(-k*t);
+    phase+=2*Math.PI*f/sr;
+    if(phase>2*Math.PI)phase-=2*Math.PI;
+    // Mix sawtooth and triangle for that metallic laser character
+    const saw=(phase/Math.PI)-1;
+    const tri=Math.abs((phase/Math.PI)-1)*2-1;
+    const env=Math.exp(-t*2.2);
+    // Add slight ring mod shimmer
+    const ring=Math.sin(2*Math.PI*freq*2.7*t);
+    data[i]=(saw*0.6+tri*0.3+ring*0.1)*env*0.55;
+  }
+  return buf;
+}
+
+function bakeBuffer(inst,midi){
+  const freq=440*Math.pow(2,(midi-69)/12);
+  const sr=actx.sampleRate;
+  if(inst==='harp')  return bakeHarp(freq,sr);
+  if(inst==='bell')  return bakeBell(freq,sr);
+  if(inst==='sine')  return bakeSine(freq,sr);
+  if(inst==='bass')  return bakeBass(freq,sr);
+  if(inst==='pad')   return bakePad(freq,sr);
+  if(inst==='organ') return bakeOrgan(freq,sr);
+  if(inst==='choir') return bakeChoir(freq,sr);
+  if(inst==='cello') return bakeCello(freq,sr);
+  if(inst==='wood')  return bakeWood(freq,sr);
+  if(inst==='thumb') return bakeThumb(freq,sr);
+  if(inst==='laser') return bakeLaser(freq,sr);
+  return bakeHarp(freq,sr);
+}
+
+// ── LOOPER ───────────────────────────────────────────────────
+const looper = {
+  events:    [],
+  state:     'stopped', // 'stopped'|'armed'|'recording'|'playing'|'overdubbing'
+  loopStart: 0,
+  loopLen:   0,
+  schedTimer:  null,
+  overdubTimer: null,
+};
+
+function setLooperState(s){
+  looper.state=s;
+  const rec=document.getElementById('lp-rec');
+  const play=document.getElementById('lp-play');
+  if(!rec||!play)return;
+  rec.className ='lp-btn'+(s==='armed'?' rec-armed':s==='recording'||s==='overdubbing'?' rec-active':'');
+  play.className='lp-btn'+(s==='playing'||s==='overdubbing'?' active':'');
+}
+
+function scheduleLoop(startAt){
+  if(!looper.loopLen)return;
+  looper.events.forEach(ev=>{
+    const fireAt=startAt+ev.t;
+    const delay=(fireAt-actx.currentTime)*1000;
+    if(delay<-50)return;
+    setTimeout(()=>{
+      if(looper.state==='stopped')return;
+      const vol=ev.insts.length>1?1/Math.sqrt(ev.insts.length):1;
+      ev.insts.forEach(inst=>pluckInst(inst,ev.midi,ev.velocity,vol));
+    },Math.max(0,delay));
+  });
+  const tillNext=(startAt+looper.loopLen-actx.currentTime)*1000;
+  clearTimeout(looper.schedTimer);
+  looper.schedTimer=setTimeout(()=>{
+    if(looper.state!=='playing'&&looper.state!=='overdubbing')return;
+    looper.loopStart=startAt+looper.loopLen;
+    scheduleLoop(looper.loopStart);
+  },Math.max(0,tillNext-20));
+}
+
+function startPlayback(){
+  looper.loopStart=actx.currentTime;
+  scheduleLoop(looper.loopStart);
+}
+
+function stopLooper(){
+  clearTimeout(looper.schedTimer);
+  clearTimeout(looper.overdubTimer);
+  setLooperState('stopped');
+}
+
+function beginRecording(){
+  looper.events=[];
+  looper.loopStart=actx.currentTime;
+  looper.loopLen=0;
+  setLooperState('recording');
+}
+
+function looperRecord(midi,velocity){
+  if(looper.state==='armed'){
+    beginRecording();
+  }
+  if(looper.state==='recording'){
+    // During initial recording loopLen is 0 so just store raw elapsed
+    looper.events.push({midi,insts:[...state.insts],velocity,t:actx.currentTime-looper.loopStart});
+  } else if(looper.state==='overdubbing'){
+    const t=(actx.currentTime-looper.loopStart)%looper.loopLen;
+    looper.events.push({midi,insts:[...state.insts],velocity,t});
+  }
+}
+
+document.getElementById('lp-rec').addEventListener('pointerup',e=>{
+  e.stopPropagation();
+  if(!actx)return;
+  if(looper.state==='stopped'){
+    setLooperState('armed');
+  } else if(looper.state==='playing'){
+    // Start overdub — runs for exactly one loop length then auto-stops
+    clearTimeout(looper.overdubTimer);
+    // Align overdub start to current loop position for clean t wrapping
+    const elapsed=(actx.currentTime-looper.loopStart)%looper.loopLen;
+    looper.loopStart=actx.currentTime-elapsed;
+    setLooperState('overdubbing');
+    looper.overdubTimer=setTimeout(()=>{
+      if(looper.state==='overdubbing') setLooperState('playing');
+    }, looper.loopLen*1000);
+  } else if(looper.state==='overdubbing'){
+    // REC again during overdub = stop overdub early
+    clearTimeout(looper.overdubTimer);
+    setLooperState('playing');
+  } else if(looper.state==='armed'){
+    setLooperState('stopped');
+  } else if(looper.state==='recording'){
+    looper.loopLen=actx.currentTime-looper.loopStart;
+    if(looper.loopLen<0.05){stopLooper();return;}
+    setLooperState('playing');
+    startPlayback();
+  }
+});
+
+document.getElementById('lp-play').addEventListener('pointerup',e=>{
+  e.stopPropagation();
+  if(!actx)return;
+  if(looper.state==='recording'){
+    looper.loopLen=actx.currentTime-looper.loopStart;
+    if(looper.loopLen<0.05){stopLooper();return;}
+    setLooperState('playing');
+    startPlayback();
+  } else if(looper.state==='playing'){
+    stopLooper();
+  } else if(looper.state==='stopped'&&looper.events.length){
+    setLooperState('playing');
+    startPlayback();
+  } else if(looper.state==='armed'){
+    setLooperState('stopped');
+  }
+});
+
+document.getElementById('lp-clear').addEventListener('pointerup',e=>{
+  e.stopPropagation();
+  looper.events=[];
+  looper.loopLen=0;
+  stopLooper();
+});
+
+function startWaveform(){
+  const canvas=document.getElementById('waveform-canvas');
+  if(!canvas)return;
+  function draw(){
+    waveRaf=requestAnimationFrame(draw);
+    const W=canvas.offsetWidth,H=canvas.offsetHeight;
+    if(!W||!H)return;
+    if(canvas.width!==W||canvas.height!==H){canvas.width=W;canvas.height=H;}
+    const ctx=canvas.getContext('2d');
+    const persistA=0.34-(scopeState.persist/100)*0.28;
+    if(!analyser){
+      ctx.fillStyle='#0a0a0a';
+      ctx.fillRect(0,0,W,H);
+      ctx.strokeStyle='rgba(0,255,204,0.12)';
+      ctx.lineWidth=1;
+      ctx.beginPath();
+      ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);
+      ctx.stroke();
+      return;
+    }
+    const fft=scopeFftFromTime(scopeState.time);
+    if(analyser.fftSize!==fft)analyser.fftSize=fft;
+    if(!scopeWaveBuf||scopeWaveBuf.length!==analyser.fftSize)scopeWaveBuf=new Float32Array(analyser.fftSize);
+    analyser.getFloatTimeDomainData(scopeWaveBuf);
+    const buf=scopeWaveBuf;
+    const N=buf.length;
+    let t0=0;
+    for(let j=Math.floor(N*0.22);j<Math.floor(N*0.74)-1;j++){
+      if(buf[j]<=0&&buf[j+1]>0){t0=j;break;}
+    }
+    ctx.fillStyle=`rgba(10,10,10,${persistA})`;
+    ctx.fillRect(0,0,W,H);
+    // Grid: 10 (x) by 8 (y) divisions
+    const xDiv=10,yDiv=8;
+    ctx.strokeStyle='rgba(0,255,204,0.055)';
+    ctx.lineWidth=1;
+    for(let gi=1;gi<xDiv;gi++){
+      const x=(gi/xDiv)*W;
+      ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();
+    }
+    for(let gi=1;gi<yDiv;gi++){
+      const y=(gi/yDiv)*H;
+      ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
+    }
+    ctx.strokeStyle='rgba(0,255,204,0.09)';
+    ctx.beginPath();
+    ctx.moveTo(W/2,0);ctx.lineTo(W/2,H);
+    ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);
+    ctx.stroke();
+
+    const g=0.22+(scopeState.gain/100)*1.28;
+    const xyMix=scopeState.xy/100;
+    const delay=Math.max(1,Math.floor((scopeState.xy/100)*(N-1)*0.46));
+
+    let rms=0;
+    for(let j=0;j<N;j++)rms+=buf[j]*buf[j];
+    rms=Math.sqrt(rms/N);
+
+    // Frequency estimate (rising zero-crossings)
+    let hz=0;
+    if(actx&&rms>0.006){
+      let crossings=0;
+      for(let j=1;j<N;j++){
+        const a=buf[(t0+j-1)%N],b=buf[(t0+j)%N];
+        if(a<=0&&b>0)crossings++;
+      }
+      const secs=N/actx.sampleRate;
+      hz=crossings>0?(crossings/secs):0;
+      if(hz<15||hz>8000)hz=0;
+    }
+
+    const bloom=2.5+rms*48;
+    ctx.beginPath();
+    ctx.strokeStyle=`rgba(0,255,204,${0.52+rms*0.38})`;
+    ctx.lineWidth=1.2;
+    ctx.shadowColor='rgba(0,255,204,0.42)';
+    ctx.shadowBlur=bloom;
+    for(let i=0;i<N;i++){
+      const s=buf[(i+t0)%N];
+      const sDly=buf[(i+t0+delay)%N];
+      const xSweep=(i/Math.max(1,N-1))*W;
+      const ySweep=H/2-s*g*H*0.41;
+      const xXy=W/2+s*g*W*0.36;
+      const yXy=H/2-sDly*g*H*0.36;
+      const x=xSweep*(1-xyMix)+xXy*xyMix;
+      const y=ySweep*(1-xyMix)+yXy*xyMix;
+      if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    ctx.shadowBlur=0;
+
+    // Hz readout (bottom-right)
+    if(hz){
+      ctx.save();
+      ctx.font='7px -apple-system,Helvetica Neue,Arial,sans-serif';
+      ctx.textAlign='right';
+      ctx.textBaseline='alphabetic';
+      ctx.fillStyle='rgba(255,179,71,0.78)';
+      ctx.shadowColor='rgba(255,179,71,0.25)';
+      ctx.shadowBlur=6;
+      ctx.fillText(hz.toFixed(hz<100?1:0)+' Hz',W-4,H-4);
+      ctx.restore();
+    }
+  }
+  draw();
+}
+
+function initAudio(){
+  actx=new(window.AudioContext||window.webkitAudioContext)();
+  actx.resume();
+
+  master=actx.createGain();master.gain.value=0.80;
+  master.connect(actx.destination);
+  analyser=actx.createAnalyser();
+  analyser.fftSize=scopeFftFromTime(scopeState.time);
+  analyser.smoothingTimeConstant=0.45;
+  master.connect(analyser);
+  scopeWaveBuf=new Float32Array(analyser.fftSize);
+  startWaveform();
+
+  // Reverb IR
+  const sr=actx.sampleRate,rl=Math.ceil(sr*2.4);
+  const rbuf=actx.createBuffer(2,rl,sr);
+  for(let c=0;c<2;c++){const d=rbuf.getChannelData(c);
+    for(let i=0;i<rl;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/rl,2.0);}
+  reverbConv=actx.createConvolver();reverbConv.buffer=rbuf;
+  reverbSend=actx.createGain();reverbSend.gain.value=0.18;
+  reverbSend.connect(reverbConv);reverbConv.connect(master);
+
+  // Delay 180ms slapback
+  delayNode=actx.createDelay(1.0);delayNode.delayTime.value=0.18;
+  const fb=actx.createGain();fb.gain.value=0.28;
+  delaySend=actx.createGain();delaySend.gain.value=0.0;
+  delaySend.connect(delayNode);
+  delayNode.connect(fb);fb.connect(delayNode);
+  delayNode.connect(master);
+
+  // Tape: modulated delay (wow/flutter) + HF rolloff + subtle saturation via WaveShaper
+  tapeDelay=actx.createDelay(0.1);tapeDelay.delayTime.value=0.012;
+  tapeLFO=actx.createOscillator();tapeLFO.type='sine';tapeLFO.frequency.value=0.6;
+  tapeLFOGain=actx.createGain();tapeLFOGain.gain.value=0.0; // 0 = off
+  tapeLFO.connect(tapeLFOGain);tapeLFOGain.connect(tapeDelay.delayTime);
+  tapeLFO.start();
+  tapeFilter=actx.createBiquadFilter();tapeFilter.type='lowpass';tapeFilter.frequency.value=20000;
+  // soft-clip waveshaper for tape saturation
+  const wsCurve=new Float32Array(256);
+  for(let i=0;i<256;i++){const x=(i/128)-1;wsCurve[i]=Math.tanh(x);}
+  const ws=actx.createWaveShaper();ws.curve=wsCurve;ws.oversample='2x';
+  tapeSend=actx.createGain();tapeSend.gain.value=0.0;
+  tapeSend.connect(tapeDelay);tapeDelay.connect(tapeFilter);tapeFilter.connect(ws);ws.connect(master);
+
+  // Ping delay — 320ms, 50% feedback, longer echo
+  pingDelay=actx.createDelay(1.0);pingDelay.delayTime.value=0.32;
+  const pfb=actx.createGain();pfb.gain.value=0.5;
+  pingSend=actx.createGain();pingSend.gain.value=0.0;
+  pingSend.connect(pingDelay);pingDelay.connect(pfb);pfb.connect(pingDelay);pingDelay.connect(master);
+
+  // Warble — slow LFO modulating a short delay line (chorus/vibrato shimmer)
+  warbleDelay=actx.createDelay(0.05);warbleDelay.delayTime.value=0.01;
+  warbleLFO=actx.createOscillator();warbleLFO.type='sine';warbleLFO.frequency.value=4.2;
+  warbleLFOGain=actx.createGain();warbleLFOGain.gain.value=0.0;
+  warbleLFO.connect(warbleLFOGain);warbleLFOGain.connect(warbleDelay.delayTime);warbleLFO.start();
+  warbleSend=actx.createGain();warbleSend.gain.value=0.0;
+  warbleSend.connect(warbleDelay);warbleDelay.connect(master);
+
+  // Crush — bit-crusher via WaveShaper with variable resolution
+  crushWS=actx.createWaveShaper();
+  crushWS.oversample='none';
+  crushSend=actx.createGain();crushSend.gain.value=0.0;
+  crushSend.connect(crushWS);crushWS.connect(master);
+  // Initial curve (full resolution = passthrough)
+  _setCrushCurve(0);
+
+  updateFX();
+}
+
+function _setCrushCurve(amt){
+  if(!crushWS)return;
+  const steps=Math.max(2,Math.round(256*(1-amt*0.98))); // amt=0 → 256 steps (clean), amt=1 → ~5 steps (crushed)
+  const curve=new Float32Array(256);
+  for(let i=0;i<256;i++){
+    const x=(i/128)-1;
+    curve[i]=Math.round(x*steps)/steps;
+  }
+  crushWS.curve=curve;
+}
+
+function updateFX(){
+  if(!reverbSend)return;
+  const now=actx.currentTime;
+  const rv=fxState.verb/100;
+  const dv=fxState.delay/100;
+  const tv=fxState.tape/100;
+  reverbSend.gain.setTargetAtTime(rv*0.6,now,0.02);
+  delaySend.gain.setTargetAtTime(dv*0.45,now,0.02);
+  if(pingSend)pingSend.gain.setTargetAtTime((fxState.ping/100)*0.5,now,0.02);
+  if(warbleLFOGain){warbleLFOGain.gain.setTargetAtTime((fxState.warble/100)*0.006,now,0.05);}
+  if(warbleSend)warbleSend.gain.setTargetAtTime((fxState.warble/100)*0.7,now,0.05);
+  if(crushSend){crushSend.gain.setTargetAtTime((fxState.crush/100)*0.65,now,0.02);_setCrushCurve(fxState.crush/100);}
+  // Tape: scale wobble depth and HF rolloff with knob
+  tapeLFOGain.gain.setTargetAtTime(tv*0.003,now,0.05); // max 3ms wow
+  tapeFilter.frequency.setTargetAtTime(20000-tv*16000,now,0.05); // 20kHz→4kHz rolloff
+  tapeSend.gain.setTargetAtTime(tv*0.7,now,0.05);
+}
+
+function pluckInst(inst,midi,velocity,volScale){
+  const key=inst+':'+midi;
+  let buf=bufCache.get(key);
+  if(!buf){buf=bakeBuffer(inst,midi);bufCache.set(key,buf);}
+  const now=actx.currentTime;
+  const src=actx.createBufferSource();src.buffer=buf;
+  const gain=actx.createGain();
+  const gv=(0.20+velocity*0.34)*volScale;
+  gain.gain.setValueAtTime(gv,now);
+  gain.gain.exponentialRampToValueAtTime(0.0001,now+buf.duration);
+  if(inst==='bass'){
+    const osc=actx.createOscillator();osc.type='sine';
+    osc.frequency.value=440*Math.pow(2,(midi-69)/12)/2;
+    const og=actx.createGain();og.gain.setValueAtTime(0.13*velocity*volScale,now);
+    og.gain.exponentialRampToValueAtTime(0.0001,now+2.2);
+    osc.connect(og);og.connect(master);osc.start();osc.stop(now+2.3);
+  }
+  src.connect(gain);
+  gain.connect(master);
+  gain.connect(reverbSend);
+  gain.connect(delaySend);
+  if(pingSend)gain.connect(pingSend);
+  if(warbleSend)gain.connect(warbleSend);
+  if(crushSend)gain.connect(crushSend);
+  gain.connect(tapeSend);
+  src.start();src.stop(now+buf.duration+0.05);
+}
+
+function pluck(midi,velocity){
+  if(!actx)return;
+  looperRecord(midi,velocity);
+  const volScale=state.insts.size>1?(1/Math.sqrt(state.insts.size)):1;
+  state.insts.forEach(inst=>pluckInst(inst,midi,velocity,volScale));
+}
+
+// ── STRUM ─────────────────────────────────────────────────────
+const ptrs=new Map();
+function rowY(cy){
+  const b=document.getElementById('harp-board'),r=b.getBoundingClientRect();
+  const vis=state.vis||state.ds;
+  const NUM=vis.length;
+  return Math.max(0,Math.min(NUM-1,Math.round(((cy-r.top)/r.height)*(NUM-1))));
+}
+function gmidi(i){const s=document.getElementById('S'+i);return s?parseInt(s.dataset.midi)||60:60;}
+function strum(pid,cy){
+  const idx=rowY(cy),now=performance.now(),p=ptrs.get(pid);if(!p)return;
+  const midi=gmidi(idx);
+  if(p.li===-1){
+    // First touch: flash visual, play audio
+    flash(idx);
+    pluck(midi,0.62);
+    p.lastMidi=midi;
+  } else if(idx!==p.li){
+    // Moved to new visual string: always flash
+    flash(idx);
+    // Only play audio if the mapped note actually changed
+    if(midi!==p.lastMidi){
+      const dt=now-p.lt,di=Math.abs(idx-p.li);
+      const vel=Math.min(0.95,0.3+(di/Math.max(1,dt))*14);
+      pluck(midi,vel);
+      p.lastMidi=midi;
+    }
+  }
+  p.li=idx;p.lt=now;
+}
+function attachBoard(){
+  const b=document.getElementById('harp-board');
+  b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);
+    ptrs.set(e.pointerId,{li:-1,lt:0,lastMidi:-1});strum(e.pointerId,e.clientY);});
+  b.addEventListener('pointermove',e=>{if(ptrs.has(e.pointerId))strum(e.pointerId,e.clientY);});
+  b.addEventListener('pointerup',e=>ptrs.delete(e.pointerId));
+  b.addEventListener('pointercancel',e=>ptrs.delete(e.pointerId));
+}
+
+// ── ROTARY KNOBS ──────────────────────────────────────────────
+const KNOB_DEFS=[
+  {id:'knob-verb',   valId:null, fillId:'fader-fill-verb',   stateKey:'verb',   def:50},
+  {id:'knob-delay',  valId:null, fillId:'fader-fill-delay',  stateKey:'delay',  def:0},
+  {id:'knob-ping',   valId:null, fillId:'fader-fill-ping',   stateKey:'ping',   def:0},
+  {id:'knob-warble', valId:null, fillId:'fader-fill-warble', stateKey:'warble', def:0},
+  {id:'knob-crush',  valId:null, fillId:'fader-fill-crush',  stateKey:'crush',  def:0},
+  {id:'knob-tape',   valId:null, fillId:'fader-fill-tape',   stateKey:'tape',   def:0},
+];
+const fxState={verb:50,delay:0,ping:0,warble:0,crush:0,tape:0};
+
+function setFaderVal(wrap,fill,line,valEl,stateKey,val,min,max){
+  const pct=((val-min)/(max-min)*100).toFixed(1)+'%';
+  if(fill)fill.style.width=pct;
+  if(line)line.style.left=pct;
+  if(valEl)valEl.textContent=Math.round(val);
+  fxState[stateKey]=val;
+}
+
+function initKnobs(){
+  KNOB_DEFS.forEach(({id,valId,fillId,stateKey,def})=>{
+    const wrap=document.getElementById(id);
+    if(!wrap)return;
+    const fill=document.getElementById(fillId);
+    const line=wrap.querySelector('.fader-line');
+    const valEl=document.getElementById(valId);
+    const min=parseInt(wrap.dataset.min),max=parseInt(wrap.dataset.max);
+    let val=def;
+    setFaderVal(wrap,fill,line,valEl,stateKey,val,min,max);
+    function valFromEvent(e){
+      const rect=wrap.getBoundingClientRect();
+      return min+(max-min)*Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));
+    }
+    wrap.addEventListener('pointerdown',e=>{
+      e.preventDefault();e.stopPropagation();
+      wrap.setPointerCapture(e.pointerId);
+      val=valFromEvent(e);
+      setFaderVal(wrap,fill,line,valEl,stateKey,val,min,max);
+      updateFX();updateLED();
+    },{passive:false});
+    wrap.addEventListener('pointermove',e=>{
+      if(!wrap.hasPointerCapture(e.pointerId))return;
+      e.preventDefault();e.stopPropagation();
+      val=valFromEvent(e);
+      setFaderVal(wrap,fill,line,valEl,stateKey,val,min,max);
+      updateFX();updateLED();
+    },{passive:false});
+    wrap.addEventListener('pointerup',e=>wrap.releasePointerCapture(e.pointerId));
+    wrap.addEventListener('pointercancel',e=>wrap.releasePointerCapture(e.pointerId));
+  });
+}
+
+function initScopeKnobs(){
+  document.querySelectorAll('.scope-dial[data-scope-key]').forEach(dial=>{
+    const key=dial.dataset.scopeKey;
+    let val=typeof scopeState[key]==='number'?scopeState[key]:50;
+    scopeState[key]=val;
+    function syncFft(){
+      if(key!=='time'||!analyser)return;
+      const f=scopeFftFromTime(val);
+      if(analyser.fftSize!==f){
+        analyser.fftSize=f;
+        scopeWaveBuf=new Float32Array(f);
+      }
+    }
+    function paintDial(){
+      dial.style.setProperty('--scope-rot',(-135+(val/100)*270)+'deg');
+      dial.dataset.val=String(Math.round(val));
+      dial.setAttribute('aria-valuenow',String(Math.round(val)));
+      scopeState[key]=val;
+      syncFft();
+    }
+    paintDial();
+    let lastAng=null;
+    dial.addEventListener('pointerdown',e=>{
+      e.preventDefault();e.stopPropagation();
+      dial.setPointerCapture(e.pointerId);
+      const r=dial.getBoundingClientRect();
+      const cx=r.left+r.width/2,cy=r.top+r.height/2;
+      lastAng=Math.atan2(e.clientY-cy,e.clientX-cx);
+    },{passive:false});
+    dial.addEventListener('pointermove',e=>{
+      if(!dial.hasPointerCapture(e.pointerId))return;
+      e.preventDefault();e.stopPropagation();
+      const r=dial.getBoundingClientRect();
+      const cx=r.left+r.width/2,cy=r.top+r.height/2;
+      const ang=Math.atan2(e.clientY-cy,e.clientX-cx);
+      let d=ang-lastAng;
+      if(d>Math.PI)d-=2*Math.PI;
+      if(d<-Math.PI)d+=2*Math.PI;
+      lastAng=ang;
+      val=Math.max(0,Math.min(100,val+(d/(2*Math.PI))*56));
+      paintDial();
+    },{passive:false});
+    dial.addEventListener('pointerup',e=>{
+      if(dial.hasPointerCapture(e.pointerId))dial.releasePointerCapture(e.pointerId);
+    });
+    dial.addEventListener('pointercancel',e=>{
+      if(dial.hasPointerCapture(e.pointerId))dial.releasePointerCapture(e.pointerId);
+    });
+  });
+}
+
+// ── INSTRUMENT BUTTONS ────────────────────────────────────────
+document.querySelectorAll('.gb-btn[data-inst]').forEach(btn=>{
+  btn.addEventListener('pointerdown',e=>{e.preventDefault();btn.classList.add('sunken');});
+  btn.addEventListener('pointerup',e=>{
+    e.preventDefault();btn.classList.remove('sunken');
+    const inst=btn.dataset.inst;
+    if(state.insts.has(inst)){
+      // Deactivate only if at least one other remains
+      if(state.insts.size>1){state.insts.delete(inst);btn.classList.remove('active');}
+    } else {
+      state.insts.add(inst);btn.classList.add('active');
+    }
+    updateLED();
+  });
+  btn.addEventListener('pointercancel',()=>btn.classList.remove('sunken'));
+});
+
+// ── CHORD BUTTONS ─────────────────────────────────────────────
+function showSubs(){document.getElementById('sub-buttons').classList.add('visible');}
+function hideSubs(){document.getElementById('sub-buttons').classList.remove('visible');
+  document.querySelectorAll('[data-sub]').forEach(b=>b.classList.remove('active','sunken'));}
+function activateChord(id){
+  const vis=document.getElementById('sub-buttons').classList.contains('visible');
+  if(state.chord===id&&vis){hideSubs();state.mode='scale';applySet();return;}
+  state.chord=id;state.mode='scale';
+  document.querySelectorAll('[data-chord]').forEach(b=>b.classList.toggle('active',b.dataset.chord===id));
+  document.querySelectorAll('[data-sub]').forEach(b=>b.classList.remove('active'));
+  showSubs();applySet();
+}
+function activateSub(id){
+  state.mode=id;
+  document.querySelectorAll('[data-sub]').forEach(b=>b.classList.toggle('active',b.dataset.sub===id));
+  applySet();
+}
+document.querySelectorAll('[data-chord]').forEach(btn=>{
+  btn.addEventListener('pointerdown',e=>{e.preventDefault();btn.setPointerCapture(e.pointerId);
+    btn.classList.add('sunken');activateChord(btn.dataset.chord);});
+  btn.addEventListener('pointermove',e=>{
+    const sub=document.elementsFromPoint(e.clientX,e.clientY).find(el=>el.dataset&&el.dataset.sub);
+    document.querySelectorAll('[data-sub]').forEach(b=>b.classList.remove('sunken'));
+    if(sub)sub.classList.add('sunken');});
+  btn.addEventListener('pointerup',e=>{
+    btn.classList.remove('sunken');
+    const sub=document.elementsFromPoint(e.clientX,e.clientY).find(el=>el.dataset&&el.dataset.sub);
+    document.querySelectorAll('[data-sub]').forEach(b=>b.classList.remove('sunken'));
+    if(sub)activateSub(sub.dataset.sub);});
+  btn.addEventListener('pointercancel',()=>{btn.classList.remove('sunken');
+    document.querySelectorAll('[data-sub]').forEach(b=>b.classList.remove('sunken'));});
+});
+document.querySelectorAll('[data-sub]').forEach(btn=>{
+  btn.addEventListener('pointerdown',e=>{e.preventDefault();btn.classList.add('sunken');});
+  btn.addEventListener('pointerup',e=>{e.preventDefault();btn.classList.remove('sunken');activateSub(btn.dataset.sub);});
+  btn.addEventListener('pointercancel',()=>btn.classList.remove('sunken'));
+});
+
+// ── SPEAKER ───────────────────────────────────────────────────
+// ── UNLOCK ────────────────────────────────────────────────────
+let unlocked=false;
+function doUnlock(e){
+  if(unlocked)return;
+  unlocked=true;
+  if(e&&e.cancelable)e.preventDefault();
+  document.getElementById('unlock-overlay').style.display='none';
+  document.getElementById('app').style.visibility='visible';
+  state.chord='cmin';state.mode='scale';
+  applySet();buildBoard();updateLabels();attachBoard();
+  initKnobs();
+  initScopeKnobs();
+  document.getElementById('btn-cmin').classList.add('active');
+  showSubs();updateLED();
+  initAudio();
+  // Resume AudioContext after iOS rotation / interruption / tab switch
+  const resumeAudio=()=>{if(actx&&actx.state!=='running')actx.resume();};
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)resumeAudio();});
+  window.addEventListener('pageshow',resumeAudio);
+  window.addEventListener('focus',resumeAudio);
+  // ── AGGRESSIVE ZOOM/GESTURE LOCKDOWN ──
+  const _vp='width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover';
+  function resetViewport(){
+    let mv=document.querySelector('meta[name=viewport]');
+    if(!mv){mv=document.createElement('meta');mv.name='viewport';document.head.appendChild(mv);}
+    mv.content=_vp;
+  }
+
+  // Block ALL touch events with 2+ fingers at document level
+  // {passive:false} required so preventDefault() actually works
+  function blockMulti(e){
+    if(e.touches&&e.touches.length>1){ e.preventDefault(); e.stopImmediatePropagation(); }
+  }
+  function blockAll(e){ e.preventDefault(); e.stopImmediatePropagation(); }
+
+  document.addEventListener('touchstart',   blockMulti, {passive:false,capture:true});
+  document.addEventListener('touchmove',    blockAll,   {passive:false,capture:true});
+  document.addEventListener('touchend',     blockMulti, {passive:false,capture:true});
+  document.addEventListener('touchcancel',  blockMulti, {passive:false,capture:true});
+  document.addEventListener('gesturestart', blockAll,   {passive:false,capture:true});
+  document.addEventListener('gesturechange',blockAll,   {passive:false,capture:true});
+  document.addEventListener('gestureend',   blockAll,   {passive:false,capture:true});
+
+  // Intercept pointer events with 3+ pointers — cancel them
+  document.addEventListener('pointerdown', e=>{
+    if(e.isPrimary===false){
+      // Allow up to 2 pointers (for two-finger strumming), kill 3+
+      const active=[...document.querySelectorAll(':root')]; // just a hook
+      // Count active pointers via a simple tracker
+    }
+  },{passive:false,capture:false});
+
+  // Kill any scroll attempts (Safari sometimes scrolls on 2-finger drag)
+  document.addEventListener('scroll', e=>{ e.preventDefault(); window.scrollTo(0,0); },{passive:false});
+  window.addEventListener('scroll',   e=>{ e.preventDefault(); window.scrollTo(0,0); },{passive:false});
+
+  // Reset viewport on any resize or orientation change
+  window.addEventListener('resize',           resetViewport);
+  window.addEventListener('orientationchange',resetViewport);
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden)resetViewport(); });
+
+  // Nuclear: poll and reset viewport every 2s in case iOS sneaks a zoom
+  setInterval(resetViewport, 2000);
+
+  // Block dblclick (Safari's double-tap zoom trigger)
+  document.addEventListener('dblclick', e=>e.preventDefault(), {passive:false, capture:true});
+
+  // Track last tap to squash double-taps ourselves
+  let _lastTap=0;
+  document.addEventListener('touchend', e=>{
+    const now=Date.now();
+    if(now-_lastTap<350){ e.preventDefault(); e.stopImmediatePropagation(); }
+    _lastTap=now;
+  },{passive:false,capture:true});
+
+  // Force scroll position lock
+  document.body.style.overflow='hidden';
+  document.documentElement.style.overflow='hidden';
+  window.scrollTo(0,0);
+}
+const ub=document.getElementById('unlock-btn');
+ub.addEventListener('click',doUnlock);
+ub.addEventListener('pointerup',doUnlock);
+ub.addEventListener('touchend',doUnlock);
+
+})();
+
+// ── CRT EFFECT ───────────────────────────────────────────────
+(function initCRT(){
+  const canvas = document.getElementById('crt-overlay');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  let W=0, H=0;
+  function resize(){
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Flicker state
+  let flickerVal   = 1.0;
+  let flickerTarget = 1.0;
+  let flickerTimer  = 0;
+
+  // Pre-build a noise tile we can reuse (regenerated every few frames)
+  const TILE = 256;
+  const noiseCanvas = document.createElement('canvas');
+  noiseCanvas.width = noiseCanvas.height = TILE;
+  const nCtx = noiseCanvas.getContext('2d');
+  let noiseFrame = 0;
+
+  function rebuildNoise(){
+    const id = nCtx.createImageData(TILE, TILE);
+    const d  = id.data;
+    for(let i=0; i<d.length; i+=4){
+      const v = (Math.random() * 255)|0;
+      d[i]=d[i+1]=d[i+2]=v;
+      d[i+3] = (Math.random() * 38)|0; // alpha: max ~15% opacity
+    }
+    nCtx.putImageData(id, 0, 0);
+  }
+  rebuildNoise();
+
+  let frame = 0;
+  function draw(){
+    requestAnimationFrame(draw);
+    frame++;
+
+    ctx.clearRect(0,0,W,H);
+
+    // ── FLICKER ──
+    // Drift toward target with some smoothing
+    flickerVal += (flickerTarget - flickerVal) * 0.18;
+    flickerTimer--;
+    if(flickerTimer <= 0){
+      // Occasional strong dip (phosphor flutter)
+      const r = Math.random();
+      if(r < 0.015){
+        // Big flutter — quick brightness drop
+        flickerTarget = 0.72 + Math.random() * 0.1;
+        flickerTimer  = 2 + (Math.random() * 3)|0;
+      } else if(r < 0.08){
+        // Mild wobble
+        flickerTarget = 0.88 + Math.random() * 0.1;
+        flickerTimer  = 3 + (Math.random() * 5)|0;
+      } else {
+        // Normal — slight variation
+        flickerTarget = 0.93 + Math.random() * 0.07;
+        flickerTimer  = 8 + (Math.random() * 12)|0;
+      }
+    }
+
+    // Apply flicker as a dark overlay
+    const flicker_dark = 1.0 - flickerVal;
+    if(flicker_dark > 0.01){
+      ctx.fillStyle = `rgba(0,0,0,${(flicker_dark * 0.85).toFixed(3)})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // ── GRAIN ──
+    // Rebuild noise tile every 2 frames for animated grain
+    if(frame % 2 === 0) rebuildNoise();
+
+    ctx.save();
+    ctx.globalAlpha = 0.22 + Math.random() * 0.06; // vary grain intensity
+    ctx.globalCompositeOperation = 'screen';
+    // Tile the noise across the full canvas
+    const pat = ctx.createPattern(noiseCanvas, 'repeat');
+    ctx.fillStyle = pat;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+
+    // ── HORIZONTAL INTERFERENCE LINE (occasional) ──
+    if(Math.random() < 0.04){
+      const y   = (Math.random() * H)|0;
+      const lh  = 1 + (Math.random() * 3)|0;
+      const lop = 0.04 + Math.random() * 0.08;
+      ctx.fillStyle = `rgba(255,255,255,${lop.toFixed(3)})`;
+      ctx.fillRect(0, y, W, lh);
+    }
+
+    // ── SUBTLE RGB CHROMATIC BLEED (top edge of screen only) ──
+    if(frame % 4 === 0){
+      const gradH = 3 + (Math.random() * 4)|0;
+      const grd = ctx.createLinearGradient(0,0,W,0);
+      grd.addColorStop(0,   'rgba(255,0,0,0.03)');
+      grd.addColorStop(0.33,'rgba(0,0,0,0)');
+      grd.addColorStop(0.66,'rgba(0,0,0,0)');
+      grd.addColorStop(1,   'rgba(0,0,255,0.03)');
+      ctx.fillStyle = grd;
+      ctx.fillRect(0, 0, W, gradH);
+    }
+  }
+
+  draw();
+})();
+
+</script>
+</body>
+</html>

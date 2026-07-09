@@ -5,137 +5,360 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Theo Lebeaux - Music</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="music.css">
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Full-screen background */
+        .bg {
+            display: none;
+        }
+
+        /* Header */
+        .site-header {
+            position: relative;
+            z-index: 10;
+            padding: 20px 40px;
+        }
+
+        .site-header .logo {
+            filter: invert(1);
+            mix-blend-mode: normal;
+        }
+
+        .back-button img {
+            filter: invert(1);
+        }
+
+        /* Player sits at the bottom of the screen */
+        .player-wrapper {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            padding: 0 0 48px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+
+        /* Track list */
+        .track-list {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .track-item {
+            font-size: 0.78em;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.45);
+            cursor: pointer;
+            padding: 2px 0;
+            transition: color 0.2s;
+        }
+
+        .track-item:hover {
+            color: rgba(255,255,255,0.8);
+        }
+
+        .track-item.active {
+            color: #fff;
+        }
+
+        /* Now playing label */
+        .now-playing {
+            font-size: 1.05em;
+            letter-spacing: 0.04em;
+            color: rgba(255,255,255,0.9);
+            text-align: center;
+        }
+
+        /* Controls row */
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .ctrl-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            color: rgba(255,255,255,0.7);
+            transition: color 0.15s, transform 0.1s;
+            display: flex;
+            align-items: center;
+        }
+
+        .ctrl-btn:hover {
+            color: #fff;
+            transform: scale(1.1);
+        }
+
+        .ctrl-btn svg {
+            display: block;
+        }
+
+        /* Progress bar */
+        .progress-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 360px;
+            max-width: 90vw;
+        }
+
+        .time-label {
+            font-size: 0.72em;
+            color: rgba(255,255,255,0.45);
+            min-width: 32px;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .progress-track {
+            flex: 1;
+            height: 2px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: #fff;
+            border-radius: 2px;
+            pointer-events: none;
+            transition: width 0.1s linear;
+        }
+
+        .progress-thumb {
+            position: absolute;
+            top: 50%;
+            left: 0%;
+            transform: translate(-50%, -50%);
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #fff;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+
+        .progress-track:hover .progress-thumb {
+            opacity: 1;
+        }
+    </style>
 </head>
 <body>
 
+    <div class="bg"></div>
+
     <header class="site-header">
         <div class="header-left">
-            <a href="javascript:history.back()" class="back-button"> 
+            <a href="javascript:history.back()" class="back-button">
                 <img src="images/back-button.svg" alt="Back">
             </a>
         </div>
         <div class="header-center">
             <img src="images/theo-lebeaux-logo.png" alt="Theo Lebeaux Logo" class="logo">
         </div>
-        <div class="header-right">
-            <!-- This can be empty or hold future right-aligned items -->
-        </div>
+        <div class="header-right"></div>
     </header>
 
-    <div class="page-title-icon equalizer-icon">
-      <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-      <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-      <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-      <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    <div class="player-wrapper">
+        <div class="track-list" id="track-list"></div>
+
+        <div class="now-playing" id="now-playing"></div>
+
+        <div class="progress-row">
+            <span class="time-label" id="time-current">0:00</span>
+            <div class="progress-track" id="progress-track">
+                <div class="progress-fill" id="progress-fill"></div>
+                <div class="progress-thumb" id="progress-thumb"></div>
+            </div>
+            <span class="time-label" id="time-total">0:00</span>
+        </div>
+
+        <div class="controls">
+            <!-- Prev -->
+            <button class="ctrl-btn" id="btn-prev" aria-label="Previous">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/>
+                </svg>
+            </button>
+
+            <!-- Play/Pause -->
+            <button class="ctrl-btn" id="btn-play" aria-label="Play">
+                <svg id="icon-play" width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+                <svg id="icon-pause" width="48" height="48" viewBox="0 0 24 24" fill="currentColor" style="display:none">
+                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                </svg>
+            </button>
+
+            <!-- Next -->
+            <button class="ctrl-btn" id="btn-next" aria-label="Next">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                </svg>
+            </button>
+        </div>
     </div>
 
-    <nav class="music-nav">
-        <a href="#newest-drops" class="nav-item active">Newest Drops</a>
-        <a href="#albums" class="nav-item">Albums</a>
-        <a href="#epk" class="nav-item">EPK</a>
-        <a href="#lessons" class="nav-item">Lessons</a>
-        <a href="#merch" class="nav-item">Merch</a>
-        <a href="#live-dates" class="nav-item">Live Dates</a>
-    </nav>
+    <audio id="audio"></audio>
 
-    <main class="music-content">
-        <section id="newest-drops" class="content-section active-section">
-            <h2>Newest Drops</h2>
-            <p>Listen to the brand new single, <strong>"Echoes in the Static"</strong> - Out Now!</p>
-            <div class="mock-player">
-                <img src="images/mock-album-art-1.jpg" alt="Echoes in the Static Artwork" class="mock-artwork">
-                <div class="mock-player-controls">
-                    <span>Echoes in the Static</span>
-                    <button>Play</button>
-                    <a href="#" class="store-link">Stream/Buy</a>
-                </div>
-            </div>
-            <p>Also check out the recent EP: <em>"Chromatic Aberrations"</em></p>
-        </section>
+    <script>
+        const tracks = [
+            { title: 'Electric Sunburst',   src: 'songs/Electric Sunburst.mp3' },
+            { title: 'Feels (metro sample)', src: 'songs/feels-metro-sample-theolebeaux.mp3' },
+            { title: 'Hopeful (metro sample)', src: 'songs/hopeful-metro-sample-theolebeaux.mp3' },
+        ];
 
-        <section id="albums" class="content-section">
-            <h2>Albums</h2>
-            <p>Explore the full discography.</p>
-            <div class="mock-album-grid">
-                <div class="mock-album-item">
-                    <img src="images/mock-album-art-2.jpg" alt="Album 1 Art">
-                    <span>Synthwave Serenity (2023)</span>
-                    <a href="#" class="store-link">Listen</a>
-                </div>
-                <div class="mock-album-item">
-                    <img src="images/mock-album-art-3.jpg" alt="Album 2 Art">
-                    <span>Neon Nights (2021)</span>
-                    <a href="#" class="store-link">Listen</a>
-                </div>
-                 <div class="mock-album-item">
-                    <img src="images/mock-album-art-4.jpg" alt="Album 3 Art">
-                    <span>First Light (2019)</span>
-                    <a href="#" class="store-link">Listen</a>
-                </div>
-            </div>
-        </section>
+        let current = 0;
+        let dragging = false;
 
-        <section id="epk" class="content-section">
-            <h2>EPK (Electronic Press Kit)</h2>
-            <p>For press, venues, and booking inquiries.</p>
-            <div class="mock-epk-content">
-                <h3>Bio</h3>
-                <p>Theo Lebeaux crafts immersive soundscapes blending synthwave, electronic, and ambient textures...</p>
-                <h3>High-Res Photos</h3>
-                <a href="#">Download Photos (.zip)</a>
-                <h3>Stage Plot / Tech Rider</h3>
-                <a href="#">Download Rider (.pdf)</a>
-                <h3>Contact</h3>
-                <p>Booking: booking@theolebeaux.fake | Press: press@theolebeaux.fake</p>
-            </div>
-        </section>
+        const audio       = document.getElementById('audio');
+        const btnPlay     = document.getElementById('btn-play');
+        const iconPlay    = document.getElementById('icon-play');
+        const iconPause   = document.getElementById('icon-pause');
+        const btnPrev     = document.getElementById('btn-prev');
+        const btnNext     = document.getElementById('btn-next');
+        const nowPlaying  = document.getElementById('now-playing');
+        const progressTrack = document.getElementById('progress-track');
+        const progressFill  = document.getElementById('progress-fill');
+        const progressThumb = document.getElementById('progress-thumb');
+        const timeCurrent   = document.getElementById('time-current');
+        const timeTotal     = document.getElementById('time-total');
+        const trackList     = document.getElementById('track-list');
 
-        <section id="lessons" class="content-section">
-            <h2>Lessons</h2>
-            <p>Unlock your potential with personalized guitar and music production lessons.</p>
-             <div class="mock-lessons-content">
-                <h3>Guitar Lessons</h3>
-                <p>Topics include: Soloing techniques, Chord Voicings, Songwriting, Gear & Tone.</p>
-                <h3>Production Lessons</h3>
-                <p>Topics include: DAW Workflow (Ableton/Logic), Synthesis, Mixing Basics, Arranging.</p>
-                <a href="#" class="store-link">Book a Session</a>
-            </div>
-        </section>
+        function fmt(s) {
+            const m = Math.floor(s / 60);
+            const sec = Math.floor(s % 60).toString().padStart(2, '0');
+            return `${m}:${sec}`;
+        }
 
-        <section id="merch" class="content-section">
-            <h2>Merch</h2>
-            <p>Grab some gear and support the music.</p>
-             <div class="mock-merch-grid">
-                 <div class="mock-merch-item">
-                    <img src="images/mock-merch-1.jpg" alt="T-Shirt">
-                    <span>"Neon Nights" T-Shirt</span>
-                    <a href="#" class="store-link">Buy Now</a>
-                </div>
-                 <div class="mock-merch-item">
-                    <img src="images/mock-merch-2.jpg" alt="Vinyl Record">
-                    <span>"Synthwave Serenity" Vinyl</span>
-                    <a href="#" class="store-link">Buy Now</a>
-                </div>
-                 <div class="mock-merch-item">
-                    <img src="images/mock-merch-3.jpg" alt="Sticker Pack">
-                    <span>Logo Sticker Pack</span>
-                    <a href="#" class="store-link">Buy Now</a>
-                </div>
-            </div>
-        </section>
+        function loadTrack(idx, autoplay) {
+            current = idx;
+            audio.src = tracks[idx].src;
+            nowPlaying.textContent = tracks[idx].title;
+            progressFill.style.width = '0%';
+            progressThumb.style.left = '0%';
+            timeCurrent.textContent = '0:00';
+            timeTotal.textContent = '0:00';
+            document.querySelectorAll('.track-item').forEach((el, i) => {
+                el.classList.toggle('active', i === idx);
+            });
+            if (autoplay) audio.play().then(setPlaying).catch(() => {});
+        }
 
-        <section id="live-dates" class="content-section">
-            <h2>Live Dates</h2>
-            <p>Catch a show near you!</p>
-             <ul class="mock-live-list">
-                <li><strong>Oct 26, 2024:</strong> The Synth Hub - Neon City <a href="#" class="ticket-link">Tickets</a></li>
-                <li><strong>Nov 10, 2024:</strong> Electric Dreams Fest - Virtual Stage <a href="#" class="ticket-link">Tickets</a></li>
-                <li><strong>Dec 05, 2024:</strong> The Circuit Lounge - Metroplex <span class="sold-out">Sold Out</span></li>
-            </ul>
-        </section>
-    </main>
+        function setPlaying() {
+            iconPlay.style.display = 'none';
+            iconPause.style.display = 'block';
+        }
 
-    <script src="music.js"></script>
+        function setPaused() {
+            iconPlay.style.display = 'block';
+            iconPause.style.display = 'none';
+        }
+
+        // Build track list
+        tracks.forEach((t, i) => {
+            const el = document.createElement('div');
+            el.className = 'track-item' + (i === 0 ? ' active' : '');
+            el.textContent = t.title;
+            el.addEventListener('click', () => loadTrack(i, true));
+            trackList.appendChild(el);
+        });
+
+        loadTrack(0, false);
+
+        btnPlay.addEventListener('click', () => {
+            if (audio.paused) {
+                audio.play().then(setPlaying).catch(() => {});
+            } else {
+                audio.pause();
+                setPaused();
+            }
+        });
+
+        btnPrev.addEventListener('click', () => {
+            if (audio.currentTime > 3) {
+                audio.currentTime = 0;
+            } else {
+                loadTrack((current - 1 + tracks.length) % tracks.length, !audio.paused);
+            }
+        });
+
+        btnNext.addEventListener('click', () => {
+            loadTrack((current + 1) % tracks.length, !audio.paused);
+        });
+
+        audio.addEventListener('ended', () => {
+            const next = (current + 1) % tracks.length;
+            loadTrack(next, true);
+        });
+
+        audio.addEventListener('timeupdate', () => {
+            if (dragging || !audio.duration) return;
+            const pct = (audio.currentTime / audio.duration) * 100;
+            progressFill.style.width = pct + '%';
+            progressThumb.style.left = pct + '%';
+            timeCurrent.textContent = fmt(audio.currentTime);
+        });
+
+        audio.addEventListener('loadedmetadata', () => {
+            timeTotal.textContent = fmt(audio.duration);
+        });
+
+        audio.addEventListener('play', setPlaying);
+        audio.addEventListener('pause', setPaused);
+
+        // Scrubbing
+        function scrubTo(e) {
+            const rect = progressTrack.getBoundingClientRect();
+            const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            if (audio.duration) {
+                audio.currentTime = pct * audio.duration;
+                progressFill.style.width = (pct * 100) + '%';
+                progressThumb.style.left = (pct * 100) + '%';
+            }
+        }
+
+        progressTrack.addEventListener('mousedown', (e) => {
+            dragging = true;
+            scrubTo(e);
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (dragging) scrubTo(e);
+        });
+
+        window.addEventListener('mouseup', () => { dragging = false; });
+    </script>
+
 </body>
-</html> 
+</html>

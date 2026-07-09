@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const closeItem = () => {
             item.classList.remove('expanded');
             body.classList.remove('gallery-active');
-            preview.focus(); // Return focus to the preview
+            item.blur(); // Release focus so the preview can re-blur via :focus rules
         };
 
         // --- Event Listeners --- 

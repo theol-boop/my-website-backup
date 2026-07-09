@@ -5,6 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JKBX - Theo Lebeaux</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .jkbx-logo-centered {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            padding: 40px 0 15px;
+        }
+
+        .jkbx-logo-centered img.artboard-logo {
+            width: 460px;
+            max-width: 90vw;
+            height: auto;
+        }
+
+        .jkbx-logo-bottom {
+            display: flex;
+            justify-content: center;
+            padding: 30px 0 50px;
+        }
+
+        .jkbx-logo-bottom img {
+            width: 340px;
+            height: auto;
+        }
+    </style>
 </head>
 <body>
     <header class="site-header">
@@ -17,95 +44,25 @@
         <div class="header-center">
             <img src="images/theo-lebeaux-logo.png" alt="Theo Lebeaux Logo" class="logo">
         </div>
-        <div class="header-right">
-            <!-- This can be empty or hold future right-aligned items -->
-        </div>
+        <div class="header-right"></div>
     </header>
 
-    <div class="jkbx-main-logo-container">
-        <img src="images/jkbx-logo-rounded.svg" alt="JKBX Logo" class="jkbx-letterhead-logo">
+    <div class="jkbx-logo-centered">
+        <img src="images/Artboard 3 copy 2.png" alt="Artboard 3 copy 2" class="artboard-logo">
     </div>
-
-    <nav class="horizontal-menu-bar">
-        <ul>
-            <li><a href="#concept">concept</a></li>
-            <li><a href="#design">design</a></li>
-            <li><a href="#market-analysis">market analysis</a></li>
-            <li><a href="#road-map">road map</a></li>
-        </ul>
-    </nav>
 
     <main>
         <div class="content-section">
-            <p><a href="http://jkbx.fm" target="_blank">jkbx.fm</a> is <em>the internet's jukebox</em>. Right now, it's a minimalistic web app that delivers a continuous, 24/7 stream of independent music in a pixel-art jukebox. The site serves as a fun project piece, a quirky corner of the web, a retro place to host my and my friends' music online<sup class="footnote">at the start, 95% of the music on jkbx.fm was either made or co-produced by me</sup>. At this point, <strong>there's not even a skip button</strong>. But I've asked. And the people have spoken <a href="#research-study" class="inline-link">[go to a research study about ppl wanting this]</a>. They want to have their own jukebox on the web. So it's time to <strong>share the juke</strong>, and make a social music hub.</p>
-
-            <p>there are two main projects:</p>
-            <ol class="projects-list">
-                <li>build the single stream, mainpage, central jukebox.</li>
-                <li>build the user-based, jkbx.fm/yourNameHere version.</li>
-            </ol>
-
-            <p>initial business strategy prioritizes early market validation for the mainpage MVP <a href="#dopwts" class="inline-link">[href to "do people want this?" section]</a>, allowing us to stay light. in the future<a href="#future-section" class="inline-link">[href to in the future section]</a>, we want to have features like live chat, share, likes, listen history, easy artist donation, and page customization.</p>
-
-            <h2>but why?</h2>
-            <p class="sub-heading">(problem and solution)</p>
-
-            <p>streamers are a bad deal for artists, and they're boring. here's the artists' perspective.</p>
+            <p><a href="http://jkbx.fm" target="_blank">jkbx.fm</a> is <em>the internet's jukebox</em>. Right now, it's a minimalistic web app that delivers a continuous, 24/7 stream of independent music in a pixel-art jukebox. The site serves as a fun project piece, a quirky corner of the web, a retro place to host my and my friends' music online. At this point, <strong>there's not even a skip button</strong>. But I've asked. And the people have spoken. They want to have their own jukebox on the web. So it's time to <strong>share the juke.</strong></p>
         </div>
 
-        <section class="distribution-section">
-            <h2 class="section-title centered-title">distribution</h2>
-            <div class="distribution-grid">
-                <div class="grid-row">
-                    <div class="grid-column before-column">
-                        <p>i can't just upload to spotify...gotta use a middle man</p>
-                    </div>
-                    <div class="grid-column after-column">
-                        <h3>direct upload</h3>
-                        <p>you can put your own music on your own jukebox</p>
-                    </div>
-                </div>
-                <div class="grid-row">
-                    <div class="grid-column before-column">
-                        <p>Around 100,000 songs are uploaded to Spotify a day. that's 36 Million songs a year. good luck with that.</p>
-                    </div>
-                    <div class="grid-column after-column">
-                        <p>as an early adopter you'll grow bigger as the platform does. get more eyes <a href="#early-adopter-examples" class="inline-link">[see if can cite some examples of ppl profiting off early]</a></p>
-                    </div>
-                </div>
-                <div class="grid-row">
-                    <div class="grid-column before-column">
-                        <p>payouts are abysmal</p>
-                    </div>
-                    <div class="grid-column after-column">
-                        <p>we're going to fight to be equitable, and incorporate brand new revenue streams for artists. as early adopters you're a bigger part of the pie</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="connection-section content-section">
-            <h2 class="section-title centered-title">connection</h2>
-            <p>jkbx will foster a stronger, more social connection between listener and artist</p>
-            <p>With more control over the presentation of your music</p>
-            <p>youre at the whim of the algorithm. the music on jkbx is artist uploaded and no-skip jkbxs embrace being in the present moment</p>
-            <p><strong>There's nowhere else you can put your music online in a jukebox.</strong></p>
-        </section>
-
-        <section class="design-ideas-section content-section">
-            <h2 class="section-title centered-title">early design ideas</h2>
-            <div class="image-placeholder-container">
-                <div class="image-placeholder-large"></div>
-            </div>
-            <p class="image-caption-right">At this point in the phase, I figured the pause button would actually just function as a mute button.</p>
-        </section>
-
+        <div class="jkbx-logo-bottom">
+            <img src="images/jkbx-logo-rounded.svg" alt="JKBX Logo">
+        </div>
     </main>
 
-    <footer>
-        <!-- Footer content -->
-    </footer>
+    <footer></footer>
 
     <script src="script.js" defer></script>
 </body>
-</html> 
+</html>

@@ -9,11 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const headerLogoElement = document.getElementById('header-logo');
     const headerLogoInfoBox = document.getElementById('header-logo-info-box');
 
-    // New element references for apocalypse sequence
-    const siteHeader = document.querySelector('.site-header');
-    const iconGrid = document.querySelector('.icon-grid');
-    const selfDestructPopup = document.getElementById('self-destruct-popup');
-    const apocalypseOverlay = document.getElementById('apocalypse-overlay'); // <-- ADD THIS LINE
+    // Red Button lava-lamp background
+    const redButtonBgCanvas = document.getElementById('red-button-bg-canvas');
+    let redButtonLavaController = null;
 
     // Click Log Message elements
     const clickLogMessageElement = document.getElementById('click-log-message');
@@ -91,6 +89,92 @@ document.addEventListener('DOMContentLoaded', () => {
     // Header Logo Info Box Logic
     setupInfoBoxEventListeners(headerLogoElement, headerLogoInfoBox);
 
+    // --- Header Logo Hover Pixelation ---
+    // A canvas sits directly over the logo (pointer-events: none, so the
+    // real <img> still receives hover for the info-box/blur effects above).
+    // It stays a pixel-perfect copy of the logo at level 1 (indistinguishable
+    // from the real image), then mosaics up on hover and back down on leave.
+    const headerLogoCanvas = document.getElementById('headerLogoPixelCanvas');
+    if (headerLogoElement && headerLogoCanvas) {
+        const hlCtx = headerLogoCanvas.getContext('2d');
+        const HL_MIN_LEVEL = 1;
+        const HL_MAX_LEVEL = 16;
+        const HL_TRANSITION_MS = 350;
+        let hlCurrentLevel = HL_MIN_LEVEL;
+        let hlStartLevel = HL_MIN_LEVEL;
+        let hlTargetLevel = HL_MIN_LEVEL;
+        let hlTransitionStart = null;
+        let hlRafId = null;
+
+        function hlEaseInOutCubic(t) {
+            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        }
+
+        function hlDraw(level) {
+            const w = headerLogoCanvas.width;
+            const h = headerLogoCanvas.height;
+            if (!w || !h) return;
+            hlCtx.clearRect(0, 0, w, h);
+            const lvl = Math.max(1, Math.round(level));
+            if (lvl <= 1) {
+                hlCtx.imageSmoothingEnabled = true;
+                hlCtx.drawImage(headerLogoElement, 0, 0, w, h);
+            } else {
+                hlCtx.imageSmoothingEnabled = false;
+                const tempW = Math.max(1, Math.floor(w / lvl));
+                const tempH = Math.max(1, Math.floor(h / lvl));
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = tempW;
+                tempCanvas.height = tempH;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.imageSmoothingEnabled = false;
+                tempCtx.drawImage(headerLogoElement, 0, 0, tempW, tempH);
+                hlCtx.drawImage(tempCanvas, 0, 0, tempW, tempH, 0, 0, w, h);
+            }
+        }
+
+        function hlAnimate(ts) {
+            if (hlTransitionStart === null) hlTransitionStart = ts;
+            const t = Math.min(1, (ts - hlTransitionStart) / HL_TRANSITION_MS);
+            const eased = hlEaseInOutCubic(t);
+            hlCurrentLevel = hlStartLevel + (hlTargetLevel - hlStartLevel) * eased;
+            hlDraw(hlCurrentLevel);
+            hlRafId = t < 1 ? requestAnimationFrame(hlAnimate) : null;
+        }
+
+        function hlGoTo(target) {
+            hlStartLevel = hlCurrentLevel;
+            hlTargetLevel = target;
+            hlTransitionStart = null;
+            if (hlRafId) cancelAnimationFrame(hlRafId);
+            hlRafId = requestAnimationFrame(hlAnimate);
+        }
+
+        function hlSetupCanvas() {
+            const w = headerLogoElement.offsetWidth || headerLogoElement.naturalWidth;
+            const h = headerLogoElement.offsetHeight || headerLogoElement.naturalHeight;
+            if (!w || !h) return;
+            headerLogoCanvas.width = w;
+            headerLogoCanvas.height = h;
+            headerLogoCanvas.style.width = w + 'px';
+            headerLogoCanvas.style.height = h + 'px';
+            hlDraw(HL_MIN_LEVEL);
+            // Hide the real image visually now that the canvas mirrors it —
+            // opacity (not display/visibility) keeps it hoverable, so the
+            // info-box and "blur other icons" effects still work off it.
+            headerLogoElement.style.opacity = '0';
+        }
+
+        if (headerLogoElement.complete && headerLogoElement.naturalWidth > 0) {
+            hlSetupCanvas();
+        } else {
+            headerLogoElement.addEventListener('load', hlSetupCanvas);
+        }
+
+        headerLogoElement.addEventListener('mouseenter', () => hlGoTo(HL_MAX_LEVEL));
+        headerLogoElement.addEventListener('mouseleave', () => hlGoTo(HL_MIN_LEVEL));
+    }
+
     // --- Video Theater Mode --- //
 
     const videoPlaceholders = document.querySelectorAll('.video-placeholder');
@@ -127,175 +211,8 @@ document.addEventListener('DOMContentLoaded', () => {
         theaterOverlay.addEventListener('click', closeTheaterMode);
     }
 
-    // --- MODIFIED: Red Button Functionality ---
-    // const secretTrigger = document.getElementById('secret-hover-trigger');
-    // const colorMessage = document.getElementById('color-picker-message');
-    // const openSecretMenuLink = document.getElementById('open-secret-menu-link');
+    // --- Red Button: lava-lamp background, 3-click cycle ---
 
-    // const horrorTrigger = document.getElementById('horror-hover-trigger');
-    // const horrorMessageBox = document.getElementById('horror-message-box');
-    // const horrorActionLink = document.getElementById('horror-action-link'); // Element is now removed from HTML
-
-    let nukeIntervalId = null;
-    let originalBodyBgImage = ''; // Retain for background restoration
-    let originalBodyBgColor = ''; // Retain for background restoration
-    let isNukeActive = false; // Retain for scary effect state
-    // let isGradientActive = false; // This will be managed by isRedButtonBgColorActive
-    // let isSecretMenuOpen = false; // Removed
-
-    let isRedButtonScaryActive = false; // Tracks state of scary effect for the red button
-    let isRedButtonBgColorActive = false; // Tracks state of background color change for the red button
-
-    let isCountdownActive = false;
-    let countdownIntervalId = null;
-    let currentCountdownValue = 10;
-    const countdownDisplayElement = document.getElementById('countdown-display'); // Cache element
-
-    // State for apocalypse sequence - Moved here for correct scope
-    let isApocalypseSequenceActive = false;
-    let pageCloseTimeoutId = null; // For the final page "close" action
-
-    // --- Intermittent Message Logic (shared helper) ---
-    // This logic is no longer needed as the hover/intermittent messages are removed.
-    /*
-    const INTERMITTENT_SHOW_DELAY = 15000;
-    const INTERMITTENT_DURATION = 4000;
-    let secretMessageHideTimeout, horrorMessageHideTimeout;
-    let secretIntermittentShowInterval, horrorIntermittentShowInterval;
-
-    function setupIntermittentDisplay(triggerEl, messageEl, pHideTimeout, pIntermittentInterval, pShowCallback) {
-        if (triggerEl) {
-            triggerEl.addEventListener('mouseenter', () => {
-                clearInterval(pIntermittentInterval);
-                clearTimeout(pHideTimeout);
-                pShowCallback(false, messageEl); // Show immediately, not as intermittent
-            });
-            triggerEl.addEventListener('mouseleave', () => {
-                // Hide with delay only if the message itself isn't hovered
-                if (!messageEl.matches(':hover')) {
-                     pHideTimeout = setTimeout(() => messageEl.classList.add('hidden'), 100);
-                }
-            });
-        }
-        if (messageEl) {
-            messageEl.addEventListener('mouseenter', () => {
-                clearInterval(pIntermittentInterval);
-                clearTimeout(pHideTimeout);
-                // Ensure it's shown if mouse directly enters message
-                pShowCallback(false, messageEl);
-            });
-            messageEl.addEventListener('mouseleave', () => {
-                 pHideTimeout = setTimeout(() => messageEl.classList.add('hidden'), 100);
-            });
-        }
-
-        // Start intermittent display
-        clearInterval(pIntermittentInterval); // Clear any existing
-        if (messageEl && messageEl.classList.contains('hidden')) {
-            pIntermittentInterval = setInterval(() => {
-                if (messageEl.classList.contains('hidden') && !triggerEl.matches(':hover') && !messageEl.matches(':hover')) {
-                    pShowCallback(true, messageEl); // Show as intermittent
-                }
-            }, INTERMITTENT_SHOW_DELAY + INTERMITTENT_DURATION);
-            setTimeout(() => {
-                if (messageEl.classList.contains('hidden') && !triggerEl.matches(':hover') && !messageEl.matches(':hover')) {
-                    pShowCallback(true, messageEl);
-                }
-            }, INTERMITTENT_SHOW_DELAY);
-        }
-        return { pHideTimeout, pIntermittentInterval }; // Return to update outer scope variables
-    }
-    
-    // --- Color Message Logic ---
-    const showColorMessage = (isIntermittent = false, messageEl = colorMessage) => {
-        if (messageEl) {
-            messageEl.classList.remove('hidden');
-            if (isIntermittent) {
-                secretMessageHideTimeout = setTimeout(() => messageEl.classList.add('hidden'), INTERMITTENT_DURATION);
-            }
-        }
-    };
-    // const r1 = setupIntermittentDisplay(secretTrigger, colorMessage, secretMessageHideTimeout, secretIntermittentShowInterval, showColorMessage);
-    // secretMessageHideTimeout = r1.pHideTimeout;
-    // secretIntermittentShowInterval = r1.pIntermittentInterval;
-
-    // --- Horror Message Logic ---
-    const showHorrorMessage = (isIntermittent = false, messageEl = horrorMessageBox) => {
-        if (messageEl) {
-            messageEl.classList.remove('hidden');
-            if (isIntermittent) {
-                horrorMessageHideTimeout = setTimeout(() => messageEl.classList.add('hidden'), INTERMITTENT_DURATION);
-            }
-        }
-    };
-    // const r2 = setupIntermittentDisplay(horrorTrigger, horrorMessageBox, horrorMessageHideTimeout, horrorIntermittentShowInterval, showHorrorMessage);
-    // horrorMessageHideTimeout = r2.pHideTimeout;
-    // horrorIntermittentShowInterval = r2.pIntermittentInterval;
-    
-    // --- Stop Intermittent (generic, called on action) ---
-    function stopIntermittent(interval, timeout) {
-        clearInterval(interval);
-        clearTimeout(timeout);
-    }
-    */
-
-    // --- Main Controls Rendering (after "Open Secret Menu" is clicked) ---
-    // This function is no longer needed as the UI for this is gone.
-    /*
-    function renderMainControlMessage() {
-        if (!colorMessage || !isSecretMenuOpen) return;
-
-        let htmlContent = "you can ";
-        if (isGradientActive) {
-            htmlContent += `<span id="change-color-link" class="action-link">Try Again</span>, or `;
-            htmlContent += `<span id="back-to-basic-link" class="action-link">Back to Basic</span>.`;
-        } else {
-            htmlContent += `<span id="change-color-link" class="action-link">Change the Color</span>.`;
-        }
-        colorMessage.innerHTML = htmlContent;
-
-        const newChangeColorLink = document.getElementById('change-color-link');
-        const newBackToBasicLink = document.getElementById('back-to-basic-link');
-
-        if (newChangeColorLink) {
-            newChangeColorLink.addEventListener('click', (event) => {
-                event.stopPropagation();
-                // stopIntermittent(secretIntermittentShowInterval, secretMessageHideTimeout); // Old call
-                applyRandomGradient();
-            });
-        }
-        if (newBackToBasicLink) {
-            newBackToBasicLink.addEventListener('click', (event) => {
-                event.stopPropagation();
-                // stopIntermittent(secretIntermittentShowInterval, secretMessageHideTimeout); // Old call
-                wipeTheSlate();
-            });
-        }
-        // showColorMessage(); // Keep it visible
-    }
-    */
-
-    // --- Secret Menu Activation & Click Handlers --- (Old logic to be removed/adapted)
-    // if (openSecretMenuLink) {
-    //     openSecretMenuLink.addEventListener('click', (event) => {
-    //         event.stopPropagation();
-    //         isSecretMenuOpen = true;
-    //         stopIntermittent(secretIntermittentShowInterval, secretMessageHideTimeout);
-    //         renderMainControlMessage();
-    //         // Prevent the message from hiding immediately if the link inside it was clicked
-    //         if (colorMessage && colorMessage.matches(':hover')) {
-    //             clearTimeout(secretMessageHideTimeout); // Assuming secretMessageHideTimeout is the one for colorMessage
-    //         }
-    //     });
-    // }
-
-    // Color changing functions (applyRandomGradient, wipeTheSlate) will be called by red button
-    // Horror effect function (toggleNukeMode) will be called by red button
-
-    // if (horrorActionLink) { ... } // This entire block can be removed as horrorActionLink is gone.
-
-
-    // --- NEW RED BUTTON LOGIC ---
     if (redButtonLink) {
         redButtonLink.addEventListener('click', (event) => {
             event.preventDefault(); // Prevent default anchor behavior
@@ -304,319 +221,30 @@ document.addEventListener('DOMContentLoaded', () => {
             redButtonClickCount++;
             if (clickLogMessageElement) {
                 if (redButtonClickCount === 1) {
-                    clickLogMessageElement.style.display = 'block'; // Or 'inline', 'inline-block' depending on desired layout
+                    clickLogMessageElement.style.display = 'block';
                 }
                 clickLogMessageElement.innerHTML = `you\'ve clicked the button <span class="click-count-number">${redButtonClickCount}</span> times.`;
             }
 
-            const currentlyNukeActive = isNukeActive;
-            const currentlyBgColorActive = isRedButtonBgColorActive;
-            // const currentlyCountdownActive = isCountdownActive; // Countdown is now tied to nuke mode
+            // 4-click cycle: white -> blur -> unblur -> reblur -> white
+            const cyclePos = redButtonClickCount % 4;
 
-            const randomNumber = Math.random();
-            let actionToPerform; // 0: nuke, 1: bgcolor
-
-            if (randomNumber < 0.05) { // 5% chance for Nuke
-                actionToPerform = 0; // Nuke
+            if (cyclePos === 1) {
+                if (redButtonLavaController) redButtonLavaController.destroy();
+                if (redButtonBgCanvas && window.LavaLampBG) {
+                    redButtonLavaController = window.LavaLampBG.create(redButtonBgCanvas);
+                }
+            } else if (cyclePos === 2) {
+                if (redButtonLavaController) redButtonLavaController.unblur();
+            } else if (cyclePos === 3) {
+                if (redButtonLavaController) redButtonLavaController.reblur();
             } else {
-                actionToPerform = 1; // Background Color
-            }
-
-            // Priority: If the selected action is ALREADY active, toggle IT off.
-            // Otherwise, turn off ANY OTHER active effect before starting the new one.
-
-            if (actionToPerform === 0) { // Selected: Nuke
-                if (currentlyNukeActive) {
-                    toggleNukeMode(); // Turn off nuke (this will also stop countdown)
-                } else {
-                    if (currentlyBgColorActive) wipeTheSlate();
-                    // No need to explicitly stop countdown here, as it only runs if nuke is active
-                    toggleNukeMode(); // Turn on nuke (this will also start countdown)
-                }
-            } else if (actionToPerform === 1) { // Selected: Background Color
-                // If background color is already active, wipeTheSlate will turn it off.
-                // If nuke mode (and thus countdown) is active, turn it off first.
-                if (currentlyNukeActive) {
-                    toggleNukeMode(); // This will also stop the countdown
-                }
-                
-                // Now toggle the background color effect
-                if (isRedButtonBgColorActive) { // Check current state as nuke might have changed it
-                    wipeTheSlate();
-                } else {
-                    applyRandomGradient();
+                if (redButtonLavaController) {
+                    redButtonLavaController.destroy();
+                    redButtonLavaController = null;
                 }
             }
-            // Countdown logic is removed from here, now handled within toggleNukeMode
         });
-    }
-
-
-    // --- Helper Functions (getRandomHexColor, getRandomDirection, applyRandomGradient, wipeTheSlate, updateHorrorLinkText, toggleNukeMode) ---
-    // These should largely remain, but ensure they are compatible with the new calling context.
-
-    function getRandomHexColor() {
-        let color = '#';
-        for (let i = 0; i < 6; i++) {
-            color += Math.floor(Math.random() * 16).toString(16);
-        }
-        return color;
-    }
-
-    const gradientDirections = [
-        'to right', 'to left', 'to bottom', 'to top',
-        'to top right', 'to top left', 'to bottom right', 'to bottom left',
-        '45deg', '-45deg', '135deg', '-135deg', '90deg', '0deg'
-    ];
-
-    function getRandomDirection() {
-        return gradientDirections[Math.floor(Math.random() * gradientDirections.length)];
-    }
-
-    const radialShapes = ['circle', 'ellipse'];
-    const radialPositions = [
-        'center', 'center center',
-        'top', 'center top',
-        'bottom', 'center bottom',
-        'left', 'left center',
-        'right', 'right center',
-        'top left', 'left top',
-        'top right', 'right top',
-        'bottom left', 'left bottom',
-        'bottom right', 'right bottom'
-    ];
-
-    function getRandomRadialShape() {
-        return radialShapes[Math.floor(Math.random() * radialShapes.length)];
-    }
-
-    function getRandomRadialPosition() {
-        return radialPositions[Math.floor(Math.random() * radialPositions.length)];
-    }
-
-    function applyRandomGradient() {
-        const numColors = Math.floor(Math.random() * 2) + 2; // Randomly 2 or 3 colors
-        const colors = [];
-        for (let i = 0; i < numColors; i++) {
-            colors.push(getRandomHexColor());
-        }
-
-        let gradientStyle;
-        if (Math.random() < 0.7) { // 70% chance for linear gradient
-            const direction = getRandomDirection();
-            gradientStyle = `linear-gradient(${direction}, ${colors.join(', ')})`;
-        } else { // 30% chance for radial gradient
-            const shape = getRandomRadialShape();
-            const position = getRandomRadialPosition();
-            gradientStyle = `radial-gradient(${shape} at ${position}, ${colors.join(', ')})`;
-        }
-
-        document.body.style.backgroundImage = gradientStyle;
-        document.body.style.backgroundColor = ''; // Clear solid background color
-        isRedButtonBgColorActive = true; 
-    }
-
-    function wipeTheSlate() {
-        document.body.style.backgroundImage = originalBodyBgImage || '';
-        document.body.style.backgroundColor = originalBodyBgColor || 'white'; // Default to white
-        // isGradientActive = false; // Old UI state
-        // renderMainControlMessage(); // Old UI update
-        isRedButtonBgColorActive = false; // Ensure red button state is also reset
-    }
-
-    // function updateHorrorLinkText() { ... } // This function can be removed as horrorActionLink is gone.
-
-    function toggleNukeMode() {
-        if (isNukeActive) {
-            // Stop the nuke mode
-            clearInterval(nukeIntervalId);
-            nukeIntervalId = null;
-            document.body.style.backgroundColor = originalBodyBgColor || 'white'; // Restore background
-            document.body.style.backgroundImage = originalBodyBgImage || '';
-            isNukeActive = false;
-            stopCountdown(); // Stop countdown when nuke mode stops
-        } else {
-            // Start the nuke mode
-            if (originalBodyBgColor === '' && originalBodyBgImage === '') { // Store original only once
-                originalBodyBgColor = document.body.style.backgroundColor;
-                originalBodyBgImage = document.body.style.backgroundImage;
-            }
-            let isRed = true;
-            document.body.style.transition = 'none';
-            nukeIntervalId = setInterval(() => {
-                document.body.style.backgroundColor = isRed ? 'red' : 'black';
-                document.body.style.backgroundImage = 'none';
-                isRed = !isRed;
-            }, 100);
-            isNukeActive = true;
-            startCountdown(); // Start countdown when nuke mode starts
-        }
-    }
-
-    // Store original body background on load
-    // Ensure this is done *before* any potential nuke/gradient might change them initially
-    // This should be safe here as DOMContentLoaded ensures body exists.
-    originalBodyBgImage = document.body.style.backgroundImage;
-    originalBodyBgColor = document.body.style.backgroundColor;
-
-    // Initial text for horror link (HTML sets it, but JS can ensure)
-    // updateHorrorLinkText(); 
-
-    // Ensure initial state of colorMessage (HTML should have it as "open the Secret Menu")
-    // If isSecretMenuOpen is false, colorMessage should show "open ..."
-    // If it was somehow already open (e.g. page refresh with JS state preserved by browser), render controls
-    /* Commenting out the problematic block referencing isSecretMenuOpen
-    if (isSecretMenuOpen) {
-        renderMainControlMessage();
-    } else if (colorMessage && openSecretMenuLink) {
-        // Ensure listener is attached if not opened yet. HTML provides initial text.
-    }
-    */
-
-    // Start intermittent message display
-    const startIntermittentMessage = () => {
-        stopIntermittent(secretIntermittentShowInterval, secretMessageHideTimeout);
-        // Only start if the message is currently hidden (i.e., user is not actively hovering/interacting)
-        if (colorMessage && colorMessage.classList.contains('hidden')) {
-            secretIntermittentShowInterval = setInterval(() => {
-                // Double check it's still hidden before showing, to avoid conflict with hover
-                if (colorMessage.classList.contains('hidden')) {
-                    showColorMessage(true);
-                }
-            }, INTERMITTENT_SHOW_DELAY + INTERMITTENT_DURATION); // Wait full cycle before next potential show
-            // Show the first one after initial delay
-            setTimeout(() => {
-                if (colorMessage.classList.contains('hidden')) {
-                     showColorMessage(true);
-                }
-            }, INTERMITTENT_SHOW_DELAY);
-        }
-    };
-    
-    // Start the intermittent message display initially if panel is hidden
-    /* Commenting out the problematic block referencing colorPopup 
-    if (colorPopup && colorPopup.classList.contains('hidden')) {
-        startIntermittentMessage();
-    }
-    */
-
-    // --- Countdown Functions ---
-    function startCountdown() {
-        if (isCountdownActive || !countdownDisplayElement) return;
-        isCountdownActive = true;
-        isApocalypseSequenceActive = false; // Reset for new countdown
-        currentCountdownValue = 10;
-        
-        countdownDisplayElement.style.display = 'flex'; // Ensure it's not display:none from initial HTML
-        countdownDisplayElement.classList.add('countdown-display-visible');
-
-        function updateNumber() {
-            countdownDisplayElement.textContent = currentCountdownValue;
-            if (currentCountdownValue > 0) {
-                currentCountdownValue--;
-            } else { 
-                clearInterval(countdownIntervalId); 
-                countdownIntervalId = null; 
-                triggerApocalypse();
-            }
-        }
-        updateNumber(); // Display the first number (10) immediately
-        countdownIntervalId = setInterval(updateNumber, 1000);
-    }
-
-    function stopCountdown() {
-        clearInterval(countdownIntervalId);
-        countdownIntervalId = null;
-        
-        if (isApocalypseSequenceActive) {
-            restoreNormalView(); // If apocalypse happened, restore fully
-        } else if (countdownDisplayElement) { 
-            countdownDisplayElement.classList.remove('countdown-display-visible');
-            setTimeout(() => {
-                if (!isCountdownActive && !isApocalypseSequenceActive) { 
-                     countdownDisplayElement.textContent = '';
-                }
-            }, 300); 
-        }
-        isCountdownActive = false;
-        // If nuke mode was active and is being stopped, ensure its visual effects are also reset.
-        // This is somewhat implicitly handled by restoreNormalView or if another effect takes over.
-        // However, to be certain, if nuke was the cause, its specific cleanup might be needed.
-        // For now, toggleNukeMode sets isNukeActive = false before calling stopCountdown.
-        // And if apocalypse happened, body BG is restored by restoreNormalView.
-        // If only countdown (from nuke) is stopped before apocalypse, toggleNukeMode should handle BG.
-    }
-
-    function triggerApocalypse() {
-        isApocalypseSequenceActive = true;
-
-        if (nukeIntervalId) {
-            clearInterval(nukeIntervalId);
-            nukeIntervalId = null;
-        }
-
-        if (countdownDisplayElement) {
-            countdownDisplayElement.classList.remove('countdown-display-visible');
-            countdownDisplayElement.style.display = 'none'; 
-            countdownDisplayElement.textContent = ''; 
-        }
-
-        if (apocalypseOverlay) {
-            apocalypseOverlay.style.display = 'block';
-        }
-
-        // Wait 0.4 seconds, then show popup
-        setTimeout(() => { // Show self-destruct popup
-            if (isApocalypseSequenceActive && selfDestructPopup) { 
-                selfDestructPopup.style.display = 'block'; // Explicitly set display
-                selfDestructPopup.classList.add('visible'); 
-
-                // After popup is visible, wait 0.4 seconds then start wiggling
-                setTimeout(() => {
-                    if (isApocalypseSequenceActive && selfDestructPopup) {
-                        selfDestructPopup.classList.add('destruct-wiggle-active');
-
-                        // After wiggling starts, wait 1.2 seconds then "close" the page
-                        pageCloseTimeoutId = setTimeout(() => {
-                            if (isApocalypseSequenceActive) { // Check again before navigating
-                                window.location.href = 'about:blank';
-                            }
-                        }, 1200); // 1.2 seconds after wiggling starts
-                    }
-                }, 400); // 0.4 seconds delay for wiggling to start
-            }
-        }, 400); // Changed from 1500 to 400
-    }
-
-    function restoreNormalView() {
-        clearTimeout(pageCloseTimeoutId); // Clear page close timeout
-
-        if (apocalypseOverlay) {
-            apocalypseOverlay.style.display = 'none';
-        }
-
-        if (siteHeader) siteHeader.style.display = ''; 
-        if (iconGrid) iconGrid.style.display = ''; 
-
-        document.body.style.backgroundColor = originalBodyBgColor || 'white';
-        document.body.style.backgroundImage = originalBodyBgImage || '';
-        document.body.style.transition = ''; 
-
-        if (selfDestructPopup) {
-            selfDestructPopup.classList.remove('visible');
-            selfDestructPopup.classList.remove('destruct-wiggle-active'); // Remove wiggle class
-            selfDestructPopup.style.display = 'none'; // Also explicitly hide
-        }
-
-        if (countdownDisplayElement) {
-            countdownDisplayElement.classList.remove('countdown-display-visible');
-             setTimeout(() => {
-                if (!isCountdownActive && !isApocalypseSequenceActive) { 
-                     countdownDisplayElement.textContent = '';
-                }
-            }, 300);
-        }
-        isApocalypseSequenceActive = false;
     }
 
     // --- James Peach Page - Interactive Image Placeholder --- //
@@ -1047,7 +675,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         artIconOriginalImage = new Image();
-        artIconOriginalImage.crossOrigin = "anonymous";
 
         artIconOriginalImage.onload = () => {
             let displayWidth = artIconImageEl.offsetWidth;

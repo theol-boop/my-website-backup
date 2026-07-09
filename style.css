@@ -361,9 +361,17 @@ main {
     animation: wiggle 0.5s ease-in-out;
 }
 
-/* Wiggle animation for header logo */
-#header-logo:hover {
-    animation: wiggle 0.5s ease-in-out;
+/* Header logo hover-pixelation canvas sits exactly over the logo image */
+.header-center {
+    position: relative;
+}
+
+#headerLogoPixelCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 1;
 }
 
 /* Mobile: 2 columns x 4 rows */
@@ -1340,11 +1348,6 @@ body:has(.site-header #header-logo:hover) #comet {
     animation: wiggle 0.5s ease-in-out;
 }
 
-/* Wiggle animation for header logo */
-#header-logo:hover {
-    animation: wiggle 0.5s ease-in-out;
-}
-
 /* Tumultuous Icon Animation - More Intense */
 @keyframes tumultuous-float {
     0% { transform: translate(0px, 0px) rotate(0deg); }
@@ -1428,33 +1431,10 @@ body.tumultuous-mode-active .icon-grid .icon-link {
 
 /* --- End Comet Animation --- */
 
-/* --- Giant Countdown Display Styles --- */
-#countdown-display {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: 'Impact', 'Arial Black', sans-serif; /* Fat text font */
-    font-size: 100vh; /* INCREASED: Was 80vh, now full viewport height */
-    color: #000000; /* Solid black text */
-    pointer-events: none; /* Should not interfere with clicks */
-    z-index: 2; /* INCREASED: Was 0, main content is 1. Popups are higher. */
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
-    text-align: center;
-    line-height: 1; /* Ensure number is vertically centered well */
+/* Red button lava-lamp background sits behind header/icon-grid, like #comet */
+#red-button-bg-canvas {
+    z-index: -1;
 }
-
-#countdown-display.countdown-display-visible {
-    opacity: 1; /* Full opacity when visible */
-    visibility: visible;
-}
-/* --- End Giant Countdown Display Styles --- */ 
 
 /* Make James Peach icon container on index page larger */
 #icon-james-peach {
@@ -1788,56 +1768,6 @@ body.jp-gallery-active .jp-interactive-placeholder.expanded {
 }
 
 /* ... existing code ... */
-
-/* Centering and initial state for the self-destruct popup */
-#self-destruct-popup {
-    /* It will have the .info-box class for base styling */
-    /* Override/add centering styles */
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center; /* Center text inside the popup */
-    /* Ensure it's hidden initially by .info-box class, JavaScript will show it by adding .visible */
-    display: block; /* Keep display block for positioning, actual visibility controlled by .info-box and .visible */
-    z-index: 9999; /* Ensure it's on top of the apocalypse overlay */
-}
-
-/* New Apocalypse Overlay */
-#apocalypse-overlay {
-    display: none; /* Initially hidden */
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: red;
-    z-index: 9998; /* High, but below self-destruct popup */
-}
-
-/* Keyframes for violent wiggling with build-up */
-@keyframes violentWiggle {
-    0% { transform: translate(-50%, -50%) rotate(0deg) translateX(0px) translateY(0px); }
-    /* Start subtle */
-    10% { transform: translate(-50%, -50%) rotate(-2deg) translateX(-3px) translateY(1px); }
-    20% { transform: translate(-50%, -50%) rotate(2deg) translateX(3px) translateY(-1px); }
-    /* Medium intensity */
-    30% { transform: translate(-50%, -50%) rotate(-5deg) translateX(-8px) translateY(3px); }
-    40% { transform: translate(-50%, -50%) rotate(6deg) translateX(8px) translateY(-3px); }
-    /* Getting more chaotic */
-    50% { transform: translate(-50%, -50%) rotate(-10deg) translateX(-15px) translateY(8px); }
-    60% { transform: translate(-50%, -50%) rotate(12deg) translateX(15px) translateY(-8px); }
-    /* Full chaos */
-    70% { transform: translate(-50%, -50%) rotate(-20deg) translateX(-25px) translateY(12px); }
-    80% { transform: translate(-50%, -50%) rotate(22deg) translateX(25px) translateY(-12px); }
-    90% { transform: translate(-50%, -50%) rotate(-28deg) translateX(-15px) translateY(8px); }
-    100% { transform: translate(-50%, -50%) rotate(0deg) translateX(0px) translateY(0px); } /* Return to allow smooth loop if needed, or end on chaos */
-}
-
-/* Class to apply the violent wiggling animation */
-#self-destruct-popup.destruct-wiggle-active {
-    /* The base transform: translate(-50%, -50%) is part of the keyframes now */
-    animation: violentWiggle 0.3s linear infinite;
-}
 
 /* Click Log Message Styles */
 #click-log-message {

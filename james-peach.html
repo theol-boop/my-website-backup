@@ -5,6 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>James Peach - Theo Lebeaux</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .jp-logo {
+            display: flex;
+            justify-content: center;
+            padding: 40px 0 20px;
+        }
+
+        .jp-logo img {
+            max-width: 340px;
+            width: 80%;
+            height: auto;
+        }
+
+        .jp-media {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 60px;
+            padding: 40px 40px 80px;
+        }
+
+        .jp-media img {
+            width: 100%;
+            max-width: 900px;
+            height: auto;
+            display: block;
+            border-radius: 4px;
+        }
+
+        .jp-media iframe {
+            width: 100%;
+            max-width: 900px;
+            aspect-ratio: 16 / 9;
+            border: none;
+            border-radius: 4px;
+            display: block;
+        }
+    </style>
 </head>
 <body class="james-peach-page">
     <header class="site-header">
@@ -17,47 +55,23 @@
         <div class="header-center">
             <img src="images/theo-lebeaux-logo.png" alt="Theo Lebeaux Logo" class="logo">
         </div>
-        <div class="header-right">
-            <!-- This can be empty or hold future right-aligned items -->
-        </div>
+        <div class="header-right"></div>
     </header>
 
     <main class="james-peach-content">
-        <!-- NEW HERO SECTION -->
-        <section class="jp-hero-section">
-            <div class="hero-title-gif" data-gif-src="images/jp-animated-logo-transparent.gif" aria-label="James Peach Animated Title"></div>
-            <img src="images/jp-animation-redux.gif" alt="James Peach Redux Animation" class="hero-redux-gif">
-        </section>
-
-        <section class="two-column-section">
-            <div class="column column-text">
-                <h2>About the Project</h2>
-                <p>This is placeholder text describing the James Peach project. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod, nisi vel consectetur interdum, nisl nunc egestas nunc, vitae tincidunt nisl nunc euismod nunc.</p>
-            </div>
-        </section>
-
-        <article class="placeholder-article full-width-section">
-            <h2>Process & Details</h2>
-            <p>More details about the animation process, software used, or the concept behind it could go here. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
-            <div class="placeholder-image-rect"></div>
-            <p>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.</p>
-        </article>
-
-        <article class="placeholder-article full-width-section">
-             <h2>Further Musings</h2>
-             <p>Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.</p>
-        </article>
-
-        <div class="centered-image-container bottom-figma-logo">
-             <img src="images/logofigma1.png" alt="Figma Logo">
+        <div class="jp-logo">
+            <img src="images/jp-animated-logo-transparent.gif" alt="James Peach">
         </div>
 
+        <div class="jp-media">
+            <img src="images/jp-widescreen2.png" alt="James Peach Widescreen">
+            <img src="images/Sunset Beach Still(1).jpg" alt="Sunset Beach">
+            <iframe src="https://www.youtube.com/embed/JeMmLC6tLMA" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
     </main>
 
-    <footer>
-        <!-- Footer content can be added later -->
-    </footer>
+    <footer></footer>
 
     <script src="script.js" defer></script>
 </body>
-</html> 
+</html>
