@@ -118,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const lvl = Math.max(1, Math.round(level));
             if (lvl <= 1) {
                 hlCtx.imageSmoothingEnabled = true;
+                hlCtx.imageSmoothingQuality = 'high';
                 hlCtx.drawImage(headerLogoElement, 0, 0, w, h);
             } else {
                 hlCtx.imageSmoothingEnabled = false;
@@ -136,19 +137,39 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        // At rest, show the real <img> itself (guaranteed full native
+        // resolution) rather than a canvas copy of it — the canvas is only
+        // shown while actively mosaic-ing, since that's the only time its
+        // content needs to differ from the source image.
+        function hlShowReal() {
+            headerLogoCanvas.style.opacity = '0';
+            headerLogoElement.style.opacity = '1';
+        }
+
+        function hlShowCanvas() {
+            headerLogoCanvas.style.opacity = '1';
+            headerLogoElement.style.opacity = '0';
+        }
+
         function hlAnimate(ts) {
             if (hlTransitionStart === null) hlTransitionStart = ts;
             const t = Math.min(1, (ts - hlTransitionStart) / HL_TRANSITION_MS);
             const eased = hlEaseInOutCubic(t);
             hlCurrentLevel = hlStartLevel + (hlTargetLevel - hlStartLevel) * eased;
             hlDraw(hlCurrentLevel);
-            hlRafId = t < 1 ? requestAnimationFrame(hlAnimate) : null;
+            if (t < 1) {
+                hlRafId = requestAnimationFrame(hlAnimate);
+            } else {
+                hlRafId = null;
+                if (hlTargetLevel === HL_MIN_LEVEL) hlShowReal();
+            }
         }
 
         function hlGoTo(target) {
             hlStartLevel = hlCurrentLevel;
             hlTargetLevel = target;
             hlTransitionStart = null;
+            hlShowCanvas();
             if (hlRafId) cancelAnimationFrame(hlRafId);
             hlRafId = requestAnimationFrame(hlAnimate);
         }
@@ -163,10 +184,10 @@ document.addEventListener('DOMContentLoaded', () => {
             headerLogoCanvas.style.width = w + 'px';
             headerLogoCanvas.style.height = h + 'px';
             hlDraw(HL_MIN_LEVEL);
-            // Hide the real image visually now that the canvas mirrors it —
-            // opacity (not display/visibility) keeps it hoverable, so the
-            // info-box and "blur other icons" effects still work off it.
-            headerLogoElement.style.opacity = '0';
+            // Canvas keeps a always-current pixel-perfect copy underneath
+            // (needed the instant a hover transition starts), but at rest
+            // the real image is what's actually shown — see hlShowReal().
+            hlShowReal();
         }
 
         if (headerLogoElement.complete && headerLogoElement.naturalWidth > 0) {
