@@ -183,23 +183,37 @@
       const W=canvas.width,H=canvas.height;
       if (!_ctx) _ctx=canvas.getContext('2d');
       const ctx=_ctx;
-      ensureOff(W,H);
-      const pad=_pad,PW=W+pad*2,PH=H+pad*2;
 
       ctx.fillStyle=_bgFill||makeBgFill(ctx,W,H);
       ctx.fillRect(0,0,W,H);
 
-      _octx.clearRect(0,0,PW,PH);
-      _octx.globalAlpha=1; _octx.globalCompositeOperation='source-over';
-      shapes.forEach(s=>{_octx.fillStyle=fill(_octx,s,W,H,pad);path(_octx,s,W,H,pad);_octx.fill();});
-
       const ease = blurT * blurT * (3 - 2 * blurT); // smoothstep
       const blurPx = ease * (mob ? MOBILE.blur : BLUR);
-      _bctx.clearRect(0,0,PW,PH);
-      _bctx.filter=`blur(${blurPx}px)`;
-      _bctx.drawImage(_off,0,0);
-      _bctx.filter='none';
-      ctx.drawImage(_blur,pad,pad,W,H,0,0,W,H);
+
+      if (mob) {
+        // Mobile: draw shapes straight to the visible canvas and blur via the
+        // canvas element's CSS filter. Canvas2D's own `ctx.filter` (used
+        // below for desktop) isn't reliably supported across mobile
+        // browsers/WebViews — when it's a no-op, shapes render fully sharp
+        // and the intended blur never appears. Element-level CSS filter is
+        // universally supported and cheap at mobile's lower shape count.
+        ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over';
+        shapes.forEach(s=>{ctx.fillStyle=fill(ctx,s,W,H,0);path(ctx,s,W,H,0);ctx.fill();});
+        canvas.style.filter = blurPx > 0.5 ? `blur(${blurPx}px)` : 'none';
+      } else {
+        ensureOff(W,H);
+        const pad=_pad,PW=W+pad*2,PH=H+pad*2;
+
+        _octx.clearRect(0,0,PW,PH);
+        _octx.globalAlpha=1; _octx.globalCompositeOperation='source-over';
+        shapes.forEach(s=>{_octx.fillStyle=fill(_octx,s,W,H,pad);path(_octx,s,W,H,pad);_octx.fill();});
+
+        _bctx.clearRect(0,0,PW,PH);
+        _bctx.filter=`blur(${blurPx}px)`;
+        _bctx.drawImage(_off,0,0);
+        _bctx.filter='none';
+        ctx.drawImage(_blur,pad,pad,W,H,0,0,W,H);
+      }
 
       grain(ctx,W,H);
     }
@@ -234,7 +248,7 @@
 
     Object.assign(canvas.style, {
       position:'fixed',inset:'0',width:'100vw',height:'100vh',display:'block',pointerEvents:'none',
-      transition:`opacity ${FADE_MS}ms ease`, opacity:'0',
+      transition:`opacity ${FADE_MS}ms ease`, opacity:'0', filter:'none',
     });
 
     const p = mob ? MOBILE : DESKTOP;

@@ -3,6 +3,9 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    /* Kill the mobile browser's default gray tap-highlight rectangle —
+       icons/links here already have their own hover/press feedback. */
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* --- Common Elements --- */
@@ -1247,41 +1250,46 @@ footer {
     margin-top: auto; /* Pushes footer down in flex container, redundant if main grows */
 }
 
-/* Blur other icons when one is hovered */
-.icon-grid:has(.icon-link:hover) .icon-link:not(:hover) {
-    filter: blur(4px);
-    /* Consider adding transition here if needed, or ensure parent handles it */
-}
-
-/* Keep hovered item sharp and scaled */
-.icon-grid .icon-link:hover {
-    transform: scale(1.05); /* Scale up the hovered icon slightly */
-    filter: none; /* Ensure hovered icon is never blurred */
-    z-index: 2; /* Bring hovered item slightly forward */
-}
-
 /* Apply blur directly to the link, not just the icon inside */
 .icon-link {
     transition: filter 0.3s ease, transform 0.3s ease; /* Ensure transitions are smooth */
 }
 
-/* Blur header logo when any icon is hovered */
-body:has(.icon-grid .icon-link:hover) .site-header .logo {
-    filter: blur(4px);
-    transition: filter 0.3s ease; /* Add transition for logo blur */
-}
+/* Hover-driven "blur everything else" effects only make sense with a real
+   pointer — on touch devices there's no hover, and taps leave these stuck
+   in their "hovered" state until something else is tapped. Scope them to
+   hover-capable, fine-pointer devices only. */
+@media (hover: hover) and (pointer: fine) {
+    /* Blur other icons when one is hovered */
+    .icon-grid:has(.icon-link:hover) .icon-link:not(:hover) {
+        filter: blur(4px);
+    }
 
-/* Blur comet when any icon is hovered */
-body:has(.icon-grid .icon-link:hover) #comet {
-    filter: blur(4px);
-    transition: filter 0.3s ease; /* Consistent transition for comet blur */
-}
+    /* Keep hovered item sharp and scaled */
+    .icon-grid .icon-link:hover {
+        transform: scale(1.05); /* Scale up the hovered icon slightly */
+        filter: none; /* Ensure hovered icon is never blurred */
+        z-index: 2; /* Bring hovered item slightly forward */
+    }
 
-/* Blur other icons and comet when header logo is hovered */
-body:has(.site-header #header-logo:hover) .icon-grid .icon-link:not(:hover),
-body:has(.site-header #header-logo:hover) #comet {
-    filter: blur(4px);
-    transition: filter 0.3s ease;
+    /* Blur header logo when any icon is hovered */
+    body:has(.icon-grid .icon-link:hover) .site-header .logo {
+        filter: blur(4px);
+        transition: filter 0.3s ease; /* Add transition for logo blur */
+    }
+
+    /* Blur comet when any icon is hovered */
+    body:has(.icon-grid .icon-link:hover) #comet {
+        filter: blur(4px);
+        transition: filter 0.3s ease; /* Consistent transition for comet blur */
+    }
+
+    /* Blur other icons and comet when header logo is hovered */
+    body:has(.site-header #header-logo:hover) .icon-grid .icon-link:not(:hover),
+    body:has(.site-header #header-logo:hover) #comet {
+        filter: blur(4px);
+        transition: filter 0.3s ease;
+    }
 }
 
 /* --- Floating Icon Animation --- */

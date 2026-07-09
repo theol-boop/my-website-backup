@@ -38,12 +38,21 @@ h1 {
     filter: blur(3px);
 }
 
-.art-item:hover .preview,
-.art-item:focus .preview
-{
+.art-item:focus .preview {
     transform: scale(1.05);
     box-shadow: 0 5px 15px rgba(0,0,0,0.2);
     filter: blur(0);
+}
+
+/* Hover unblur only for real pointers — on touch, a tap's "sticky" :hover
+   state would otherwise leave the preview unblurred after closing the
+   expanded view, since there's no mouseleave to clear it. */
+@media (hover: hover) and (pointer: fine) {
+    .art-item:hover .preview {
+        transform: scale(1.05);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        filter: blur(0);
+    }
 }
 
 /* Style for the hover title */
@@ -65,13 +74,22 @@ h1 {
     z-index: 10; /* Ensure it's above the preview */
 }
 
-/* Show title on hover/focus of the art item */
-.art-item:hover .art-title,
+/* Show title on focus of the art item (keyboard nav / JS open state) */
 .art-item:focus .art-title {
     opacity: 1;
     visibility: visible;
     transform: translate(-50%, 85%); /* Move upwards slightly, staying very low */
     transition: opacity 0.3s ease 0.6s, transform 0.3s ease 0.6s, visibility 0s linear 0.6s; /* Increased delay to 0.6s */
+}
+
+/* Show title on hover only for real pointers — see .art-item:hover .preview above */
+@media (hover: hover) and (pointer: fine) {
+    .art-item:hover .art-title {
+        opacity: 1;
+        visibility: visible;
+        transform: translate(-50%, 85%);
+        transition: opacity 0.3s ease 0.6s, transform 0.3s ease 0.6s, visibility 0s linear 0.6s;
+    }
 }
 
 /* Styles for the container of the full image view */
