@@ -121,8 +121,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 hlCtx.drawImage(headerLogoElement, 0, 0, w, h);
             } else {
                 hlCtx.imageSmoothingEnabled = false;
-                const tempW = Math.max(1, Math.floor(w / lvl));
-                const tempH = Math.max(1, Math.floor(h / lvl));
+                // Pixelation grid is defined in CSS pixels regardless of DPR,
+                // so mosaic blocks look the same size on retina and non-retina screens.
+                const dpr = w / headerLogoCanvas.clientWidth || 1;
+                const tempW = Math.max(1, Math.floor(w / lvl / dpr));
+                const tempH = Math.max(1, Math.floor(h / lvl / dpr));
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = tempW;
                 tempCanvas.height = tempH;
@@ -154,8 +157,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const w = headerLogoElement.offsetWidth || headerLogoElement.naturalWidth;
             const h = headerLogoElement.offsetHeight || headerLogoElement.naturalHeight;
             if (!w || !h) return;
-            headerLogoCanvas.width = w;
-            headerLogoCanvas.height = h;
+            const dpr = window.devicePixelRatio || 1;
+            headerLogoCanvas.width = Math.round(w * dpr);
+            headerLogoCanvas.height = Math.round(h * dpr);
             headerLogoCanvas.style.width = w + 'px';
             headerLogoCanvas.style.height = h + 'px';
             hlDraw(HL_MIN_LEVEL);
