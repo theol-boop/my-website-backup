@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WORMHOLE</title>
+    <script type="module" crossorigin src="./assets/index-DO7jl8nZ.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-D2PBEhBh.css">
+  </head>
+  <body>
+    <div id="game">
+      <canvas id="view"></canvas>
+      <div id="hud">
+        <div id="status">
+          <div class="bar-label">HULL</div>
+          <div class="bar hull"><div id="hull-fill"></div></div>
+          <div class="bar-label">SHIELD</div>
+          <div class="bar shield"><div id="shield-fill"></div></div>
+          <div id="weapons">
+            <div class="weapon-row" id="laser-row">
+              <span class="weapon-name laser">LASER</span><span class="pips" id="laser-pips"></span>
+            </div>
+            <div class="weapon-row" id="missile-row">
+              <span class="weapon-name missile">MISSILE</span><span class="pips" id="missile-pips"></span>
+            </div>
+          </div>
+        </div>
+        <div id="boss-box" class="hidden">
+          <div id="boss-name">SERAPH</div>
+          <div class="bar boss"><div id="boss-fill"></div></div>
+        </div>
+        <div id="overdrive" class="hidden">OVERDRIVE <span id="od-time"></span></div>
+        <div id="score-box">
+          <div id="score">0</div>
+          <div id="timer">0:00</div>
+        </div>
+        <div id="hint">WASD — THRUSTERS&nbsp;&nbsp;·&nbsp;&nbsp;MOUSE — AIM&nbsp;&nbsp;·&nbsp;&nbsp;CLICK — FIRE</div>
+        <a id="site-link" href="../projects.html">← theolebeaux.com</a>
+        <div id="gameover" class="hidden">
+          <div id="go-title">SHIP LOST</div>
+          <div id="go-score"></div>
+          <div id="go-hint">PRESS <b>R</b> TO REDEPLOY</div>
+        </div>
+        <div id="damage-flash"></div>
+        <div id="warp-flash"></div>
+      </div>
+    </div>
+  </body>
+</html>
