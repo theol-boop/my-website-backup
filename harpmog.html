@@ -1993,8 +1993,25 @@ function encodeWav(L,R,sr){
   }
   return new Blob([buf],{type:'audio/wav'});
 }
-let capturing=false;
-document.getElementById('save-wav').addEventListener('click',()=>{
+let capturing=false,readyWav=null;
+const wavBtn=document.getElementById('save-wav');
+// Phones/tablets: hand the file to the share sheet (AirDrop, Files, GarageBand, Messages…).
+// iOS only opens it straight from a tap, so after recording the button becomes "Share WAV".
+function canShareFile(f){return matchMedia('(pointer:coarse)').matches&&navigator.canShare&&navigator.canShare({files:[f]});}
+function downloadBlob(blob,name){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+function resetWavBtn(){readyWav=null;wavBtn.textContent='Save WAV';}
+wavBtn.addEventListener('click',async()=>{
+  if(readyWav){
+    const f=readyWav;
+    try{await navigator.share({files:[f],title:'HarpMog loop'});wavStatus('Shared harpmog-loop.wav.');}
+    catch(e){if(e&&e.name==='AbortError'){wavStatus('Share cancelled. Tap Share WAV to try again.');return;}
+      downloadBlob(f,f.name);wavStatus('Saved to your Downloads instead (Files app → Downloads).');}
+    resetWavBtn();return;
+  }
   if(capturing)return;
   if(!actx||!looper.events.length||!looper.loopLen){wavStatus('Record a loop first (REC, play, then REC again), then come back here.');return;}
   capturing=true;
@@ -2011,10 +2028,15 @@ document.getElementById('save-wav').addEventListener('click',()=>{
     for(let i=0;i<inL.length;i++){const j=off+i;if(j>=0&&j<total){L[j]=inL[i];R[j]=inR[i];}}
     if(t>to){
       sp.onaudioprocess=null;try{limiter.disconnect(sp);sp.disconnect();}catch(e){}
-      const url=URL.createObjectURL(encodeWav(L,R,sr));
-      const a=document.createElement('a');a.href=url;a.download='harpmog-loop.wav';document.body.appendChild(a);a.click();a.remove();
-      setTimeout(()=>URL.revokeObjectURL(url),60000);
-      wavStatus('Saved harpmog-loop.wav ('+len.toFixed(2)+'s). The loop keeps playing.');capturing=false;
+      const blob=encodeWav(L,R,sr);capturing=false;
+      let file=null;try{file=new File([blob],'harpmog-loop.wav',{type:'audio/wav'});}catch(e){}
+      if(file&&canShareFile(file)){
+        readyWav=file;wavBtn.textContent='Share WAV ↗';
+        wavStatus('Loop recorded ('+len.toFixed(2)+'s). Tap Share WAV to send it to AirDrop, Files, GarageBand…');
+      } else {
+        downloadBlob(blob,'harpmog-loop.wav');
+        wavStatus('Saved harpmog-loop.wav ('+len.toFixed(2)+'s). The loop keeps playing.');
+      }
     }
   };
   setLooperState('playing');startPlayback(start);
