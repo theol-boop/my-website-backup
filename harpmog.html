@@ -76,17 +76,26 @@ button{font-family:var(--font);color:inherit;}
 #var-pop button{border:none;border-radius:8px;padding:9px 4px;font-size:14px;font-weight:600;cursor:pointer;
   background:#fff;box-shadow:0 2px 0 var(--key-shadow),inset 0 0 0 1px rgba(0,0,0,.07);color:var(--ink);white-space:nowrap;}
 #var-pop button.hover,#var-pop button:active{background:var(--fam);color:#fff;}
+#var-pop .pop-bass-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);margin:10px 2px 6px;}
+#var-pop .pop-bass-label span{font-weight:500;letter-spacing:.02em;text-transform:none;color:var(--ink-3);}
+#var-pop .pop-bass{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;}
+#var-pop .pop-bass button{padding:6px 2px;font-size:12px;}
+#var-pop .pop-bass button.on{background:var(--ink);color:var(--body);}
 #var-pop button.current{box-shadow:0 2px 0 var(--key-shadow),inset 0 0 0 2px var(--fam);}
 
 /* ── WHERE NEXT ── */
-#directions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;}
-.dir{border:none;border-radius:10px;padding:6px 6px 5px;cursor:pointer;text-align:left;min-width:0;
+#next-panel{display:flex;flex-direction:column;}
+#lanes{flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+.lane{display:flex;flex-direction:column;gap:5px;min-width:0;min-height:0;overflow:hidden;}
+.lane-head{flex:none;font-size:9px;letter-spacing:.06em;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase;}
+.lane-head b{color:var(--ink-2);letter-spacing:.14em;}
+.dir{flex:none;border:none;border-radius:9px;padding:5px 7px 4px;cursor:pointer;text-align:left;min-width:0;
   background:#fffaf0;box-shadow:0 2px 0 var(--key-shadow),inset 0 0 0 1px rgba(0,0,0,.06);
-  display:flex;flex-direction:column;gap:1px;border-left:4px solid var(--fam);}
-.dir b{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.dir small{font-size:10px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.02em;}
+  display:flex;flex-direction:column;gap:0;border-left:4px solid var(--fam);}
+.dir b{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dir small{font-size:9.5px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.01em;}
 .dir:active{transform:translateY(1px);box-shadow:0 1px 0 var(--key-shadow);}
-.memory{display:flex;align-items:center;gap:6px;min-width:0;}
+.memory{flex:none;display:flex;align-items:center;gap:6px;min-width:0;}
 .memory .mini{flex:none;width:52px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);}
 .chips{display:flex;gap:5px;overflow:hidden;min-width:0;flex:1;}
 .chip{flex:none;border:none;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;
@@ -142,7 +151,10 @@ button{font-family:var(--font);color:inherit;}
 .lp-clear{color:var(--ink-3);}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:.35;}}
 /* the scope: a built-in display, bezel + glass (vignette, scanlines, glare drawn over the canvas) */
-#led-panel{position:relative;flex:1;min-height:110px;border-radius:12px;overflow:hidden;background:#07120d;
+#scope-box{flex:1;min-height:0;container-type:size;display:flex;align-items:center;justify-content:center;}
+/* always square: as big as the space allows (max 260px), hidden when there's no room */
+@container (max-height:72px){#led-panel{display:none;}}
+#led-panel{position:relative;flex:none;width:min(100cqw,100cqh,260px);aspect-ratio:1/1;border-radius:12px;overflow:hidden;background:#07120d;
   border:4px solid #2a221d;box-shadow:inset 0 0 0 1px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.65),0 0 0 1px var(--edge);}
 #waveform-canvas{position:absolute;inset:0;display:block;width:100%;height:100%;}
 #led-panel::after{content:'';position:absolute;inset:0;pointer-events:none;border-radius:8px;
@@ -171,9 +183,8 @@ button{font-family:var(--font);color:inherit;}
 /* ── PHONES / TABLETS HELD UPRIGHT: chords on top, plate on the right ── */
 @media (orientation:portrait),(max-width:700px){
   #app{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);
-    grid-template-rows:auto auto minmax(0,1fr);
+    grid-template-rows:auto minmax(0,1fr) auto;
     grid-template-areas:"chords chords" "next plate" "controls plate";gap:8px;}
-  #directions{grid-template-columns:repeat(2,minmax(0,1fr));}
   #chord-grid{grid-template-columns:minmax(40px,.95fr) repeat(12,minmax(0,1fr));gap:4px;}
   .key{height:38px;font-size:12px;}
 }
@@ -184,8 +195,9 @@ button{font-family:var(--font);color:inherit;}
   .key{height:36px;font-size:11px;border-radius:6px;}
   .row-head{padding:0 4px;} .row-head b{font-size:10px;} .row-head small{font-size:9px;}
   .panel-label .hint{display:none;}
-  .dir b{font-size:13px;} .dir small{font-size:9px;}
   .memory .mini{width:40px;font-size:9px;}
+  #lanes{gap:4px;} .lane{gap:4px;} .lane-head{font-size:7.5px;}
+  .dir{padding:3px 4px 2px 5px;border-left-width:3px;border-radius:7px;} .dir b{font-size:11px;} .dir small{font-size:7.5px;}
   .inst{font-size:8px;height:28px;letter-spacing:0;border-radius:6px;}
   #inst-btns{gap:3px;}
   #controls-panel .panel-label{display:none;}
@@ -193,16 +205,12 @@ button{font-family:var(--font);color:inherit;}
   #fx-knobs{gap:4px 6px;} .fader-wrap{height:20px;} .fx-name{font-size:8px;}
   .lp-btn{font-size:10px;height:30px;letter-spacing:0;}
   #brand{display:none;}
-  #led-panel{min-height:70px;}
   #disp-chord{font-size:20px;}
 }
 /* short phones held upright (iPhone SE etc.) */
 @media (orientation:portrait) and (max-height:740px){
   .key{height:30px;}
   #chord-panel,#next-panel{gap:5px;}
-  .dir{padding:4px 5px;} .dir b{font-size:12px;}
-  .dir:nth-child(n+7){display:none;}
-  #led-panel{display:none;}   /* no room for the scope on the smallest phones */
 }
 /* ── PHONES HELD SIDEWAYS: tighter everything ── */
 @media (orientation:landscape) and (max-height:560px){
@@ -215,17 +223,17 @@ button{font-family:var(--font);color:inherit;}
   .key{height:clamp(22px,7.4vh,34px);font-size:11px;border-radius:6px;}
   .key::after{bottom:3px;height:2px;}
   .row-head{padding:0 4px;border-radius:6px;} .row-head b{font-size:9px;} .row-head small{font-size:8px;}
-  #directions{gap:4px;}
-  .dir{padding:3px 5px;border-radius:8px;} .dir b{font-size:12px;} .dir small{font-size:8px;}
   .chip{padding:3px 8px;font-size:11px;} #fav-btn{padding:3px 8px;font-size:11px;}
   .memory .mini{width:42px;font-size:8px;}
+  #lanes{gap:5px;} .lane{gap:3px;} .lane-head{font-size:7.5px;}
+  .dir{padding:2px 5px;border-radius:7px;} .dir b{font-size:11px;} .dir small{font-size:7.5px;}
   #display{padding:4px 8px;} #disp-chord{font-size:16px;}
   #controls-panel{gap:6px;}
   .inst{height:26px;font-size:8px;letter-spacing:0;}
   #inst-btns{gap:3px;}
   #fx-knobs{gap:3px 5px;} .fader-wrap{height:18px;} .fader-line{width:10px;margin-left:-5px;} .fx-name{font-size:7px;}
   .lp-btn{height:28px;font-size:10px;letter-spacing:.02em;}
-  #looper-panel{gap:5px;} #led-panel{min-height:70px;border-width:3px;}
+  #looper-panel{gap:5px;} #led-panel{border-width:3px;}
   #brand{display:none;}
 }
 </style>
@@ -246,7 +254,7 @@ button{font-family:var(--font);color:inherit;}
 
   <section id="next-panel" class="panel">
     <div class="panel-label">Where next <span class="hint">from the chord you're on</span></div>
-    <div id="directions"></div>
+    <div id="lanes"></div>
     <div class="memory"><span class="mini">Saved</span><div class="chips" id="favs"></div><button id="fav-btn">&#9734; Save</button></div>
     <div class="memory"><span class="mini">Recent</span><div class="chips" id="recents"></div></div>
   </section>
@@ -285,7 +293,7 @@ button{font-family:var(--font);color:inherit;}
       <div class="fx-unit"><div class="fader-wrap" id="knob-tape" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-tape"></div><div class="fader-line"></div></div><div class="fx-name">twang</div></div>
     </div>
     <div id="looper-panel">
-      <div id="led-panel"><canvas id="waveform-canvas"></canvas></div>
+      <div id="scope-box"><div id="led-panel"><canvas id="waveform-canvas"></canvas></div></div>
       <div id="looper-transport">
         <button class="lp-btn" id="lp-rec">REC</button>
         <button class="lp-btn" id="lp-play">PLAY</button>
@@ -295,7 +303,7 @@ button{font-family:var(--font);color:inherit;}
     <div id="brand"><span>HarpMog</span><a class="site-back" href="javascript:history.back()" hidden>&#8249; back</a></div>
   </section>
 </div>
-<div id="var-pop" hidden><div class="pop-title"></div><div class="pop-grid"></div></div>
+<div id="var-pop" hidden><div class="pop-title"></div><div class="pop-grid"></div><div class="pop-bass-label">bass note <span>(for slash chords)</span></div><div class="pop-bass"></div></div>
 <script>
 (function(){
 'use strict';
@@ -456,24 +464,31 @@ const rowVar={maj:0,min:0,dom:0,dim:0,aug:0};          // each row remembers its
 const VOICE_TOP=100;                                    // E7: the top string
 
 function chordVar(c){return FAM[c.fam].vars[c.v];}
-function chordName(c){return PC_NAMES[c.root]+chordVar(c).s;}
-function chordKey(c){return c.root+':'+c.fam+':'+c.v;}
+function hasBass(c){return c.bass!=null&&c.bass!==c.root;}
+function chordName(c){return PC_NAMES[c.root]+chordVar(c).s+(hasBass(c)?'/'+PC_NAMES[c.bass]:'');}
+function chordKey(c){return c.root+':'+c.fam+':'+c.v+(hasBass(c)?'/'+c.bass:'');}
+function chordPcs(c){const s=new Set([c.root,...chordVar(c).iv.map(i=>(c.root+i)%12)]);if(hasBass(c))s.add(c.bass);return s;}
 function chordNotes(c){
   const iv=chordVar(c).iv;
-  let last=C2+c.root;const out=[last];
+  let last=C2+(hasBass(c)?c.bass:c.root);const out=[last];
+  const up=pc=>{let m=Math.floor(last/12)*12+pc;if(m<=last)m+=12;return m;};
+  if(hasBass(c)){const m=up(c.root);out.push(m);last=m;}   // slash chord: the chord's root sits just above the bass
   for(let k=0;;k=(k+1)%iv.length){
-    let m=Math.floor(last/12)*12+(c.root+iv[k])%12;
-    if(m<=last)m+=12;
+    const m=up((c.root+iv[k])%12);
     if(m>VOICE_TOP)break;
     out.push(m);last=m;
   }
   return out;
 }
 
-// ── WHERE NEXT: labelled moves from the current chord ─────────
-// Each move: semitones up from the current root, a family, and a "ladder"
-// of extensions from plain to lush; the rung used matches how rich the
-// current chord is, so a maj9 leads to m9 / 13 / maj9 rather than triads.
+// ── WHERE NEXT ────────────────────────────────────────────────
+// Three lanes, all visible at once:
+//   PULL   functional moves (V→I, ii–V, tritone sub, backdoor…)
+//   COLOUR same root: parallel, richer/simpler, sus, other tensions, pedal/slash
+//   DRIFT  nearby chords (relative/leading-tone, mediants, planing, axis,
+//          Coltrane step, pivots), sorted by how few new notes they bring
+// Each suggestion uses a "ladder" rung matching how rich the current chord
+// is, so a maj9 leads to m9 / 13 / maj9 rather than plain triads.
 const LADDERS={
   maj:['maj',['','maj7','maj9','maj9♯11']],
   six:['maj',['6','6','6/9','6/9']],
@@ -484,6 +499,7 @@ const LADDERS={
   sus:['dom',['7sus4','7sus4','9sus4','13sus4']],
   half:['dim',['ø','ø','ø9','ø11']],
   dim:['dim',['°','°7','°7','°7(9)']],
+  aug:['aug',['+','+7','9♯5','maj9♯5']],
 };
 const MOVES={
   maj:[[5,'maj','to IV'],[2,'min','ii, heads to V'],[7,'dom','V7, back home'],[9,'min','vi, relative minor'],
@@ -498,14 +514,65 @@ const MOVES={
        [3,'dim','shift a minor 3rd'],[11,'min','down a half step'],[2,'dom','as a passing V']],
   aug:[[5,'maj','V+ to I'],[5,'min','V+ to i'],[0,'six','line cliché to 6'],[9,'min','to vi'],[4,'maj','up a major 3rd']],
 };
-function suggestions(c){
-  const v=chordVar(c);
-  const kind=c.fam==='dim'&&v.s.startsWith('ø')?'half':c.fam;
-  return MOVES[kind].map(([d,lad,label])=>{
-    const [fam,rungs]=LADDERS[lad];
-    const s=rungs[Math.min(3,v.lv)];
-    return {chord:{root:(c.root+d)%12,fam,v:findVar(fam,s)},label};
-  });
+const SWAPS={maj:['maj7♯11','6/9','maj13'],min:['m(maj9)','m6/9','m7 4ths'],dom:['13♭9','7alt','13♯11','7♯9'],dim:['°(maj7)','ø9'],aug:['maj7♯5','+(add9)']};
+const mod12=n=>((n%12)+12)%12;
+function mk(root,lad,lv,extra){const [fam,rungs]=LADDERS[lad];return {root:mod12(root),fam,v:findVar(fam,rungs[Math.min(3,Math.max(0,lv))]),...extra};}
+function same(c,d){return {root:mod12(c.root+d),fam:c.fam,v:c.v};}
+function kindOf(c){const v=chordVar(c);return c.fam==='dim'&&v.s.startsWith('ø')?'half':c.fam;}
+function isSus(c){return chordVar(c).s.includes('sus');}
+
+function pullMoves(c){
+  const lv=chordVar(c).lv;
+  return MOVES[kindOf(c)].map(([d,lad,label])=>({chord:mk(c.root+d,lad,lv),label}));
+}
+function colourMoves(c){
+  const v=chordVar(c),lv=v.lv,r=c.root,k=kindOf(c),out=[];
+  // parallel
+  if(c.fam==='maj')out.push({chord:mk(r,'min',lv),label:'parallel minor'});
+  if(c.fam==='min')out.push({chord:mk(r,'maj',lv),label:'parallel major'});
+  if(c.fam==='dom')out.push({chord:mk(r,'min',Math.max(1,lv)),label:'parallel minor'});
+  if(c.fam==='dim')out.push({chord:mk(r,'min',lv),label:'brighten to minor'});
+  if(c.fam==='aug')out.push({chord:mk(r,'maj',lv),label:'settle to major'});
+  // richer / simpler along this family's ladder
+  const lad={maj:'maj',min:'min',dom:isSus(c)?'sus':'dom',half:'half',dim:'dim',aug:'aug'}[k];
+  const rungs=LADDERS[lad][1];let at=rungs.indexOf(v.s);if(at<0)at=lv;
+  for(let j=at+1;j<rungs.length;j++)if(rungs[j]!==v.s){out.push({chord:mk(r,lad,j),label:'richer'});break;}
+  for(let j=at-1;j>=0;j--)if(rungs[j]!==v.s){out.push({chord:mk(r,lad,j),label:'simpler'});break;}
+  // sus ↔ resolved
+  if(c.fam==='dom')out.push(isSus(c)?{chord:mk(r,'dom',lv),label:'resolve the sus'}:{chord:mk(r,'sus',lv),label:'sus it'});
+  if(c.fam==='maj')out.push(isSus(c)?{chord:mk(r,'maj',lv),label:'resolve the sus'}:{chord:{root:r,fam:'maj',v:findVar('maj','sus2')},label:'open it up (sus2)'});
+  if(c.fam==='min')out.push({chord:{root:r,fam:'maj',v:findVar('maj','sus2')},label:'drop the 3rd (sus2)'});
+  // other tensions, same job
+  SWAPS[c.fam].filter(x=>x!==v.s).slice(0,2).forEach(x=>out.push({chord:{root:r,fam:c.fam,v:findVar(c.fam,x)},label:'other tension'}));
+  // pedal / slash over the same root
+  out.push({chord:{root:mod12(r+10),fam:'maj',v:0,bass:r},label:'pedal: 9sus sound'});
+  out.push({chord:{root:mod12(r+2),fam:'maj',v:0,bass:r},label:'pedal: lydian float'});
+  out.push({chord:{...c,bass:mod12(r+7)},label:'over its 5th'});
+  return out;
+}
+function driftMoves(c){
+  const lv=chordVar(c).lv,r=c.root,out=[];
+  if(c.fam==='maj'){out.push({chord:mk(r+9,'min',lv),label:'relative'});out.push({chord:mk(r+4,'min',lv),label:'leading-tone shift'});
+    out.push({chord:mk(r+3,'dom',Math.max(1,lv)),label:'Coltrane step'});
+    out.push({chord:mk(r+2,'dom',lv),label:'pivot: as IV of '+PC_NAMES[mod12(r+7)]});}
+  if(c.fam==='min'){out.push({chord:mk(r+3,'maj',lv),label:'relative'});out.push({chord:mk(r+8,'maj',lv),label:'leading-tone shift'});
+    out.push({chord:mk(r+3,'dom',Math.max(1,lv)),label:'pivot: as iii of '+PC_NAMES[mod12(r+8)]});}
+  if(c.fam==='dom')out.push({chord:mk(r+2,'maj',lv),label:'pivot: backdoor to '+PC_NAMES[mod12(r+2)]});
+  out.push({chord:same(c,4),label:'mediant, up M3'},{chord:same(c,8),label:'mediant, down M3'},
+           {chord:same(c,3),label:'up a minor 3rd'},{chord:same(c,9),label:'down a minor 3rd'},
+           {chord:same(c,1),label:'plane up ½'},{chord:same(c,11),label:'plane down ½'},
+           {chord:same(c,2),label:'plane up a step'},{chord:same(c,10),label:'plane down a step'},
+           {chord:same(c,6),label:'axis, tritone away'});
+  // fewest new notes first: smoothest voice-leading at the top
+  const have=chordPcs(c);
+  return out.map((m,i)=>{const n=[...chordPcs(m.chord)].filter(p=>!have.has(p)).length;
+    return {...m,i,n,label:m.label+' · '+(n===0?'same notes':n+' new')};}).sort((a,b)=>a.n-b.n||a.i-b.i);
+}
+function lanes(c){
+  const seen=new Set([chordKey(c)]);
+  const uniq=list=>list.filter(m=>{const k=chordKey(m.chord);if(seen.has(k))return false;seen.add(k);return true;});
+  const pull=uniq(pullMoves(c)),colour=uniq(colourMoves(c)),drift=uniq(driftMoves(c));
+  return [['Pull','functional',pull],['Colour','same root',colour],['Drift','nearby · fewest changes',drift]];
 }
 
 // ── STATE / STRINGS ───────────────────────────────────────────
@@ -585,7 +652,7 @@ function attachKey(k){
   k.addEventListener('pointermove',e=>{if(held)hoverPop(e.clientX,e.clientY);});
   k.addEventListener('pointerup',e=>{
     clearTimeout(timer);k.classList.remove('pressed');
-    if(!held){selectChord({root:+k.dataset.root,fam:k.dataset.fam,v:rowVar[k.dataset.fam]});return;}
+    if(!held){closePop();selectChord({root:+k.dataset.root,fam:k.dataset.fam,v:rowVar[k.dataset.fam]});return;}
     // held: releasing over an extension picks it; releasing elsewhere leaves the list open to tap
     const b=popButtonAt(e.clientX,e.clientY);
     if(b)pickFromPop(b);
@@ -596,6 +663,7 @@ function attachKey(k){
 
 // Hold-for-extensions list
 const pop=document.getElementById('var-pop');
+let popBass=null;
 function openPop(k){
   const fam=FAM[k.dataset.fam],root=+k.dataset.root;
   pop.style.setProperty('--fam',fam.color);
@@ -608,6 +676,20 @@ function openPop(k){
     b.addEventListener('pointerup',e=>{e.stopPropagation();pickFromPop(b);});
     grid.appendChild(b);
   });
+  // bass row: pick a different bass first, then an extension → slash chord (e.g. Fmaj7/G)
+  const cur=state.chord;
+  popBass=(cur.fam===fam.id&&cur.root===root&&hasBass(cur))?cur.bass:root;
+  const bassRow=pop.querySelector('.pop-bass');bassRow.innerHTML='';
+  for(let i=0;i<12;i++){
+    const pc=(root+i)%12,b=document.createElement('button');
+    b.textContent=i===0?'root':PC_NAMES[pc];b.dataset.pc=pc;
+    b.classList.toggle('on',pc===popBass);
+    b.addEventListener('pointerup',e=>{e.stopPropagation();popBass=pc;
+      bassRow.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+      grid.querySelectorAll('button').forEach(x=>x.textContent=PC_NAMES[root]+fam.vars[+x.dataset.v].s+(pc!==root?'/'+PC_NAMES[pc]:''));});
+    bassRow.appendChild(b);
+  }
+  grid.querySelectorAll('button').forEach(x=>x.textContent=PC_NAMES[root]+fam.vars[+x.dataset.v].s+(popBass!==root?'/'+PC_NAMES[popBass]:''));
   pop.hidden=false;
   // place it next to the key, kept on screen
   const r=k.getBoundingClientRect(),pw=pop.offsetWidth,ph=pop.offsetHeight,M=8;
@@ -620,7 +702,8 @@ function popButtonAt(x,y){return document.elementsFromPoint(x,y).find(el=>el.par
 function hoverPop(x,y){const b=popButtonAt(x,y);pop.querySelectorAll('button').forEach(el=>el.classList.toggle('hover',el===b));}
 function pickFromPop(b){
   closePop();
-  selectChord({root:+b.dataset.root,fam:b.dataset.fam,v:+b.dataset.v},{setRow:true});
+  const root=+b.dataset.root;
+  selectChord({root,fam:b.dataset.fam,v:+b.dataset.v,...(popBass!=null&&popBass!==root?{bass:popBass}:{})},{setRow:true});
 }
 function closePop(){pop.hidden=true;}
 document.addEventListener('pointerdown',e=>{if(!pop.hidden&&!pop.contains(e.target))closePop();},true);
@@ -628,16 +711,30 @@ document.addEventListener('pointerdown',e=>{if(!pop.hidden&&!pop.contains(e.targ
 // ── WHERE NEXT + SAVED + RECENT ───────────────────────────────
 function famColor(c){return FAM[c.fam].color;}
 function renderNext(){
-  const box=document.getElementById('directions');box.innerHTML='';
-  for(const {chord,label} of suggestions(state.chord)){
-    const b=document.createElement('button');b.className='dir';
-    b.style.setProperty('--fam',famColor(chord));
-    b.innerHTML=`<b>${chordName(chord)}</b><small>${label}</small>`;
-    b.addEventListener('click',()=>selectChord(chord));
-    box.appendChild(b);
+  const box=document.getElementById('lanes');box.innerHTML='';
+  for(const [name,sub,list] of lanes(state.chord)){
+    const lane=document.createElement('div');lane.className='lane';
+    lane.innerHTML=`<div class="lane-head"><b>${name}</b> ${sub}</div>`;
+    for(const {chord,label} of list){
+      const b=document.createElement('button');b.className='dir';
+      b.style.setProperty('--fam',famColor(chord));
+      b.innerHTML=`<b>${chordName(chord)}</b><small>${label}</small>`;
+      b.addEventListener('click',()=>selectChord(chord));
+      lane.appendChild(b);
+    }
+    box.appendChild(lane);
   }
-  renderMemory();
+  fitLanes();renderMemory();
 }
+// No scrolling on this instrument: show as many suggestions as fit, hide the rest
+function fitLanes(){
+  document.querySelectorAll('#lanes .lane').forEach(l=>{
+    const dirs=[...l.querySelectorAll('.dir')];dirs.forEach(d=>d.hidden=false);
+    const bottom=l.getBoundingClientRect().bottom+1;
+    dirs.forEach(d=>{if(d.getBoundingClientRect().bottom>bottom)d.hidden=true;});
+  });
+}
+window.addEventListener('resize',()=>requestAnimationFrame(fitLanes));
 function loadList(k){try{const v=JSON.parse(localStorage.getItem(k)||'[]');return Array.isArray(v)?v.filter(c=>FAM[c.fam]&&FAM[c.fam].vars[c.v]):[];}catch(e){return[];}}
 function saveList(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 let favs=loadList('harpmog.favs'),recents=loadList('harpmog.recents');
