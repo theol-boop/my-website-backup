@@ -5,8 +5,11 @@
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WORMHOLE</title>
-    <script type="module" crossorigin src="./assets/index-DO7jl8nZ.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-D2PBEhBh.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet" />
+    <script type="module" crossorigin src="./assets/index-DxYEkHn7.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BOD_3C2h.css">
   </head>
   <body>
     <div id="game">
@@ -17,14 +20,23 @@
           <div class="bar hull"><div id="hull-fill"></div></div>
           <div class="bar-label">SHIELD</div>
           <div class="bar shield"><div id="shield-fill"></div></div>
+          <div class="bar-label">SPECIAL METER</div>
+          <div class="bar meter"><div id="meter-fill"></div></div>
           <div id="weapons">
-            <div class="weapon-row" id="laser-row">
+            <div class="weapon-row" id="laser-row" data-special="laser">
               <span class="weapon-name laser">LASER</span><span class="pips" id="laser-pips"></span>
             </div>
-            <div class="weapon-row" id="missile-row">
+            <div class="weapon-row" id="missile-row" data-special="missile">
               <span class="weapon-name missile">MISSILE</span><span class="pips" id="missile-pips"></span>
             </div>
+            <div class="weapon-row" id="wave-row" data-special="wave">
+              <span class="weapon-name wave">WAVE</span><span class="pips" id="wave-pips"></span>
+            </div>
+            <div class="weapon-row" id="bomb-row" data-special="bomb">
+              <span class="weapon-name bomb">BOMB</span><span class="pips" id="bomb-pips"></span>
+            </div>
           </div>
+          <div id="upgrade-list"></div>
         </div>
         <div id="boss-box" class="hidden">
           <div id="boss-name">SERAPH</div>
@@ -34,8 +46,18 @@
         <div id="score-box">
           <div id="score">0</div>
           <div id="timer">0:00</div>
+          <div id="combo" class="hidden">
+            <span id="combo-mult"></span>
+            <div id="combo-bar"><div id="combo-fill"></div></div>
+          </div>
         </div>
-        <div id="hint">WASD — THRUSTERS&nbsp;&nbsp;·&nbsp;&nbsp;MOUSE — AIM&nbsp;&nbsp;·&nbsp;&nbsp;CLICK — FIRE</div>
+        <div id="zone-tag" class="hidden"></div>
+        <div id="upgrade" class="hidden">
+          <div id="up-title">BOSS DOWN — PICK ONE</div>
+          <div id="up-cards"></div>
+          <div id="up-hint">press 1 · 2 · 3, or click a card</div>
+        </div>
+        <div id="hint">WASD — THRUSTERS&nbsp;&nbsp;·&nbsp;&nbsp;MOUSE — AIM&nbsp;&nbsp;·&nbsp;&nbsp;CLICK — FIRE&nbsp;&nbsp;·&nbsp;&nbsp;1-4 — SELECT&nbsp;&nbsp;·&nbsp;&nbsp;RIGHT-CLICK — ARM</div>
         <a id="site-link" href="../projects.html">← theolebeaux.com</a>
         <div id="gameover" class="hidden">
           <div id="go-title">SHIP LOST</div>
