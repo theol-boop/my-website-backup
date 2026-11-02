@@ -154,6 +154,25 @@ button{font-family:var(--font);color:inherit;}
 .inst::after{content:'';position:absolute;left:0;bottom:0;height:3px;width:var(--lvl,66.7%);background:rgba(207,84,40,.55);}
 .inst.active::after{background:rgba(233,222,198,.7);}
 
+#lib-btn{margin-left:auto;flex:none;border:none;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;letter-spacing:.06em;cursor:pointer;
+  background:transparent;box-shadow:inset 0 0 0 1px var(--edge-d);color:var(--ink-2);}
+#lib{position:fixed;inset:0;z-index:150;background:rgba(40,28,18,.35);display:flex;align-items:center;justify-content:center;padding:16px;}
+#lib .sheet{width:min(620px,100%);max-height:100%;overflow:auto;background:var(--body);border:1px solid var(--edge);border-radius:16px;padding:16px;
+  box-shadow:0 20px 50px rgba(40,25,10,.4);touch-action:pan-y;-webkit-overflow-scrolling:touch;}
+.lib-actions{display:flex;gap:8px;margin:6px 0 8px;}
+.lib-ghost{border:none;border-radius:9px;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer;background:transparent;box-shadow:inset 0 0 0 1px var(--edge-d);color:var(--ink-2);}
+.lib-key-label{font-weight:500;letter-spacing:.04em;text-transform:none;margin-left:6px;}
+#lib-keys{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:3px;margin:4px 0 8px;}
+#lib-keys button{border:none;border-radius:7px;padding:6px 0;font-size:12px;font-weight:700;cursor:pointer;background:#fffaf0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);color:var(--ink-2);}
+#lib-keys button.on{background:var(--ink);color:var(--body);}
+.lib-item{display:flex;align-items:center;gap:10px;width:100%;border:none;background:#fffaf0;border-radius:10px;padding:8px 10px;margin-bottom:6px;
+  cursor:pointer;text-align:left;box-shadow:0 2px 0 var(--key-shadow),inset 0 0 0 1px rgba(0,0,0,.06);}
+.lib-item .lib-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.lib-item b{font-size:13px;} .lib-item small{font-size:11px;color:var(--ink-2);}
+.lib-item .lib-chords{font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lib-item .lib-del{flex:none;border:none;background:transparent;font-size:16px;color:var(--ink-3);cursor:pointer;padding:4px 6px;}
+.lib-empty{font-size:12px;color:var(--ink-3);margin:2px 0 6px;}
+
 /* ── STRUM PLATE ── */
 #plate-panel{display:flex;flex-direction:column;gap:8px;min-height:0;}
 #display{background:var(--win);border-radius:10px;padding:8px 12px 7px;
@@ -314,7 +333,7 @@ button{font-family:var(--font);color:inherit;}
   <section id="next-panel" class="panel">
     <div class="panel-label">Where next <span class="hint">from the chord you're on</span></div>
     <div id="lanes"></div>
-    <div class="prog-head"><span class="mini">Progression</span><span class="hint">drag chords in · tap to play · drag out to remove</span></div>
+    <div class="prog-head"><span class="mini">Progression</span><span class="hint">drag chords in · tap to play · drag out to remove</span><button id="lib-btn">Library</button></div>
     <div id="prog"></div>
     <div class="memory" id="recent-row"><span class="mini">Recent</span><div class="chips" id="recents"></div></div>
   </section>
@@ -378,93 +397,26 @@ button{font-family:var(--font);color:inherit;}
   <div class="set-foot">Tip: hold a sound button to set its volume.</div>
 </div></div>
 <div id="vol-pop" hidden><div class="pop-title"></div><div class="vol-track"><div class="vol-fill"></div><div class="vol-knob"></div></div><div class="vol-val"></div></div>
+<div id="lib" hidden><div class="sheet">
+  <div class="sheet-head"><b>Progressions</b><button id="lib-close">Done</button></div>
+  <div class="set-group">Yours</div>
+  <div class="lib-actions"><button class="set-btn" id="lib-save">Save current strip</button><button class="lib-ghost" id="lib-clear">Clear strip</button></div>
+  <div id="lib-mine"></div>
+  <div class="set-group">Pre-built <span class="lib-key-label">in the key of</span></div>
+  <div id="lib-keys"></div>
+  <div id="lib-built"></div>
+</div></div>
 <div id="fam-pop" hidden><div class="pop-title">Show in this row</div><div class="fam-list"></div></div>
 <div id="var-pop" hidden><div class="pop-title"></div><div class="pop-grid"></div><div class="pop-bass-label">bass note <span>(for slash chords)</span></div><div class="pop-bass"></div></div>
 <script>
 (function(){
 'use strict';
 
-// ══ LEGACY CHORD SETS (C- / F-, red patterns, coloured key rows) ══
-// Hidden for now while we try the omnichord-style system below. The data
-// and voicing() are kept so they can be brought back. NN/NM/C2/C8/MAX_STRINGS
-// are still used by the new system.
-// ── NOTES ─────────────────────────────────────────────────────
-const NN=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
-const NM={C:0,Db:1,D:2,Eb:3,E:4,F:5,Gb:6,G:7,Ab:8,A:9,Bb:10,B:11};
-const C2=36,C8=108;      // MIDI range of the strings
+// ── RANGE ─────────────────────────────────────────────────────
+const C2=36;             // the bass string sits in octave 2 (MIDI 36 = C2)
 const MAX_STRINGS=42;    // the board always draws 42 lines
 
-// ── HOW A CHORD BECOMES STRINGS ──────────────────────────────
-// A "cell" is an ordered list of note names, written low → high.
-// voicing() walks it upward: the first note lands in octave 2 (C2–B2),
-// and each next note is the nearest copy of that note ABOVE the one
-// before. When the cell runs out it starts again from its first note;
-// the walk stops at C8.
-//   ['C','G','D','Eb'] → C2 G2 D3 Eb3 C4 G4 D5 Eb5 C6 …
-// So the ORDER of the cell is the voicing: wide leaps spread the chord
-// out, small steps keep it close. A long cell can reach C8 before it
-// finishes, and notes after that point are never heard.
-// The result (usually 12–25 notes) is spread across the 42 drawn
-// strings, so neighbouring lines often share a note.
-function voicing(cell){
-  let last=C2+(NM[cell[0]]??0);
-  const out=[last];
-  for(let idx=1;;idx++){
-    let m=Math.floor(last/12)*12+(NM[cell[idx%cell.length]]??0);
-    if(m<=last)m+=12;
-    if(m>C8)break;
-    out.push(m);last=m;
-  }
-  return out.slice(0,MAX_STRINGS);
-}
-// SCALE mode: every note of the natural minor scale from C2 up (42 notes)
-function minorScale(root){
-  const iv=[0,2,3,5,7,8,10],rp=NM[root],out=[];
-  for(let m=C2;m<=C8&&out.length<MAX_STRINGS;m++)if(iv.includes(((m-rp)%12+12)%12))out.push(m);
-  return out;
-}
-function transpose(cell,semis){return cell.map(n=>NN[(NM[n]+semis+120)%12]);}
-
-// ── C- / F- AND THE RED PATTERN BUTTONS ───────────────────────
-// Patterns written in C minor; F- plays them a 4th higher.
-const PATTERNS={
-  base:   ['C','G','D','Eb','G','Bb','D','Eb','Bb','D','G','Bb','D','F'],
-  deep:   ['C','G','D','Eb','Bb','F','D','G','C','D','G','Bb','Eb','F'],
-  shimmer:['C','G','D','Eb','G','A','Bb','D','F','Bb','C','D','A','D','F','G','D','Eb','F','A'],
-  blue:   ['C','F','Bb','Eb','G','C','F','Bb','D','F','Bb','Eb','G','C','F','Bb','D','F','G','C'],
-  '45':   ['C','F','G','C','F','G','C','F','Bb','C','F','G','C','D','G','Bb','Eb','F','Bb','D','G','A','D','Eb','Ab','Bb','Eb','G','C','D','G','C','F','G','C'],
-};
-// Fixed chords: the same notes whether C- or F- is selected.
-const FIXED_CHORDS={
-  fminarp:['F','Ab','C','Eb','F','G','Ab','Bb','C','D','Eb','F','G','Bb','D','Eb','F','Ab','C','Eb','G','Ab'],
-  copper: ['C','G','D','F','C','G','D','A','C','G','D','G','C','D','C','F','A'],
-  darp:   ['D','G','A','D','G','A','D','G','A','D','G','A','D','G','A','D','G','A','D','G','A','D','G','A','D','G','A','D','G','A','D'],
-  garp:   ['G','Bb','D','F','B','Bb','D','F','G','Bb','D','F','A','C','D','F','G','Bb','A','C','D','F'],
-  bbarp:  ['Bb','D','F','A','Bb','D','Eb','F','A','C','E','G','A','Bb','D','F','G','G','A','A','Bb','C','D'],
-  abmaj7: ['Ab','C','Eb','G','C','F','Bb','D','Eb','G','Ab','C','Eb','F','G','Bb','F','G','Bb'],
-  ebmaj:  ['Eb','G','Bb','D','F','G','Bb','C','D','F','G','Bb','D','Eb','G','A','D','F','G','C','Eb','D'],
-};
-function chordSets(root,semis){
-  const sets={scale:minorScale(root)};
-  for(const k in PATTERNS)sets[k]=voicing(transpose(PATTERNS[k],semis));
-  for(const k in FIXED_CHORDS)sets[k]=voicing(FIXED_CHORDS[k]);
-  return sets;
-}
-const CHORDS={cmin:chordSets('C',0),fmin:chordSets('F',5)};
-
-// ── THE FOUR COLOURED KEY ROWS ────────────────────────────────
-// One cell per row, written in C, played in all 12 keys.
-const KEY_ROWS={
-  k45: {label:'45',     cell:PATTERNS['45']},                      // purple: the 45 pattern
-  k5th:{label:'5TH',    cell:['C','F','Bb','Eb','G']},             // teal: stacked 4ths, then G
-  kong:{label:'ORANGE', cell:['C','G','D','E','A','E','B']},       // orange: open major (add 9, 6, 7)
-  kpnk:{label:'PINK',   cell:['C','G','D','Eb','Ab','G','B','D','F','G','Ab','B']}, // pink: minor with Ab and B
-};
-const KEYS=['c','db','d','eb','e','f','gb','g','ab','a','bb','b'];
-const KEY_SETS={};
-for(const row in KEY_ROWS)KEYS.forEach((k,i)=>{KEY_SETS[row+'_'+k]=voicing(transpose(KEY_ROWS[row].cell,i));});
-
-// ══ NEW CHORD SYSTEM (omnichord-style) ═══════════════════════
+// ══ CHORD SYSTEM (omnichord-style) ═══════════════════════════
 // Roots run across in 4ths; chord families run down. Tap a key for that
 // root in the row's current chord; hold a key for its extensions.
 //
@@ -769,7 +721,7 @@ function buildGrid(){
     const f=FAM[fid];
     const head=document.createElement('button');head.className='row-head';head.dataset.row=row;
     head.style.setProperty('--fam',f.color);
-    head.addEventListener('click',()=>openFamPop(head,row));
+    onTap(head,()=>openFamPop(head,row));
     g.appendChild(head);
     for(const r of ROOTS){
       const k=document.createElement('button');k.className='key';
@@ -901,7 +853,7 @@ function renderNext(){
       b.style.setProperty('--fam',famColor(chord));
       b.innerHTML=`<b>${chordName(chord)}</b><small>${label}</small>`;
       b.addEventListener('pointerdown',e=>dragStart(e,chord));
-      b.addEventListener('click',()=>{if(!dragJustEnded())selectChord(chord);});
+      onTap(b,()=>selectChord(chord));
       lane.appendChild(b);
     }
     box.appendChild(lane);
@@ -942,7 +894,7 @@ function renderChips(id,list,empty){
     const b=document.createElement('button');b.className='chip';b.textContent=chordName(c);
     b.style.setProperty('--fam',famColor(c));
     b.addEventListener('pointerdown',e=>dragStart(e,c));
-    b.addEventListener('click',()=>{if(!dragJustEnded())selectChord(c);});
+    onTap(b,()=>selectChord(c));
     box.appendChild(b);
   }
 }
@@ -950,6 +902,18 @@ function renderMemory(){
   const cur=chordKey(state.chord);
   renderChips('recents',recents.filter(c=>chordKey(c)!==cur),'chords you play show up here');
   renderProg();
+}
+
+// A tap that works even while another finger is strumming (iOS cancels
+// "click" when two fingers are down): fires on release if the finger didn't move.
+function onTap(el,fn){
+  let id=null,x0=0,y0=0;
+  el.addEventListener('pointerdown',e=>{id=e.pointerId;x0=e.clientX;y0=e.clientY;});
+  el.addEventListener('pointerup',e=>{
+    if(e.pointerId!==id)return;id=null;
+    if(Math.hypot(e.clientX-x0,e.clientY-y0)>10||dragJustEnded())return;
+    fn(e);
+  });
 }
 
 // ── PROGRESSION STRIP ─────────────────────────────────────────
@@ -970,13 +934,82 @@ function renderProg(){
     if(c){b.textContent=chordName(c);b.style.setProperty('--fam',famColor(c));if(chordKey(c)===cur)b.classList.add('now');}
     else b.innerHTML='<span>+</span>';
     b.addEventListener('pointerdown',e=>{if(c)dragStart(e,c,{fromSlot:i});});
-    b.addEventListener('click',()=>{
-      if(dragJustEnded())return;
-      if(c)selectChord(c);else{prog[i]={...state.chord};saveProg();renderProg();}
-    });
+    onTap(b,()=>{if(c)selectChord(c);else{prog[i]={...state.chord};saveProg();renderProg();}});
     box.appendChild(b);
   });
 }
+
+// ── PROGRESSION LIBRARY ───────────────────────────────────────
+// Pre-built progressions are written in C (as [root, family, extension,
+// slash bass?]) and loaded in whatever key you pick. Your own saved
+// progressions are stored exactly as they were.
+const BUILT=[
+  {name:'ii–V–I',                note:'the jazz cadence',                  ch:[[2,'min','m9'],[7,'dom','13'],[0,'maj','maj9'],[0,'maj','maj9']]},
+  {name:'Minor ii–V–i',          note:'dark, tense, resolved',             ch:[[2,'half','ø9'],[7,'dom','7alt'],[0,'min','m9'],[0,'min','m6/9']]},
+  {name:'I–vi–ii–V turnaround',  note:'rhythm changes, standards',         ch:[[0,'maj','maj7'],[9,'dom','7♭9'],[2,'min','m9'],[7,'dom','13']]},
+  {name:'Turnaround, tritone sub',note:'slides home by half steps',        ch:[[0,'maj','maj9'],[9,'dom','7♭9'],[2,'min','m9'],[1,'dom','9♯11']]},
+  {name:'Autumn-Leaves style',   note:'ii–V–I–IV, then minor ii–V–i',      ch:[[5,'min','m7'],[10,'dom','9'],[3,'maj','maj7'],[8,'maj','maj7'],[2,'half','ø'],[7,'dom','7alt'],[0,'min','m9'],[0,'min','m9']]},
+  {name:'Jazz blues (bars 1–8)', note:'dominant-7 blues with passing °7',  ch:[[0,'dom','13'],[5,'dom','9'],[0,'dom','13'],[7,'min','m9'],[0,'dom','7♭9'],[5,'dom','9'],[6,'dim','°7'],[9,'dom','7alt']]},
+  {name:'Coltrane cycle',        note:'major thirds, Giant Steps style',   ch:[[0,'maj','maj7'],[3,'dom','7'],[8,'maj','maj7'],[11,'dom','7'],[4,'maj','maj7'],[7,'dom','7'],[0,'maj','maj7']]},
+  {name:'Neo-soul IV–iii–ii–I',  note:'lush and lazy',                     ch:[[5,'maj','maj9'],[4,'min','m9'],[2,'min','m9'],[0,'maj','maj9']]},
+  {name:'Dilla loop',            note:'ii–V–I with a ♯9 twist',            ch:[[2,'min','m9'],[7,'dom','13'],[0,'maj','maj9'],[9,'dom','7♯9']]},
+  {name:'Backdoor',              note:'iv–♭VII7–I',                        ch:[[5,'min','m9'],[10,'dom','13'],[0,'maj','maj9'],[0,'maj','6/9']]},
+  {name:'Dorian vamp',           note:'two-chord groove',                  ch:[[0,'min','m9'],[5,'dom','13'],[0,'min','m11'],[5,'dom','13']]},
+  {name:'Andalusian',            note:'flamenco cadence, minor key',       ch:[[0,'min','m'],[10,'maj',''],[8,'maj',''],[7,'dom','7♭9']]},
+  {name:'Cinematic mediants',    note:'big film-score jumps',              ch:[[0,'maj','add9'],[8,'maj','add9'],[4,'maj',''],[5,'min','m']]},
+  {name:'Pop axis, coloured',    note:'I–V–vi–IV with extensions',         ch:[[0,'maj','add9'],[7,'maj','',11],[9,'min','m7'],[5,'maj','maj7♯11']]},
+  {name:'Pedal on the root',     note:'chords floating over one bass',     ch:[[0,'maj','maj9'],[10,'maj','',0],[5,'maj','maj7',0],[2,'maj','',0]]},
+  {name:'Sus & float',           note:'open, unresolved',                  ch:[[0,'sus','9sus4'],[8,'maj','maj7♯11'],[10,'sus','13sus4'],[0,'maj','6/9']]},
+];
+function builtChords(p,key){
+  return p.ch.map(([r,fam,ext,bass])=>({root:mod12(r+key),fam,v:findVar(fam,ext),...(bass!=null?{bass:mod12(bass+key)}:{})}));
+}
+let libKey=0;
+let myProgs=(()=>{try{const l=JSON.parse(localStorage.getItem('harpmog.progs')||'[]');
+  return Array.isArray(l)?l.filter(x=>x&&Array.isArray(x.chords)).map(x=>({name:String(x.name||'Untitled'),chords:x.chords.map(unpackChord)})):[];}catch(e){return[];}})();
+function saveMyProgs(){try{localStorage.setItem('harpmog.progs',JSON.stringify(myProgs.map(p=>({name:p.name,chords:p.chords.map(packChord)}))));}catch(e){}}
+function loadIntoStrip(chords){
+  prog=chords.slice(0,PROG_LEN);while(prog.length<PROG_LEN)prog.push(null);
+  saveProg();
+  const first=prog.find(Boolean);
+  if(first)selectChord(first);else renderProg();
+}
+function libItem(title,note,chords,onLoad,onDelete){
+  const b=document.createElement('button');b.className='lib-item';
+  b.innerHTML=`<span class="lib-text"><b></b><small></small><span class="lib-chords"></span></span>`;
+  b.querySelector('b').textContent=title;b.querySelector('small').textContent=note;
+  b.querySelector('.lib-chords').textContent=chords.filter(Boolean).map(chordName).join('  ·  ');
+  if(!note)b.querySelector('small').remove();
+  b.addEventListener('click',onLoad);
+  if(onDelete){const x=document.createElement('span');x.className='lib-del';x.textContent='✕';x.title='Delete';
+    x.addEventListener('click',e=>{e.stopPropagation();onDelete();});b.appendChild(x);}
+  return b;
+}
+function renderLib(){
+  const mine=document.getElementById('lib-mine');mine.innerHTML='';
+  if(!myProgs.length)mine.innerHTML='<div class="lib-empty">Nothing saved yet. Build a progression in the strip, then tap “Save current strip”.</div>';
+  myProgs.forEach((p,i)=>mine.appendChild(libItem(p.name,'',p.chords,
+    ()=>{loadIntoStrip(p.chords);closeLib();},
+    ()=>{if(confirm(`Delete “${p.name}”?`)){myProgs.splice(i,1);saveMyProgs();renderLib();}})));
+  const keys=document.getElementById('lib-keys');keys.innerHTML='';
+  for(let k=0;k<12;k++){const b=document.createElement('button');b.textContent=PC_NAMES[k];b.classList.toggle('on',k===libKey);
+    b.addEventListener('click',()=>{libKey=k;renderLib();});keys.appendChild(b);}
+  const built=document.getElementById('lib-built');built.innerHTML='';
+  BUILT.forEach(p=>{const ch=builtChords(p,libKey);built.appendChild(libItem(p.name,p.note,ch,()=>{loadIntoStrip(ch);closeLib();}));});
+}
+const libEl=document.getElementById('lib');
+function closeLib(){libEl.hidden=true;}
+document.getElementById('lib-btn').addEventListener('click',()=>{libKey=state.chord.root;renderLib();libEl.hidden=false;});
+document.getElementById('lib-close').addEventListener('click',closeLib);
+libEl.addEventListener('click',e=>{if(e.target===libEl)closeLib();});
+document.getElementById('lib-save').addEventListener('click',()=>{
+  const chords=prog.filter(Boolean);
+  if(!chords.length){alert('The strip is empty. Drag some chords in first.');return;}
+  const name=prompt('Name this progression:',chords.slice(0,4).map(chordName).join(' – '));
+  if(name==null)return;
+  myProgs.unshift({name:name.trim()||'Untitled',chords:prog.slice()});saveMyProgs();renderLib();
+});
+document.getElementById('lib-clear').addEventListener('click',()=>{prog=Array(PROG_LEN).fill(null);saveProg();renderProg();});
 
 // ── DRAG AND DROP (chords → progression) ──────────────────────
 let drag=null,dragEndedAt=0;
@@ -2042,7 +2075,8 @@ function doUnlock(e){
   function blockMulti(e){
     if(e.touches&&e.touches.length>1){ e.preventDefault(); e.stopImmediatePropagation(); }
   }
-  function blockAll(e){ e.preventDefault(); e.stopImmediatePropagation(); }
+  // (the Settings and Library panels are allowed to scroll on small screens)
+  function blockAll(e){ if(e.type==='touchmove'&&e.target.closest&&e.target.closest('.sheet'))return; e.preventDefault(); e.stopImmediatePropagation(); }
 
   document.addEventListener('touchstart',   blockMulti, {passive:false,capture:true});
   document.addEventListener('touchmove',    blockAll,   {passive:false,capture:true});
@@ -2067,13 +2101,11 @@ function doUnlock(e){
   // Block dblclick (Safari's double-tap zoom trigger)
   document.addEventListener('dblclick', e=>e.preventDefault(), {passive:false, capture:true});
 
-  // Track last tap to squash double-taps ourselves
-  let _lastTap=0;
-  document.addEventListener('touchend', e=>{
-    const now=Date.now();
-    if(now-_lastTap<350){ e.preventDefault(); e.stopImmediatePropagation(); }
-    _lastTap=now;
-  },{passive:false,capture:true});
+  // iPhone: if audio is still suspended, wake it on the next real tap
+  // (touchend/click always count as a user gesture on iOS)
+  const wake=()=>{if(actx&&actx.state!=='running')actx.resume();};
+  document.addEventListener('touchend',wake,{capture:true,passive:true});
+  document.addEventListener('click',wake,{capture:true});
 
   // Force scroll position lock
   document.body.style.overflow='hidden';
