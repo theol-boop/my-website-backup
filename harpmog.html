@@ -173,6 +173,34 @@ button{font-family:var(--font);color:inherit;}
 .lib-item .lib-del{flex:none;border:none;background:transparent;font-size:16px;color:var(--ink-3);cursor:pointer;padding:4px 6px;}
 .lib-empty{font-size:12px;color:var(--ink-3);margin:2px 0 6px;}
 
+#rhythm-bar{flex:none;display:flex;gap:6px;}
+#rh-play,#rh-open{border:none;cursor:pointer;background:var(--win);color:var(--lcd-dim);border-radius:9px;height:34px;
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.6),0 1px 0 rgba(255,255,255,.6);}
+#rh-play{flex:none;width:44px;font-size:14px;}
+#rh-play.on{color:var(--win);background:var(--lcd);box-shadow:0 0 12px rgba(185,224,122,.5);}
+#rh-open{flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:0 10px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+#rh-name{flex:1;min-width:0;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#rh-bpm{flex:none;font-variant-numeric:tabular-nums;}
+#rh-bpm::after{content:' bpm';font-weight:500;opacity:.7;}
+#rh-dots{flex:none;display:flex;gap:3px;}
+#rh-dots i{width:6px;height:6px;border-radius:50%;background:rgba(185,224,122,.18);}
+#rh-dots i.lit{background:var(--lcd);box-shadow:0 0 6px var(--lcd);}
+#rh-dots i.lit.one{background:#f3dca4;box-shadow:0 0 6px #f3dca4;}
+#rh-sheet{position:fixed;inset:0;z-index:150;background:rgba(40,28,18,.35);display:flex;align-items:center;justify-content:center;padding:16px;}
+#rh-sheet .sheet{width:min(560px,100%);max-height:100%;overflow:auto;background:var(--body);border:1px solid var(--edge);border-radius:16px;padding:16px;
+  box-shadow:0 20px 50px rgba(40,25,10,.4);touch-action:pan-y;-webkit-overflow-scrolling:touch;}
+#rh-pats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:4px 0 4px;}
+#rh-pats button{border:none;border-radius:10px;padding:8px 10px;cursor:pointer;text-align:left;background:#fffaf0;
+  box-shadow:0 2px 0 var(--key-shadow),inset 0 0 0 1px rgba(0,0,0,.06);display:flex;flex-direction:column;gap:2px;}
+#rh-pats button b{font-size:13px;} #rh-pats button small{font-size:10.5px;color:var(--ink-2);}
+#rh-pats button.on{background:var(--ink);color:var(--body);} #rh-pats button.on small{color:var(--body-3);}
+.rh-tempo{flex:none;display:flex;align-items:center;gap:6px;}
+.rh-tempo button{border:none;border-radius:9px;height:34px;min-width:34px;padding:0 10px;font-size:15px;font-weight:700;cursor:pointer;background:#fffaf0;
+  box-shadow:0 2px 0 var(--key-shadow),inset 0 0 0 1px rgba(0,0,0,.06);color:var(--ink);}
+#rh-tap{font-size:12px;letter-spacing:.1em;}
+#rh-tap.hit{background:var(--ink);color:var(--body);}
+#rh-bpm2{min-width:44px;text-align:center;font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;}
+
 /* ── STRUM PLATE ── */
 #plate-panel{display:flex;flex-direction:column;gap:8px;min-height:0;}
 #display{background:var(--win);border-radius:10px;padding:8px 12px 7px;
@@ -275,6 +303,8 @@ button{font-family:var(--font);color:inherit;}
   .lp-btn{font-size:10px;height:30px;letter-spacing:0;}
   #brand{display:none;}
   #disp-chord{font-size:20px;}
+  #rh-bpm::after{content:'';} #rh-open{padding:0 6px;gap:4px;font-size:9px;letter-spacing:.02em;} #rh-play{width:34px;}
+  #rh-dots{gap:2px;} #rh-dots i{width:4px;height:4px;}
 }
 /* short phones held upright (iPhone SE etc.) */
 /* shorter chord keys on phones held upright, so more suggestions fit */
@@ -306,6 +336,7 @@ button{font-family:var(--font);color:inherit;}
   #lanes{gap:5px;} .lane{gap:3px;} .lane-head{font-size:7.5px;}
   .dir{padding:2px 5px;border-radius:7px;} .dir b{font-size:11px;} .dir small{font-size:7.5px;}
   #display{padding:4px 8px;} #disp-chord{font-size:16px;}
+  #rh-play,#rh-open{height:26px;} #rh-open{font-size:9px;gap:5px;padding:0 6px;} #rh-play{width:34px;font-size:11px;}
   #controls-panel{gap:6px;}
   .inst{height:26px;font-size:8px;letter-spacing:0;}
   #inst-btns{gap:3px;}
@@ -340,6 +371,7 @@ button{font-family:var(--font);color:inherit;}
 
   <section id="plate-panel">
     <div id="display"><div id="disp-chord">C</div><div id="disp-inst">HARP</div><button id="settings-btn" aria-label="Settings">&#9881;</button></div>
+    <div id="rhythm-bar"><button id="rh-play" aria-label="Start auto-strum">&#9654;</button><button id="rh-open" aria-label="Rhythm settings"><span id="rh-name">Strum 8ths</span><span id="rh-dots"></span><span id="rh-bpm">96</span></button></div>
     <div id="harp-board"></div>
   </section>
 
@@ -397,6 +429,19 @@ button{font-family:var(--font);color:inherit;}
   <div class="set-foot">Tip: hold a sound button to set its volume.</div>
 </div></div>
 <div id="vol-pop" hidden><div class="pop-title"></div><div class="vol-track"><div class="vol-fill"></div><div class="vol-knob"></div></div><div class="vol-val"></div></div>
+<div id="rh-sheet" hidden><div class="sheet">
+  <div class="sheet-head"><b>Auto-strum</b><button id="rh-close">Done</button></div>
+  <div class="set-group">Pattern</div>
+  <div id="rh-pats"></div>
+  <div class="set-group">Feel</div>
+  <div class="set-row"><div class="set-text"><b>Tempo</b><small>Tap TAP in time (3–4 taps) to set it by feel.</small></div>
+    <div class="rh-tempo"><button id="rh-minus">&minus;</button><span id="rh-bpm2">96</span><button id="rh-plus">+</button><button id="rh-tap">TAP</button></div></div>
+  <div class="set-row"><div class="set-text"><b>Swing</b><small>Pushes the off-beats late. Full is a triplet feel, great with Comp.</small></div>
+    <div class="seg" id="rh-swing"><button data-val="0">Off</button><button data-val="0.5">Light</button><button data-val="1">Full</button></div></div>
+  <div class="set-row"><div class="set-text"><b>Play the progression</b><small>Each chord in the progression strip gets one bar, then it moves to the next and loops.</small></div>
+    <div class="seg" id="rh-follow"><button data-val="off">Off</button><button data-val="on">On</button></div></div>
+  <div class="set-foot">You can keep strumming by hand on top. REC records the auto-strum too. On a keyboard, Space starts and stops it.</div>
+</div></div>
 <div id="lib" hidden><div class="sheet">
   <div class="sheet-head"><b>Progressions</b><button id="lib-close">Done</button></div>
   <div class="set-group">Yours</div>
@@ -2065,6 +2110,218 @@ function midiNote(midi,velocity,when){
   if(!midiOut||!actx)return;
   const ts=performance.now()+Math.max(0,(when-actx.currentTime)*1000);
   try{midiOut.send([0x90,midi,Math.max(1,Math.min(127,Math.round(velocity*127)))],ts);midiOut.send([0x80,midi,0],ts+700);}catch(e){}
+}
+
+// ══ AUTO-STRUM / RHYTHM ══════════════════════════════════════
+// Plays the current chord's strings in a repeating pattern. Timing runs on
+// the audio clock (notes are queued ~80 ms ahead), so it stays steady even
+// when the screen is busy. Changing chord takes effect on the next queued
+// note, so the rhythm just carries on with the new chord.
+//
+// A pattern is one bar on a 16th-note grid (16 steps for 4/4, 12 for 3/4).
+// Each event:  t  step it lands on (0 = beat 1, 4 = beat 2 …)
+//              do 'strum' a fast glissando over part of the strings
+//                 'bass'  the lowest string
+//                 'note'  one string at position p (0 = bass end, 1 = top)
+//              lo/hi  part of the strings a strum covers (0 = bass end, 1 = top)
+//              rise   strum low → high (true) or high → low (false)
+//              v  loudness 0–1     ms  how long the strum takes
+const RHYTHMS=(()=>{
+  const R={};
+  const S=(t,lo,hi,v,ms,rise=true)=>({t,do:'strum',lo,hi,v,ms,rise});
+  const B=(t,v)=>({t,do:'bass',v});
+  const N=(t,p,v)=>({t,do:'note',p,v});
+  R.strum8={name:'Strum 8ths',desc:'down on the beat, light up-strums between',steps:16,
+    ev:[0,1,2,3].flatMap(b=>[S(b*4,0,1,b%2?0.6:0.78,28),S(b*4+2,0.45,1,0.38,18,false)])};
+  R.waltz={name:'Waltz',desc:'3/4: bass, then two light strums',steps:12,
+    ev:[B(0,0.8),S(4,0.35,1,0.5,14),S(8,0.35,1,0.45,14)]};
+  R.bossa={name:'Bossa',desc:'bass on 1 & 3, syncopated chord jabs',steps:16,
+    ev:[B(0,0.75),N(6,0.1,0.55),B(8,0.65),N(14,0.1,0.5),
+        S(0,0.4,0.9,0.45,10),S(3,0.4,0.9,0.4,10),S(6,0.4,0.9,0.42,10),S(10,0.4,0.9,0.4,10),S(12,0.4,0.9,0.42,10)]};
+  R.arpup={name:'Arp up',desc:'one string at a time, rising',steps:16,
+    ev:[0,.2,.35,.5,.6,.7,.8,.9].map((p,k)=>N(k*2,p,k?0.52:0.68))};
+  R.arpud={name:'Arp up-down',desc:'rises, then falls back',steps:16,
+    ev:[0,.25,.4,.55,.7,.85,.7,.55].map((p,k)=>N(k*2,p,k?0.52:0.68))};
+  R.comp={name:'Comp',desc:'jazz-piano stabs on 1 and the and-of-2 (try with swing)',steps:16,
+    ev:[B(0,0.6),B(8,0.55),S(0,0.3,0.8,0.55,8),S(6,0.3,0.8,0.5,8),S(14,0.3,0.8,0.32,8)]};
+  R.skank={name:'Skank',desc:'reggae off-beat chops, bass on 1',steps:16,
+    ev:[B(0,0.7),S(4,0.5,1,0.55,6,false),S(12,0.5,1,0.55,6,false)]};
+  R.ballad={name:'Ballad',desc:'bass, then a slow broken chord',steps:16,
+    ev:[B(0,0.75),...[.3,.4,.5,.6,.7,.8,.9].map((p,k)=>N(2+k*2,p,0.45))]};
+  R.shimmer={name:'Shimmer',desc:'fast 16ths rippling over the top strings',steps:16,
+    ev:Array.from({length:16},(_,k)=>N(k,0.5+0.5*(k%8)/7,k%2?0.28:0.38))};
+  R.pad={name:'Pad swell',desc:'one slow strum per bar (good with PAD / CHOIR)',steps:16,
+    ev:[S(0,0,1,0.5,350)]};
+  for(const k in R)R[k].ev.sort((a,b)=>a.t-b.t);
+  return R;
+})();
+const RHYTHM_ORDER=['strum8','waltz','bossa','arpup','arpud','comp','skank','ballad','shimmer','pad'];
+
+const rhythm=Object.assign({pat:'strum8',bpm:96,swing:0,follow:false},
+  (()=>{try{const o=JSON.parse(localStorage.getItem('harpmog.rhythm')||'{}');
+    return {pat:RHYTHMS[o.pat]?o.pat:undefined,bpm:+o.bpm||undefined,swing:[0,0.5,1].includes(o.swing)?o.swing:undefined,follow:!!o.follow};}catch(e){return{};}})());
+for(const k of ['pat','bpm','swing'])if(rhythm[k]===undefined)delete rhythm[k];
+Object.assign(rhythm,{pat:rhythm.pat||'strum8',bpm:Math.max(50,Math.min(200,rhythm.bpm||96)),swing:rhythm.swing||0,
+  on:false,timer:null,barStart:0,idx:0,cur:null,next:null,slot:-1,queued:[]});
+function saveRhythm(){try{localStorage.setItem('harpmog.rhythm',JSON.stringify({pat:rhythm.pat,bpm:rhythm.bpm,swing:rhythm.swing,follow:rhythm.follow}));}catch(e){}}
+
+const RH_AHEAD=0.08;                              // seconds of rhythm queued in advance
+function stepDur(){return 60/rhythm.bpm/4;}       // one 16th note
+function stepAt(barStart,t){
+  let at=barStart+t*stepDur();
+  if(rhythm.swing&&t%4===2)at+=rhythm.swing*stepDur()*(2/3);   // swing pushes the off-beat 8ths late (full = triplet feel)
+  return at;
+}
+// one note on every selected sound, plus MIDI, looper recording and a string flash
+function rhythmNote(midi,v,at){
+  v=Math.max(0.05,Math.min(1,v+(Math.random()-0.5)*0.06));      // a touch of human variation
+  const vol=state.insts.size>1?1/Math.sqrt(state.insts.size):1;
+  state.insts.forEach(inst=>rhythm.queued.push({at,outs:pluckInst(inst,midi,v,vol,at)}));
+  midiNote(midi,v,at);
+  looperRecord(midi,v,at);
+  const i=state.vis.indexOf(midi);
+  if(i>=0)setTimeout(()=>flash(i),Math.max(0,(at-actx.currentTime)*1000));
+}
+function rhythmEvent(e,at){
+  const asc=[...state.ds].reverse(),n=asc.length;if(!n)return;
+  if(e.do==='bass')return rhythmNote(asc[0],e.v,at);
+  if(e.do==='note')return rhythmNote(asc[Math.round(e.p*(n-1))],e.v,at);
+  let notes=asc.slice(Math.round(e.lo*(n-1)),Math.round(e.hi*(n-1))+1);
+  if(!e.rise)notes.reverse();
+  const gap=(e.ms/1000)/Math.max(1,notes.length-1);
+  notes.forEach((m,k)=>rhythmNote(m,e.v*(1-0.15*k/notes.length),at+k*gap));
+}
+// called as each new bar is queued: switch pattern, step the progression strip
+function rhythmBar(){
+  if(rhythm.next){rhythm.cur=RHYTHMS[rhythm.next];rhythm.next=null;}
+  if(rhythm.follow){
+    const filled=prog.map((c,i)=>c?i:-1).filter(i=>i>=0);
+    if(filled.length){
+      const after=filled.find(i=>i>rhythm.slot);
+      rhythm.slot=after!=null?after:filled[0];
+      selectChord(prog[rhythm.slot]);
+    }
+  }
+}
+function rhythmTick(){
+  const now=actx.currentTime,horizon=now+RH_AHEAD;
+  const barLen=()=>rhythm.cur.steps*stepDur();
+  if(rhythm.barStart+barLen()<now-0.5){   // fell far behind (tab in background): restart on the next beat
+    rhythm.barStart=now+0.05;rhythm.idx=0;rhythmBar();
+  }
+  for(;;){
+    const ev=rhythm.cur.ev;
+    if(rhythm.idx>=ev.length){                 // bar done: move on only once the next bar line is near
+      if(rhythm.barStart+barLen()>horizon)break;
+      rhythm.barStart+=barLen();rhythm.idx=0;rhythmBar();continue;
+    }
+    const e=ev[rhythm.idx],at=stepAt(rhythm.barStart,e.t);
+    if(at>horizon)break;
+    if(at>=now-0.03)rhythmEvent(e,at);
+    rhythm.idx++;
+  }
+  rhythm.queued=rhythm.queued.filter(q=>q.at>now);
+}
+function rhythmStart(){
+  if(!actx||rhythm.on)return;
+  rhythm.on=true;rhythm.cur=RHYTHMS[rhythm.pat];rhythm.next=null;rhythm.idx=0;
+  rhythm.barStart=actx.currentTime+0.06;
+  if(rhythm.follow){               // start from the chord you're on if it's in the strip
+    const k=chordKey(state.chord),here=prog.findIndex(c=>c&&chordKey(c)===k);
+    rhythm.slot=here>=0?here-1:-1;   // rhythmBar() steps forward one → lands on this one (or the first filled slot)
+  }
+  rhythmBar();
+  rhythmTick();
+  rhythm.timer=setInterval(rhythmTick,20);
+  paintRhythm();
+}
+function rhythmStop(){
+  if(!rhythm.on)return;
+  rhythm.on=false;clearInterval(rhythm.timer);rhythm.timer=null;
+  const now=actx.currentTime;
+  for(const q of rhythm.queued)if(q.at>now)q.outs.forEach(n=>n.disconnect());   // cut notes not yet heard
+  rhythm.queued=[];
+  paintRhythm();
+}
+function setPattern(id){
+  rhythm.pat=id;saveRhythm();
+  if(rhythm.on)rhythm.next=id;     // switches cleanly at the next bar line
+  paintRhythm();
+}
+function setBpm(b){
+  b=Math.max(50,Math.min(200,Math.round(b)));
+  if(rhythm.on&&actx){             // keep our place in the bar when the tempo changes
+    const now=actx.currentTime,pos=(now-rhythm.barStart)/stepDur();
+    rhythm.bpm=b;rhythm.barStart=now-pos*stepDur();
+  } else rhythm.bpm=b;
+  saveRhythm();paintRhythm();
+}
+// ── RHYTHM CONTROLS ──
+const rhSheet=document.getElementById('rh-sheet');
+function paintRhythm(){
+  const pat=RHYTHMS[rhythm.pat];
+  const play=document.getElementById('rh-play');
+  play.classList.toggle('on',rhythm.on);play.innerHTML=rhythm.on?'&#9632;':'&#9654;';
+  play.setAttribute('aria-label',rhythm.on?'Stop auto-strum':'Start auto-strum');
+  document.getElementById('rh-name').textContent=pat.name+(rhythm.follow?' · strip':'');
+  document.getElementById('rh-bpm').textContent=rhythm.bpm;
+  document.getElementById('rh-bpm2').textContent=rhythm.bpm;
+  const beats=pat.steps/4,dots=document.getElementById('rh-dots');
+  if(dots.children.length!==beats){dots.innerHTML='';for(let i=0;i<beats;i++)dots.appendChild(document.createElement('i'));}
+  document.querySelectorAll('#rh-pats button').forEach(b=>b.classList.toggle('on',b.dataset.pat===rhythm.pat));
+  document.querySelectorAll('#rh-swing button').forEach(b=>b.classList.toggle('on',+b.dataset.val===rhythm.swing));
+  document.querySelectorAll('#rh-follow button').forEach(b=>b.classList.toggle('on',(b.dataset.val==='on')===rhythm.follow));
+}
+// beat lights follow the audio clock
+(function beatLoop(){
+  requestAnimationFrame(beatLoop);
+  const dots=document.getElementById('rh-dots').children;
+  if(!rhythm.on||!actx||!rhythm.cur){for(const d of dots)d.classList.remove('lit');return;}
+  const beats=rhythm.cur.steps/4,beatLen=4*stepDur();
+  let pos=(actx.currentTime-rhythm.barStart)/beatLen;
+  if(pos<0)pos+=beats;                       // the scheduler can already be on the next bar
+  const beat=Math.floor(pos)%beats,fresh=pos-Math.floor(pos)<0.35;
+  [...dots].forEach((d,i)=>{d.classList.toggle('lit',i===beat&&fresh);d.classList.toggle('one',i===0);});
+})();
+{
+  const pats=document.getElementById('rh-pats');
+  for(const id of RHYTHM_ORDER){
+    const b=document.createElement('button');b.dataset.pat=id;
+    b.innerHTML=`<b>${RHYTHMS[id].name}</b><small>${RHYTHMS[id].desc}</small>`;
+    b.addEventListener('click',()=>setPattern(id));pats.appendChild(b);
+  }
+  onTap(document.getElementById('rh-play'),()=>{if(rhythm.on)rhythmStop();else rhythmStart();});
+  document.getElementById('rh-open').addEventListener('click',()=>{paintRhythm();rhSheet.hidden=false;});
+  document.getElementById('rh-close').addEventListener('click',()=>{rhSheet.hidden=true;});
+  rhSheet.addEventListener('click',e=>{if(e.target===rhSheet)rhSheet.hidden=true;});
+  // − / + : tap for 1, hold to keep going
+  for(const [id,d] of [['rh-minus',-1],['rh-plus',1]]){
+    const el=document.getElementById(id);let rep=null,t0=null;
+    const stop=()=>{clearTimeout(t0);clearInterval(rep);};
+    el.addEventListener('pointerdown',e=>{e.preventDefault();setBpm(rhythm.bpm+d);t0=setTimeout(()=>{rep=setInterval(()=>setBpm(rhythm.bpm+d),70);},400);});
+    el.addEventListener('pointerup',stop);el.addEventListener('pointercancel',stop);el.addEventListener('pointerleave',stop);
+  }
+  // tap tempo: average of the last few taps; a pause of 2 s starts over
+  let taps=[];
+  document.getElementById('rh-tap').addEventListener('pointerdown',e=>{
+    e.preventDefault();const t=performance.now();
+    if(taps.length&&t-taps[taps.length-1]>2000)taps=[];
+    taps.push(t);taps=taps.slice(-5);
+    const el=e.currentTarget;el.classList.add('hit');setTimeout(()=>el.classList.remove('hit'),90);
+    if(taps.length>=3){const gaps=taps.slice(1).map((x,i)=>x-taps[i]);setBpm(60000/(gaps.reduce((a,b)=>a+b)/gaps.length));}
+  });
+  document.querySelectorAll('#rh-swing button').forEach(b=>b.addEventListener('click',()=>{rhythm.swing=+b.dataset.val;saveRhythm();paintRhythm();}));
+  document.querySelectorAll('#rh-follow button').forEach(b=>b.addEventListener('click',()=>{
+    rhythm.follow=b.dataset.val==='on';saveRhythm();
+    if(rhythm.follow&&rhythm.on){const k=chordKey(state.chord);rhythm.slot=prog.findIndex(c=>c&&chordKey(c)===k);}   // carry on from here
+    paintRhythm();
+  }));
+  // Space starts/stops (computer keyboards)
+  document.addEventListener('keydown',e=>{
+    if(e.code!=='Space'||e.repeat||!unlocked||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;
+    e.preventDefault();if(rhythm.on)rhythmStop();else rhythmStart();
+  });
+  paintRhythm();
 }
 
 // ── UNLOCK ────────────────────────────────────────────────────
