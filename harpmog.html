@@ -613,7 +613,7 @@ function updateDisplay(){
 }
 
 // ── CHORD GRID ────────────────────────────────────────────────
-const HOLD_MS=320;
+const HOLD_MS=380;   // hold this long for the extensions menu (the chord itself changes on touch)
 function buildGrid(){
   const g=document.getElementById('chord-grid');g.innerHTML='';
   for(const f of FAMILIES){
@@ -647,12 +647,14 @@ function attachKey(k){
   let timer=null,held=false;
   k.addEventListener('pointerdown',e=>{
     e.preventDefault();k.setPointerCapture(e.pointerId);k.classList.add('pressed');held=false;
+    // the chord changes the instant the key is touched; keep holding to open its extensions
+    selectChord({root:+k.dataset.root,fam:k.dataset.fam,v:rowVar[k.dataset.fam]});
     timer=setTimeout(()=>{held=true;openPop(k);},HOLD_MS);
   });
   k.addEventListener('pointermove',e=>{if(held)hoverPop(e.clientX,e.clientY);});
   k.addEventListener('pointerup',e=>{
     clearTimeout(timer);k.classList.remove('pressed');
-    if(!held){closePop();selectChord({root:+k.dataset.root,fam:k.dataset.fam,v:rowVar[k.dataset.fam]});return;}
+    if(!held)return;
     // held: releasing over an extension picks it; releasing elsewhere leaves the list open to tap
     const b=popButtonAt(e.clientX,e.clientY);
     if(b)pickFromPop(b);
