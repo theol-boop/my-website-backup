@@ -101,8 +101,8 @@ button{font-family:var(--font);color:inherit;}
 #display{background:var(--win);border-radius:10px;padding:8px 12px 7px;
   box-shadow:inset 0 2px 6px rgba(0,0,0,.6),0 1px 0 rgba(255,255,255,.6);
   display:flex;align-items:baseline;justify-content:space-between;gap:10px;min-width:0;}
-#disp-chord{font-size:24px;font-weight:700;color:var(--lcd);text-shadow:0 0 10px rgba(185,224,122,.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#disp-inst{font-size:10px;letter-spacing:.14em;color:var(--lcd-dim);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#disp-chord{flex:none;max-width:70%;font-size:24px;font-weight:700;color:var(--lcd);text-shadow:0 0 10px rgba(185,224,122,.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#disp-inst{flex:1;min-width:0;text-align:right;font-size:10px;letter-spacing:.14em;color:var(--lcd-dim);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #harp-board{flex:1;min-height:0;position:relative;touch-action:none;
   background:
     linear-gradient(90deg,rgba(255,255,255,.04),transparent 18%,transparent 82%,rgba(255,255,255,.04)),
@@ -132,8 +132,8 @@ button{font-family:var(--font);color:inherit;}
 .fader-fill{position:absolute;top:0;left:0;bottom:0;width:0%;background:linear-gradient(90deg,rgba(207,84,40,.25),rgba(207,84,40,.6));pointer-events:none;}
 .fader-line{position:absolute;top:2px;bottom:2px;width:14px;margin-left:-7px;left:0%;border-radius:8px;pointer-events:none;
   background:linear-gradient(180deg,#fffaf0,#d9cbad);box-shadow:0 1px 2px rgba(0,0,0,.35),inset 0 0 0 1px rgba(0,0,0,.12);}
-#looper-panel{display:flex;gap:8px;align-items:stretch;margin-top:auto;}
-#looper-transport{flex:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;align-content:center;}
+#looper-panel{flex:1;min-height:0;display:flex;flex-direction:column;gap:8px;}
+#looper-transport{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
 .lp-btn{height:38px;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;letter-spacing:.08em;
   background:linear-gradient(180deg,#fffaf0,var(--key));color:var(--ink);box-shadow:0 2px 0 var(--key-shadow),inset 0 0 0 1px rgba(0,0,0,.06);}
 .lp-btn.active{background:var(--ink);color:var(--body);transform:translateY(1px);}
@@ -141,16 +141,16 @@ button{font-family:var(--font);color:inherit;}
 .lp-btn.rec-active{background:var(--dom);color:#fff;transform:translateY(1px);}
 .lp-clear{color:var(--ink-3);}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:.35;}}
-#led-panel{flex:none;width:84px;border-radius:8px;overflow:hidden;background:var(--win);box-shadow:inset 0 2px 5px rgba(0,0,0,.6);}
-#scope-wrap{display:grid;grid-template-columns:1fr 18px;}
-#waveform-canvas{display:block;width:100%;height:auto;aspect-ratio:1/1;}
-#scope-side{display:flex;flex-direction:column;justify-content:space-evenly;align-items:center;background:rgba(0,0,0,.25);}
-.scope-unit{display:flex;justify-content:center;}
-.scope-dial{width:13px;height:13px;border-radius:50%;position:relative;cursor:pointer;touch-action:none;background:#3a302a;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);}
-.scope-dial-ring{display:none;}
-.scope-dial-pointer{position:absolute;left:50%;top:50%;width:1px;height:5px;margin-left:-.5px;margin-top:-5px;background:var(--lcd);
-  transform-origin:50% 5px;transform:rotate(var(--scope-rot,-135deg));pointer-events:none;}
-.scope-dial-name{display:none;}
+/* the scope: a built-in display, bezel + glass (vignette, scanlines, glare drawn over the canvas) */
+#led-panel{position:relative;flex:1;min-height:110px;border-radius:12px;overflow:hidden;background:#07120d;
+  border:4px solid #2a221d;box-shadow:inset 0 0 0 1px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.65),0 0 0 1px var(--edge);}
+#waveform-canvas{position:absolute;inset:0;display:block;width:100%;height:100%;}
+#led-panel::after{content:'';position:absolute;inset:0;pointer-events:none;border-radius:8px;
+  background:
+    linear-gradient(155deg,rgba(255,255,255,.10) 0%,rgba(255,255,255,.03) 28%,transparent 42%),
+    repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px),
+    radial-gradient(120% 110% at 50% 50%,transparent 55%,rgba(0,0,0,.65) 100%);
+  box-shadow:inset 0 0 18px rgba(0,0,0,.8),inset 0 0 40px rgba(60,255,170,.05);}
 #brand{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:12px;font-weight:700;letter-spacing:.2em;color:var(--ink-3);text-transform:uppercase;}
 #brand a{color:var(--ink-3);text-decoration:none;letter-spacing:.1em;font-size:11px;}
 
@@ -191,8 +191,9 @@ button{font-family:var(--font);color:inherit;}
   #controls-panel .panel-label{display:none;}
   #controls-panel{gap:8px;}
   #fx-knobs{gap:4px 6px;} .fader-wrap{height:20px;} .fx-name{font-size:8px;}
-  .lp-btn{font-size:10px;height:32px;letter-spacing:0;}
-  #led-panel,#brand{display:none;}
+  .lp-btn{font-size:10px;height:30px;letter-spacing:0;}
+  #brand{display:none;}
+  #led-panel{min-height:70px;}
   #disp-chord{font-size:20px;}
 }
 /* short phones held upright (iPhone SE etc.) */
@@ -201,6 +202,7 @@ button{font-family:var(--font);color:inherit;}
   #chord-panel,#next-panel{gap:5px;}
   .dir{padding:4px 5px;} .dir b{font-size:12px;}
   .dir:nth-child(n+7){display:none;}
+  #led-panel{display:none;}   /* no room for the scope on the smallest phones */
 }
 /* ── PHONES HELD SIDEWAYS: tighter everything ── */
 @media (orientation:landscape) and (max-height:560px){
@@ -223,7 +225,7 @@ button{font-family:var(--font);color:inherit;}
   #inst-btns{gap:3px;}
   #fx-knobs{gap:3px 5px;} .fader-wrap{height:18px;} .fader-line{width:10px;margin-left:-5px;} .fx-name{font-size:7px;}
   .lp-btn{height:28px;font-size:10px;letter-spacing:.02em;}
-  #led-panel{width:52px;} #scope-wrap{grid-template-columns:1fr;} #scope-side{display:none;}
+  #looper-panel{gap:5px;} #led-panel{min-height:70px;border-width:3px;}
   #brand{display:none;}
 }
 </style>
@@ -267,6 +269,11 @@ button{font-family:var(--font);color:inherit;}
       <button class="inst" data-inst="cello">CELLO</button>
       <button class="inst" data-inst="wood">WOOD</button>
       <button class="inst" data-inst="thumb">THUMB</button>
+      <button class="inst" data-inst="epiano">E.PNO</button>
+      <button class="inst" data-inst="nylon">NYLON</button>
+      <button class="inst" data-inst="vibes">VIBES</button>
+      <button class="inst" data-inst="mbox">M.BOX</button>
+      <button class="inst" data-inst="omni">OMNI</button>
     </div>
     <div class="panel-label">Effects</div>
     <div id="fx-knobs">
@@ -278,21 +285,11 @@ button{font-family:var(--font);color:inherit;}
       <div class="fx-unit"><div class="fader-wrap" id="knob-tape" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-tape"></div><div class="fader-line"></div></div><div class="fx-name">twang</div></div>
     </div>
     <div id="looper-panel">
+      <div id="led-panel"><canvas id="waveform-canvas"></canvas></div>
       <div id="looper-transport">
         <button class="lp-btn" id="lp-rec">REC</button>
         <button class="lp-btn" id="lp-play">PLAY</button>
         <button class="lp-btn lp-clear" id="lp-clear">CLR</button>
-      </div>
-      <div id="led-panel">
-        <div id="scope-wrap">
-          <canvas id="waveform-canvas"></canvas>
-          <div id="scope-side">
-            <div class="scope-unit"><div class="scope-dial" data-scope-key="time" role="slider" aria-label="Time base"><div class="scope-dial-ring"></div><div class="scope-dial-pointer"></div></div><div class="scope-dial-name">time</div></div>
-            <div class="scope-unit"><div class="scope-dial" data-scope-key="gain" role="slider" aria-label="Scope gain"><div class="scope-dial-ring"></div><div class="scope-dial-pointer"></div></div><div class="scope-dial-name">gain</div></div>
-            <div class="scope-unit"><div class="scope-dial" data-scope-key="persist" role="slider" aria-label="Phosphor persistence"><div class="scope-dial-ring"></div><div class="scope-dial-pointer"></div></div><div class="scope-dial-name">phos</div></div>
-            <div class="scope-unit"><div class="scope-dial" data-scope-key="xy" role="slider" aria-label="X-Y mix"><div class="scope-dial-ring"></div><div class="scope-dial-pointer"></div></div><div class="scope-dial-name">x-y</div></div>
-          </div>
-        </div>
       </div>
     </div>
     <div id="brand"><span>HarpMog</span><a class="site-back" href="javascript:history.back()" hidden>&#8249; back</a></div>
@@ -675,7 +672,9 @@ document.getElementById('fav-btn').addEventListener('click',()=>{
 let actx=null,master=null,reverbConv=null,reverbSend=null,delayNode=null,delaySend=null;
 let analyser=null,waveRaf=null;
 let scopeWaveBuf=null;
-const scopeState={time:50,gain:55,persist:28,xy:18};
+// Scope settings are fixed (the old dials, all turned fully right): longest window,
+// full gain, longest phosphor trails, full X-Y figure.
+const scopeState={time:100,gain:100,persist:100,xy:100};
 function scopeFftFromTime(t){
   const sizes=[512,1024,2048];
   return sizes[Math.min(2,Math.floor(Number(t)/34.001))];
@@ -928,6 +927,73 @@ function bakeThumb(freq,sr){
   return buf;
 }
 
+// E.PNO — Rhodes-style electric piano: FM tine (bright attack that mellows), soft bark at loud-ish notes
+function bakeEpiano(freq,sr){
+  const dur=3.2,bufLen=Math.ceil(sr*dur);
+  const buf=actx.createBuffer(1,bufLen,sr);
+  const data=buf.getChannelData(0);
+  const idx0=2.2*Math.min(1,700/freq);          // less FM up high, keeps it clean
+  const w=2*Math.PI*freq/sr;
+  const tineOk=audible(freq,14,sr);
+  for(let i=0;i<bufLen;i++){
+    const t=i/sr;
+    const I=idx0*Math.exp(-t*5)+0.25;
+    const body=Math.sin(w*i+I*Math.sin(w*i));
+    const tine=tineOk?Math.sin(w*14*i)*0.10*Math.exp(-t*40):0;
+    const env=Math.min(1,i/(sr*0.002))*Math.exp(-t*1.25);
+    data[i]=(body+tine)*env*0.42;
+  }
+  return buf;
+}
+// NYLON — the harp's string, plucked softer: darker and a little longer
+function bakeNylon(freq,sr){return bakeKS(freq,sr,3.0,0.4978,2600);}
+// VIBES — vibraphone: bar partials (1, 4, 10) with the motor's tremolo
+function bakeVibes(freq,sr){
+  const dur=3.6,bufLen=Math.ceil(sr*dur);
+  const buf=actx.createBuffer(1,bufLen,sr);
+  const data=buf.getChannelData(0);
+  const parts=[{r:1,a:0.75,d:2.6},{r:4,a:0.22,d:0.35},{r:10,a:0.05,d:0.08}].filter(p=>audible(freq,p.r,sr));
+  for(let i=0;i<bufLen;i++){
+    const t=i/sr;let s=0;
+    for(const p of parts)s+=Math.sin(2*Math.PI*freq*p.r*t)*p.a*Math.exp(-t/p.d);
+    const trem=1-0.32*(0.5+0.5*Math.sin(2*Math.PI*5.2*t));
+    data[i]=s*trem*Math.min(1,i/(sr*0.001))*0.55;
+  }
+  return buf;
+}
+// MBOX — music box: an octave up, steel comb partials, tiny click
+function bakeMusicBox(freq,sr){
+  const f=freq*2;
+  const dur=2.4,bufLen=Math.ceil(sr*dur);
+  const buf=actx.createBuffer(1,bufLen,sr);
+  const data=buf.getChannelData(0);
+  const parts=[{r:1,a:0.6,d:1.6},{r:3.98,a:0.22,d:0.45},{r:9.1,a:0.08,d:0.12}].filter(p=>audible(f,p.r,sr));
+  for(let i=0;i<bufLen;i++){
+    const t=i/sr;let s=0;
+    for(const p of parts)s+=Math.sin(2*Math.PI*f*p.r*t)*p.a*Math.exp(-t/p.d);
+    s+=(Math.random()*2-1)*Math.exp(-i/(sr*0.0015))*0.25;
+    data[i]=s*0.5;
+  }
+  return buf;
+}
+// OMNI — omnichord-style strum plate: soft pulse wave whose filter closes as it rings
+function bakeOmni(freq,sr){
+  const dur=2.6,bufLen=Math.ceil(sr*dur);
+  const buf=actx.createBuffer(1,bufLen,sr);
+  const data=buf.getChannelData(0);
+  const H=[],duty=0.3;
+  for(let n=1;n<=24&&audible(freq,n,sr);n++)H.push({n,a:Math.sin(Math.PI*n*duty)/n});
+  const w=2*Math.PI*freq/sr;
+  for(let i=0;i<bufLen;i++){
+    const t=i/sr;let s=0;
+    const bright=0.35+3.5*Math.exp(-t*6);        // brightness falls fast after the strum
+    for(const h of H)s+=Math.sin(w*h.n*i)*h.a*Math.exp(-(h.n-1)/(bright*4));
+    const env=Math.min(1,i/(sr*0.004))*Math.exp(-t*1.5);
+    data[i]=s*env*0.5;
+  }
+  return buf;
+}
+
 function bakeBuffer(inst,midi){
   const freq=440*Math.pow(2,(midi-69)/12);
   const sr=actx.sampleRate;
@@ -941,6 +1007,11 @@ function bakeBuffer(inst,midi){
   if(inst==='cello') return bakeCello(freq,sr);
   if(inst==='wood')  return bakeWood(freq,sr);
   if(inst==='thumb') return bakeThumb(freq,sr);
+  if(inst==='epiano') return bakeEpiano(freq,sr);
+  if(inst==='nylon') return bakeNylon(freq,sr);
+  if(inst==='vibes') return bakeVibes(freq,sr);
+  if(inst==='mbox')  return bakeMusicBox(freq,sr);
+  if(inst==='omni')  return bakeOmni(freq,sr);
   return bakeHarp(freq,sr);
 }
 
@@ -1131,8 +1202,10 @@ function startWaveform(){
     waveRaf=requestAnimationFrame(draw);
     const W=canvas.offsetWidth,H=canvas.offsetHeight;
     if(!W||!H)return;
-    if(canvas.width!==W||canvas.height!==H){canvas.width=W;canvas.height=H;}
+    const dpr=Math.min(2,window.devicePixelRatio||1);
+    if(canvas.width!==Math.round(W*dpr)||canvas.height!==Math.round(H*dpr)){canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);}
     const ctx=canvas.getContext('2d');
+    ctx.setTransform(dpr,0,0,dpr,0,0);
     const persistA=0.34-(scopeState.persist/100)*0.28;
     if(!analyser){
       ctx.fillStyle='#0a0a0a';
@@ -1206,8 +1279,9 @@ function startWaveform(){
       const sDly=buf[(i+t0+delay)%N];
       const xSweep=(i/Math.max(1,N-1))*W;
       const ySweep=H/2-s*g*H*0.41;
-      const xXy=W/2+s*g*W*0.36;
-      const yXy=H/2-sDly*g*H*0.36;
+      const R=Math.min(W,H)*0.36;           // same scale both ways so the figure isn't stretched
+      const xXy=W/2+s*g*R;
+      const yXy=H/2-sDly*g*R;
       const x=xSweep*(1-xyMix)+xXy*xyMix;
       const y=ySweep*(1-xyMix)+yXy*xyMix;
       if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
@@ -1218,13 +1292,14 @@ function startWaveform(){
     // Hz readout (bottom-right)
     if(hz){
       ctx.save();
-      ctx.font='7px -apple-system,Helvetica Neue,Arial,sans-serif';
+      ctx.fillStyle='#07120d';ctx.fillRect(W-74,H-24,70,19);   // clear behind it so the trails don't smear the text
+      ctx.font='10px -apple-system,Helvetica Neue,Arial,sans-serif';
       ctx.textAlign='right';
       ctx.textBaseline='alphabetic';
       ctx.fillStyle='rgba(255,179,71,0.78)';
       ctx.shadowColor='rgba(255,179,71,0.25)';
       ctx.shadowBlur=6;
-      ctx.fillText(hz.toFixed(hz<100?1:0)+' Hz',W-4,H-4);
+      ctx.fillText(hz.toFixed(hz<100?1:0)+' Hz',W-10,H-9);
       ctx.restore();
     }
   }
@@ -1464,56 +1539,6 @@ function initFaders(){
   });
 }
 
-function initScopeKnobs(){
-  document.querySelectorAll('.scope-dial[data-scope-key]').forEach(dial=>{
-    const key=dial.dataset.scopeKey;
-    let val=typeof scopeState[key]==='number'?scopeState[key]:50;
-    scopeState[key]=val;
-    function syncFft(){
-      if(key!=='time'||!analyser)return;
-      const f=scopeFftFromTime(val);
-      if(analyser.fftSize!==f){
-        analyser.fftSize=f;
-        scopeWaveBuf=new Float32Array(f);
-      }
-    }
-    function paintDial(){
-      dial.style.setProperty('--scope-rot',(-135+(val/100)*270)+'deg');
-      dial.dataset.val=String(Math.round(val));
-      dial.setAttribute('aria-valuenow',String(Math.round(val)));
-      scopeState[key]=val;
-      syncFft();
-    }
-    paintDial();
-    let lastAng=null;
-    dial.addEventListener('pointerdown',e=>{
-      e.preventDefault();e.stopPropagation();
-      dial.setPointerCapture(e.pointerId);
-      const r=dial.getBoundingClientRect();
-      const cx=r.left+r.width/2,cy=r.top+r.height/2;
-      lastAng=Math.atan2(e.clientY-cy,e.clientX-cx);
-    },{passive:false});
-    dial.addEventListener('pointermove',e=>{
-      if(!dial.hasPointerCapture(e.pointerId))return;
-      e.preventDefault();e.stopPropagation();
-      const r=dial.getBoundingClientRect();
-      const cx=r.left+r.width/2,cy=r.top+r.height/2;
-      const ang=Math.atan2(e.clientY-cy,e.clientX-cx);
-      let d=ang-lastAng;
-      if(d>Math.PI)d-=2*Math.PI;
-      if(d<-Math.PI)d+=2*Math.PI;
-      lastAng=ang;
-      val=Math.max(0,Math.min(100,val+(d/(2*Math.PI))*56));
-      paintDial();
-    },{passive:false});
-    dial.addEventListener('pointerup',e=>{
-      if(dial.hasPointerCapture(e.pointerId))dial.releasePointerCapture(e.pointerId);
-    });
-    dial.addEventListener('pointercancel',e=>{
-      if(dial.hasPointerCapture(e.pointerId))dial.releasePointerCapture(e.pointerId);
-    });
-  });
-}
 
 // ── INSTRUMENT BUTTONS (tap to layer; at least one stays on) ──
 document.querySelectorAll('.inst[data-inst]').forEach(btn=>{
@@ -1539,7 +1564,6 @@ function doUnlock(e){
   document.getElementById('app').style.visibility='visible';
   buildGrid();applySet();renderNext();attachBoard();
   initFaders();
-  initScopeKnobs();
   initAudio();
   prewarm();
   // Resume AudioContext after iOS rotation / interruption / tab switch
