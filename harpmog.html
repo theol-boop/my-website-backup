@@ -230,7 +230,7 @@ button{font-family:var(--font);color:inherit;}
   font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);text-decoration:none;}
 
 /* ── PHONES / TABLETS HELD UPRIGHT: chords on top, plate on the right ── */
-@media (orientation:portrait),(max-width:700px){
+@media (orientation:portrait),(max-width:700px) and (min-height:561px){
   #app{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);
     grid-template-rows:auto minmax(0,1fr) auto;
     grid-template-areas:"chords chords" "next plate" "controls plate";gap:8px;}
@@ -258,9 +258,15 @@ button{font-family:var(--font);color:inherit;}
   #disp-chord{font-size:20px;}
 }
 /* short phones held upright (iPhone SE etc.) */
+/* shorter chord keys on phones held upright, so more suggestions fit */
+@media (orientation:portrait) and (max-width:480px) and (max-height:900px){
+  .key{height:31px;} #chord-grid{gap:3px;} #chord-panel{gap:5px;}
+  .row-head b{font-size:9px;} .row-head small{font-size:8px;}
+}
 @media (orientation:portrait) and (max-height:740px){
+  .key{height:25px !important;font-size:10px;} #chord-grid{gap:2px;} .key::after{bottom:3px;height:2px;}
+  #chord-panel .panel-label{display:none;}
   #recent-row{display:none;}   /* small screens: the progression strip covers recall */
-  .key{height:30px;}
   #chord-panel,#next-panel{gap:5px;}
 }
 /* ── PHONES HELD SIDEWAYS: tighter everything ── */
@@ -271,7 +277,8 @@ button{font-family:var(--font);color:inherit;}
   .panel{padding:6px;gap:5px;border-radius:10px;}
   .panel-label{font-size:9px;} .panel-label .hint{font-size:9px;}
   #chord-grid{gap:3px;grid-template-columns:40px repeat(12,minmax(0,1fr));}
-  .key{height:clamp(22px,7.4vh,34px);font-size:11px;border-radius:6px;}
+  .key{height:clamp(20px,6vh,30px);font-size:10px;border-radius:6px;}
+  #chord-panel .panel-label{display:none;}
   .key::after{bottom:3px;height:2px;}
   .row-head{padding:0 4px;border-radius:6px;} .row-head b{font-size:9px;} .row-head small{font-size:8px;}
   .chip{padding:3px 8px;font-size:11px;} .slot{height:28px;font-size:10px;} .prog-head .hint{display:none;}
