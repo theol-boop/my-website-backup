@@ -4,579 +4,279 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#e9dec6">
 <title>HarpMog</title>
 <style>
-:root {
-  --pf: -apple-system,'Helvetica Neue',Arial,sans-serif;
-  --mf: -apple-system,'Helvetica Neue',Arial,sans-serif;
-  --bg:       #000000;
-  --bg2:      #0a0a0a;
-  --bg3:      #0f0f0f;
-  --border:   #1e2040;
-  --border-b: #0a0c20;
-  --neon-c:   #00ffcc;   /* cyan — primary accent */
-  --neon-r:   #ff2244;   /* red */
-  --neon-y:   #ffe600;   /* yellow */
-  --neon-o:   #ff6600;   /* orange */
-  --neon-p:   #cc00ff;   /* purple */
-  --neon-pk:  #ff2288;   /* pink */
-  --neon-tl:  #00ddbb;   /* teal */
-  --neon-b:   #0088ff;   /* blue */
-  --dim:      #1a2a2a;   /* dimmed surface */
-  --text:     #ffb347;   /* primary text */
-  --text-d:   #8a5a1a;   /* dimmed text */
-  --red:#ff2244; --red-d:#660011;
-  --blue:#0088ff; --blue-d:#003366;
-  --blue-lt:#44aaff; --blue-lt-d:#1155aa;
-  --green:#00ffcc; --green-d:#004433;
-  --yellow:#ffe600; --yellow-d:#554400;
-  --orange:#ff6600; --orange-d:#552200;
-  --teal:#00ddbb; --teal-d:#004433;
-  --pink:#ff2288; --pink-d:#660033;
-  --purple:#cc00ff; --purple-d:#440066;
-  --screen:#00000a; --screen-b:#0a0a1a;
+:root{
+  --font:"Futura","Avenir Next","Avenir","Century Gothic","Trebuchet MS",sans-serif;
+  /* body of the instrument */
+  --body:#e9dec6; --body-2:#ded0b2; --body-3:#d3c29f; --edge:#b7a37b; --edge-d:#8f7d58;
+  --ink:#3a2d22; --ink-2:#6c5843; --ink-3:#9a866b;
+  /* dark windows (strum plate, display, scope) */
+  --win:#231d19; --win-2:#2f2722; --brass:#c9a25c; --brass-hi:#f3dca4;
+  --lcd:#b9e07a; --lcd-dim:#5f7a3a;
+  /* keys */
+  --key:#f7f1e3; --key-shadow:#bfae8a;
+  /* chord families */
+  --maj:#e0a12a; --min:#3d8c87; --dom:#cf5428; --dim:#6d5a8f; --aug:#7f8b37;
+  --fx:#cf5428;
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;touch-action:manipulation;}
-html,body{width:100%;height:100%;height:100dvh;overflow:hidden;touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%;background:#000;}
-#app{touch-action:none;}
-a,button,input,select,textarea,div,span{touch-action:manipulation;}
-#app{position:fixed;top:0;left:0;right:0;bottom:0;
-  width:100%;height:100%;height:100dvh;
-  display:grid;grid-template-columns:minmax(0,62fr) minmax(0,38fr);
-  padding:max(env(safe-area-inset-top),10px) max(env(safe-area-inset-right),10px)
-          max(env(safe-area-inset-bottom),24px) max(env(safe-area-inset-left),10px);
-  gap:10px;
-  box-sizing:border-box;}
-
-/* ── CRT OVERLAY ── */
-#crt-overlay{
-  position:fixed;inset:0;
-  width:100%;height:100%;
-  pointer-events:none;
-  z-index:999;
-  display:block;
-}
-body::after{
-  content:'';
-  position:fixed;inset:0;
-  pointer-events:none;
-  z-index:998;
-  background:
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 5px,
-      rgba(0,0,0,0.10) 5px,
-      rgba(0,0,0,0.10) 6px
-    );
-  mix-blend-mode:multiply;
-}
-
-/* ── LEFT PANEL ── */
-#left-panel{display:flex;flex-direction:column;gap:6px;min-height:0;overflow:hidden;height:100%;}
-#bottom-dock{display:flex;flex-direction:column;gap:6px;margin-top:auto;flex-shrink:0;}
-
-
-.block-label{
-  font-family:var(--pf);font-size:9px;letter-spacing:.05em;
-  color:#ffb347;text-transform:uppercase;
-  border-left:2px solid #ffb347;
-  padding-left:6px;margin-bottom:2px;
-  font-weight:700;
-  text-shadow:0 0 8px rgba(255,179,71,.7);
-}
-#chord-block{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
-#inst-block{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
-#fx-block{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
-/* 6 faders in a row; 2 rows of 3 on phones held upright (see SMALL SCREENS) */
-#fx-knobs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;}
-.fx-unit{min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;}
-.fx-name{
-  font-family:var(--pf);font-size:8px;letter-spacing:-.01em;
-  color:#8a5a1a;text-align:center;text-transform:uppercase;font-weight:600;
-}
-
-/* ── FADER BARS ── */
-.fader-wrap{
-  width:100%;height:26px;
-  background:var(--bg2);
-  border:1px solid var(--border);
-  border-radius:2px;
-  position:relative;
-  cursor:pointer;touch-action:none;
-  overflow:hidden;
-}
-.fader-fill{
-  position:absolute;top:0;left:0;bottom:0;width:0%;
-  background:linear-gradient(90deg,rgba(255,140,0,.3),rgba(255,179,71,.7));
-  transition:width .05s linear;
-  z-index:1;
-  pointer-events:none;
-}
-.fader-line{
-  position:absolute;top:0;bottom:0;width:2px;
-  background:#fff;
-  box-shadow:0 0 10px #ffb347,0 0 20px rgba(255,179,71,.5);
-  pointer-events:none;
-  z-index:2;
-  left:0%;transform:translateX(-1px);
-}
-
-/* ── RIGHT PANEL ── */
-#right-panel{display:flex;flex-direction:column;gap:6px;min-height:0;overflow:hidden;}
-#screen-housing{
-  flex:1;min-height:0;
-  background:var(--bg2);
-  border:1px solid var(--border);
-  border-radius:6px;
-  padding:6px;
-  display:flex;flex-direction:column;gap:4px;
-  overflow:hidden;
-}
-/* Doubles as the readout: current chord · pattern · instruments */
-#screen-label{
-  font-family:var(--mf);font-size:7px;letter-spacing:.3em;
-  color:#8a5a1a;text-align:center;text-transform:uppercase;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-#screen-label span{color:#ffb347;text-shadow:0 0 6px rgba(255,179,71,.5);}
-#led-panel{
-  background:transparent;
-  padding:0;
-  flex-shrink:0;
-  width:96px;
-  align-self:flex-end;
-  overflow:hidden;
-  position:relative;
-  margin-top:3px;
-  border:1px solid var(--border);
-  border-radius:4px;
-  opacity:0.88;
-}
-#led-panel:hover{opacity:1;}
-#scope-wrap{
-  display:grid;
-  grid-template-columns:1fr 28px;
-  width:100%;
-}
-#waveform-canvas{
-  display:block;
-  width:100%;
-  height:auto;
-  aspect-ratio:1/1;
-}
-/* ── SCOPE (right-side dials) ── */
-#scope-side{
-  display:flex;flex-direction:column;justify-content:space-evenly;align-items:center;
-  padding:2px 2px;
-  background:rgba(0,0,0,.25);
-  border-left:1px solid var(--border);
-  align-self:stretch;
-  overflow:hidden;
-}
-.scope-unit{
-  display:flex;flex-direction:column;align-items:center;gap:0;min-width:0;
-  flex:1;justify-content:center;
-}
-.scope-dial{
-  width:16px;height:16px;flex-shrink:0;
-  border-radius:50%;
-  position:relative;
-  cursor:pointer;touch-action:none;
-  -webkit-tap-highlight-color:transparent;
-  background:
-    radial-gradient(circle at 35% 28%,rgba(60,80,90,.35),transparent 45%),
-    radial-gradient(circle at 50% 50%,#0c1014 0%,#050608 72%,#000 100%);
-  border:1px solid var(--border);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 1px 4px rgba(0,0,0,.5);
-}
-.scope-dial:active{filter:brightness(1.08);}
-.scope-dial-ring{
-  position:absolute;inset:1px;border-radius:50%;
-  border:1px solid rgba(0,255,204,.12);
-  pointer-events:none;
-  background:repeating-conic-gradient(
-    from -90deg,
-    transparent 0deg 24deg,
-    rgba(0,255,204,.07) 24deg 26deg
-  );
-}
-.scope-dial-pointer{
-  position:absolute;left:50%;top:50%;
-  width:1px;height:5px;margin-left:-.5px;margin-top:-4px;
-  background:linear-gradient(180deg,var(--neon-c),rgba(0,255,204,.4));
-  border-radius:1px;
-  transform-origin:50% 4px;
-  transform:rotate(var(--scope-rot,-135deg));
-  box-shadow:0 0 3px rgba(0,255,204,.9);
-  pointer-events:none;
-}
-.scope-dial-name{
-  display:none;
-}
-
-/* ── BUTTONS ── */
-.gb-btn{
-  position:relative;border:none;background:none;cursor:pointer;outline:none;
-  -webkit-touch-callout:none;user-select:none;
-  flex:1;display:flex;align-items:center;justify-content:center;
-}
-.gb-btn .well{position:absolute;inset:0;border-radius:5px;}
-.gb-btn .face{
-  position:absolute;inset:0;
-  border-radius:5px;
-  display:flex;align-items:center;justify-content:center;
-  font-family:var(--pf);
-  font-size:90%;   /* fills ~90% of button height */
-  letter-spacing:-.02em;
-  font-weight:600;
-  text-transform:uppercase;
-  line-height:1;
-  transition:filter .04s,opacity .04s;
-}
-.gb-btn.sunken .face,.gb-btn.pressed .face{opacity:.7;filter:brightness(.8);}
-.gb-btn.active .face{filter:brightness(1.2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.5);}
-
-/* Color variants — neon on dark */
-.gb-red   .well{background:rgba(255,34,68,.12);border:1px solid var(--neon-r);}
-.gb-red   .face{color:var(--neon-r);text-shadow:0 0 10px var(--neon-r);}
-.gb-blue  .well{background:rgba(0,136,255,.12);border:1px solid var(--neon-b);}
-.gb-blue  .face{color:var(--neon-b);text-shadow:0 0 10px var(--neon-b);}
-.gb-bluelt .well{background:rgba(68,170,255,.10);border:1px solid var(--blue-lt);}
-.gb-bluelt .face{color:var(--blue-lt);text-shadow:0 0 8px var(--blue-lt);}
-.gb-green .well{background:rgba(0,255,204,.10);border:1px solid var(--neon-c);}
-.gb-green .face{color:var(--neon-c);text-shadow:0 0 10px var(--neon-c);}
-.gb-yellow .well{background:rgba(255,230,0,.10);border:1px solid var(--neon-y);}
-.gb-yellow .face{color:var(--neon-y);text-shadow:0 0 10px var(--neon-y);}
-.gb-orange .well{background:rgba(255,102,0,.10);border:1px solid var(--neon-o);}
-.gb-orange .face{color:var(--neon-o);text-shadow:0 0 8px var(--neon-o);}
-.gb-purple .well{background:rgba(204,0,255,.10);border:1px solid var(--neon-p);}
-.gb-purple .face{color:var(--neon-p);text-shadow:0 0 10px var(--neon-p);}
-.gb-teal  .well{background:rgba(0,221,187,.10);border:1px solid var(--neon-tl);}
-.gb-teal  .face{color:var(--neon-tl);text-shadow:0 0 8px var(--neon-tl);}
-.gb-pink  .well{background:rgba(255,34,136,.10);border:1px solid var(--neon-pk);}
-.gb-pink  .face{color:var(--neon-pk);text-shadow:0 0 10px var(--neon-pk);}
-
-/* Active state: filled background */
-.gb-btn.active .well{filter:brightness(2.5);}
-
-/* ── SIZE VARIANTS ── */
-#chord-btns{display:flex;gap:6px;}
-#key-rows{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
-.key-row{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-top:2px;}
-.chr-gb{height:32px;flex:none;width:100%;}
-.chr-gb .face{font-size:15px;letter-spacing:-.02em;}
-#chord-btns .gb-btn{height:36px;flex:1;}
-#chord-btns .gb-btn .face{font-size:20px;letter-spacing:-.03em;}
-#sub-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
-  max-height:0;opacity:0;pointer-events:none;overflow:hidden;
-  transition:max-height .22s ease,opacity .15s;}
-#sub-buttons.visible{max-height:400px;opacity:1;pointer-events:all;}
-/* Patterns only apply to C- / F-: dimmed (but kept in place, so nothing jumps) while a coloured key is selected */
-#sub-buttons.visible.inactive{opacity:.22;pointer-events:none;}
-.sub-gb{height:36px;flex:none;width:100%;}
-.sub-gb .face{font-size:16px;letter-spacing:-.02em;}
-#inst-btns{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;}
-.inst-gb{height:32px;width:100%;flex:none;}
-.inst-gb .face{font-size:13px;letter-spacing:-.02em;}
-
-/* ── LOOPER PANEL ── */
-#looper-panel{
-  flex-shrink:0;
-  background:var(--screen);
-  border:1px solid var(--border);
-  border-radius:6px;
-  padding:6px 8px;
-  display:flex;flex-direction:column;gap:5px;
-}
-#looper-transport{display:flex;gap:5px;}
-.lp-btn{
-  flex:1;height:32px;border:1px solid #ffb347;background:transparent;border-radius:5px;
-  color:#ffb347;font-family:var(--pf);font-size:15px;letter-spacing:-.02em;font-weight:600;
-  cursor:pointer;outline:none;
-  transition:background .08s,color .08s;
-}
-.lp-btn:active{background:rgba(0,255,204,.15);}
-.lp-btn.active{background:rgba(255,179,71,.18);color:#fff;text-shadow:0 0 8px rgba(255,179,71,.8);box-shadow:inset 0 0 8px rgba(255,179,71,.15);}
-.lp-btn.rec-armed{border-color:#ff4466;color:#ff4466;text-shadow:0 0 8px rgba(255,68,102,.8);animation:blink .7s infinite;}
-.lp-btn.rec-active{background:rgba(255,68,102,.22);border-color:#ff4466;color:#fff;text-shadow:0 0 8px rgba(255,68,102,.8);}
-.lp-clear{border-color:var(--text-d)!important;color:var(--text-d)!important;text-shadow:none!important;}
-.lp-clear:active{background:rgba(255,255,255,.08)!important;}
-@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
-
-/* ── FOOTER / BACK LINKS (back links only appear when you arrived from another page on the same site) ── */
-#app-foot{padding:4px 4px 2px;flex-shrink:0;display:flex;gap:10px;align-items:baseline;
-  font-family:var(--pf);font-weight:700;font-size:9px;letter-spacing:.02em;text-transform:uppercase;color:var(--text-d);}
-#app-foot a,.back-link{color:var(--text-d);text-decoration:none;}
-#app-foot a:hover,.back-link:hover{color:#ffb347;}
-.back-link{position:fixed;z-index:101;
-  top:max(env(safe-area-inset-top),10px);left:max(env(safe-area-inset-left),10px);padding:8px;
-  font-family:var(--pf);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;}
+html,body{width:100%;height:100%;height:100dvh;overflow:hidden;touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%;
+  background:var(--body);color:var(--ink);font-family:var(--font);}
+button{font-family:var(--font);color:inherit;}
 [hidden]{display:none!important;}
 
-/* ── HARP BOARD ── */
-#harp-board{
-  flex:1;min-height:0;
-  background:var(--screen);
-  border:1px solid var(--border);
-  display:flex;flex-direction:column;
-  padding:4px 8px 4px 8px;
-  overflow:hidden;position:relative;touch-action:none;
-}
-/* Scan-line overlay */
-#harp-board::before{
-  content:'';position:absolute;inset:0;pointer-events:none;z-index:1;
-  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.18) 2px,rgba(0,0,0,.18) 4px);
-}
+/* ── APP FRAME ── */
+#app{position:fixed;inset:0;width:100%;height:100%;height:100dvh;
+  display:grid;gap:10px;
+  grid-template-columns:minmax(0,1.5fr) minmax(0,.78fr) minmax(0,.72fr);
+  grid-template-rows:auto minmax(0,1fr);
+  grid-template-areas:"chords plate controls" "next plate controls";
+  padding:max(env(safe-area-inset-top),12px) max(env(safe-area-inset-right),12px)
+          max(env(safe-area-inset-bottom),12px) max(env(safe-area-inset-left),12px);
+  background:
+    radial-gradient(120% 90% at 30% 0%,rgba(255,255,255,.35),transparent 60%),
+    linear-gradient(180deg,var(--body),var(--body-2));}
+.panel{background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,.08));
+  border:1px solid var(--edge);border-radius:14px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 -2px 0 rgba(0,0,0,.05),0 1px 0 rgba(255,255,255,.5);
+  padding:10px;min-width:0;min-height:0;display:flex;flex-direction:column;gap:8px;}
+.panel-label{display:flex;align-items:baseline;gap:8px;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);}
+.panel-label .hint{font-weight:500;letter-spacing:.04em;text-transform:none;color:var(--ink-3);font-size:11px;}
+#chord-panel{grid-area:chords;}
+#next-panel{grid-area:next;overflow:hidden;}
+#plate-panel{grid-area:plate;}
+#controls-panel{grid-area:controls;overflow:hidden;}
+
+/* ── CHORD GRID (omnichord style: roots in 4ths across, chord families down) ── */
+#chord-grid{display:grid;grid-template-columns:minmax(46px,.9fr) repeat(12,minmax(0,1fr));gap:5px;}
+.row-head{display:flex;flex-direction:column;justify-content:center;padding:0 6px;border-radius:8px;
+  color:#fff;background:var(--fam);box-shadow:inset 0 -2px 0 rgba(0,0,0,.18);min-width:0;}
+.row-head b{font-size:12px;letter-spacing:.08em;line-height:1.1;}
+.row-head small{font-size:10px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
+.key{position:relative;height:40px;border:none;border-radius:8px;cursor:pointer;
+  background:linear-gradient(180deg,#fffaf0,var(--key));
+  box-shadow:0 3px 0 var(--key-shadow),0 4px 6px rgba(60,40,20,.18),inset 0 0 0 1px rgba(0,0,0,.06);
+  font-size:13px;font-weight:600;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;transition:transform .05s,box-shadow .05s;}
+.key::after{content:'';position:absolute;left:22%;right:22%;bottom:5px;height:3px;border-radius:2px;background:var(--fam);opacity:.55;}
+.key.pressed{transform:translateY(2px);box-shadow:0 1px 0 var(--key-shadow),0 1px 2px rgba(60,40,20,.2),inset 0 0 0 1px rgba(0,0,0,.06);}
+.key.active{background:var(--fam);color:#fff;transform:translateY(2px);
+  box-shadow:0 1px 0 rgba(0,0,0,.25),inset 0 2px 4px rgba(0,0,0,.25);}
+.key.active::after{background:#fff;opacity:.7;}
+
+/* hold-for-extensions popover */
+#var-pop{position:fixed;z-index:50;min-width:200px;max-width:min(360px,92vw);
+  background:var(--key);border:1px solid var(--edge);border-radius:14px;padding:10px;
+  box-shadow:0 14px 40px rgba(40,25,10,.35),0 2px 0 rgba(255,255,255,.7) inset;}
+#var-pop .pop-title{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);margin:0 2px 8px;}
+#var-pop .pop-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
+#var-pop button{border:none;border-radius:8px;padding:9px 4px;font-size:14px;font-weight:600;cursor:pointer;
+  background:#fff;box-shadow:0 2px 0 var(--key-shadow),inset 0 0 0 1px rgba(0,0,0,.07);color:var(--ink);white-space:nowrap;}
+#var-pop button.hover,#var-pop button:active{background:var(--fam);color:#fff;}
+#var-pop button.current{box-shadow:0 2px 0 var(--key-shadow),inset 0 0 0 2px var(--fam);}
+
+/* ── WHERE NEXT ── */
+#directions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;}
+.dir{border:none;border-radius:10px;padding:6px 6px 5px;cursor:pointer;text-align:left;min-width:0;
+  background:#fffaf0;box-shadow:0 2px 0 var(--key-shadow),inset 0 0 0 1px rgba(0,0,0,.06);
+  display:flex;flex-direction:column;gap:1px;border-left:4px solid var(--fam);}
+.dir b{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dir small{font-size:10px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.02em;}
+.dir:active{transform:translateY(1px);box-shadow:0 1px 0 var(--key-shadow);}
+.memory{display:flex;align-items:center;gap:6px;min-width:0;}
+.memory .mini{flex:none;width:52px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);}
+.chips{display:flex;gap:5px;overflow:hidden;min-width:0;flex:1;}
+.chip{flex:none;border:none;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;
+  background:#fffaf0;box-shadow:inset 0 0 0 1px var(--edge);color:var(--ink);border-left:3px solid var(--fam);}
+.chips .empty{font-size:11px;color:var(--ink-3);padding:5px 2px;white-space:nowrap;}
+#fav-btn{flex:none;border:none;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;
+  background:transparent;box-shadow:inset 0 0 0 1px var(--edge-d);color:var(--ink-2);}
+#fav-btn.on{background:var(--maj);color:#fff;box-shadow:none;}
+
+/* ── STRUM PLATE ── */
+#plate-panel{display:flex;flex-direction:column;gap:8px;min-height:0;}
+#display{background:var(--win);border-radius:10px;padding:8px 12px 7px;
+  box-shadow:inset 0 2px 6px rgba(0,0,0,.6),0 1px 0 rgba(255,255,255,.6);
+  display:flex;align-items:baseline;justify-content:space-between;gap:10px;min-width:0;}
+#disp-chord{font-size:24px;font-weight:700;color:var(--lcd);text-shadow:0 0 10px rgba(185,224,122,.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#disp-inst{font-size:10px;letter-spacing:.14em;color:var(--lcd-dim);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#harp-board{flex:1;min-height:0;position:relative;touch-action:none;
+  background:
+    linear-gradient(90deg,rgba(255,255,255,.04),transparent 18%,transparent 82%,rgba(255,255,255,.04)),
+    linear-gradient(180deg,var(--win-2),var(--win));
+  border-radius:12px;border:1px solid #14100d;
+  box-shadow:inset 0 3px 10px rgba(0,0,0,.6),0 1px 0 rgba(255,255,255,.6);
+  display:flex;flex-direction:column;padding:8px 16px;overflow:hidden;}
+#harp-board::before,#harp-board::after{content:'';position:absolute;top:6px;bottom:6px;width:6px;border-radius:3px;
+  background:linear-gradient(90deg,#7d6234,var(--brass),#7d6234);opacity:.85;}
+#harp-board::before{left:5px;} #harp-board::after{right:5px;}
 .string-row{display:flex;align-items:center;flex:1;min-height:0;}
 .string-line-wrap{flex:1;height:100%;position:relative;}
-.string-line{position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);border-radius:0;pointer-events:none;}
+.string-line{position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);pointer-events:none;border-radius:1px;}
 
-/* ── UNLOCK SCREEN ── */
-#unlock-overlay{
-  position:fixed;inset:0;background:var(--bg);
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:20px;z-index:100;
-}
-#unlock-overlay::before{
-  content:'';position:fixed;inset:0;pointer-events:none;
-  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,255,204,.015) 3px,rgba(0,255,204,.015) 4px);
-}
-.ul-title{
-  font-family:var(--pf);font-size:36px;color:#ffb347;letter-spacing:.05em;font-weight:800;
-  text-shadow:0 0 30px rgba(255,179,71,.9),0 0 80px rgba(255,140,0,.5),0 0 2px #fff;
-  position:relative;
-}
-.ul-sub{font-family:var(--pf);font-size:11px;color:#8a5a1a;letter-spacing:.12em;font-weight:600;position:relative;}
-#unlock-btn{position:relative;width:200px;height:56px;border:none;background:none;cursor:pointer;outline:none;border-radius:6px;}
-#unlock-btn .well{position:absolute;inset:0;border-radius:6px;background:rgba(255,179,71,.08);border:2px solid #ffb347;box-shadow:0 0 20px rgba(255,179,71,.35),inset 0 0 12px rgba(255,179,71,.05);}
-#unlock-btn .face{position:absolute;inset:0;border-radius:6px;background:transparent;color:#ffb347;
-  display:flex;align-items:center;justify-content:center;
-  font-family:var(--pf);font-size:18px;letter-spacing:.1em;font-weight:700;
-  text-shadow:0 0 16px rgba(255,179,71,.9),0 0 40px rgba(255,140,0,.4);}
-#unlock-btn:active .face{opacity:.6;}
+/* ── CONTROLS ── */
+#controls-panel{gap:10px;}
+#inst-btns{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;}
+.inst{height:34px;border:none;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:.04em;
+  background:linear-gradient(180deg,#fffaf0,var(--key));color:var(--ink-2);
+  box-shadow:0 2px 0 var(--key-shadow),inset 0 0 0 1px rgba(0,0,0,.06);min-width:0;}
+.inst.active{background:var(--ink);color:var(--body);box-shadow:0 1px 0 rgba(0,0,0,.3),inset 0 2px 3px rgba(0,0,0,.4);transform:translateY(1px);}
+#fx-knobs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 8px;}
+.fx-unit{min-width:0;display:flex;flex-direction:column;gap:3px;}
+.fx-name{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);text-align:center;}
+.fader-wrap{width:100%;height:24px;position:relative;cursor:pointer;touch-action:none;border-radius:12px;
+  background:var(--body-3);box-shadow:inset 0 2px 3px rgba(0,0,0,.2),0 1px 0 rgba(255,255,255,.7);overflow:hidden;}
+.fader-fill{position:absolute;top:0;left:0;bottom:0;width:0%;background:linear-gradient(90deg,rgba(207,84,40,.25),rgba(207,84,40,.6));pointer-events:none;}
+.fader-line{position:absolute;top:2px;bottom:2px;width:14px;margin-left:-7px;left:0%;border-radius:8px;pointer-events:none;
+  background:linear-gradient(180deg,#fffaf0,#d9cbad);box-shadow:0 1px 2px rgba(0,0,0,.35),inset 0 0 0 1px rgba(0,0,0,.12);}
+#looper-panel{display:flex;gap:8px;align-items:stretch;margin-top:auto;}
+#looper-transport{flex:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;align-content:center;}
+.lp-btn{height:38px;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;letter-spacing:.08em;
+  background:linear-gradient(180deg,#fffaf0,var(--key));color:var(--ink);box-shadow:0 2px 0 var(--key-shadow),inset 0 0 0 1px rgba(0,0,0,.06);}
+.lp-btn.active{background:var(--ink);color:var(--body);transform:translateY(1px);}
+.lp-btn.rec-armed{color:var(--dom);animation:blink .7s infinite;}
+.lp-btn.rec-active{background:var(--dom);color:#fff;transform:translateY(1px);}
+.lp-clear{color:var(--ink-3);}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.35;}}
+#led-panel{flex:none;width:84px;border-radius:8px;overflow:hidden;background:var(--win);box-shadow:inset 0 2px 5px rgba(0,0,0,.6);}
+#scope-wrap{display:grid;grid-template-columns:1fr 18px;}
+#waveform-canvas{display:block;width:100%;height:auto;aspect-ratio:1/1;}
+#scope-side{display:flex;flex-direction:column;justify-content:space-evenly;align-items:center;background:rgba(0,0,0,.25);}
+.scope-unit{display:flex;justify-content:center;}
+.scope-dial{width:13px;height:13px;border-radius:50%;position:relative;cursor:pointer;touch-action:none;background:#3a302a;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);}
+.scope-dial-ring{display:none;}
+.scope-dial-pointer{position:absolute;left:50%;top:50%;width:1px;height:5px;margin-left:-.5px;margin-top:-5px;background:var(--lcd);
+  transform-origin:50% 5px;transform:rotate(var(--scope-rot,-135deg));pointer-events:none;}
+.scope-dial-name{display:none;}
+#brand{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:12px;font-weight:700;letter-spacing:.2em;color:var(--ink-3);text-transform:uppercase;}
+#brand a{color:var(--ink-3);text-decoration:none;letter-spacing:.1em;font-size:11px;}
 
-/* ── SMALL SCREENS ── */
-/* Narrow (phones held upright): FX in 2 rows of 3, smaller labels so everything fits its button */
+/* ── START SCREEN ── */
+#unlock-overlay{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  background:radial-gradient(100% 70% at 50% 30%,#f4ecd9,var(--body) 60%,var(--body-2));}
+.ul-title{font-size:44px;font-weight:700;letter-spacing:.04em;color:var(--ink);}
+.ul-title span{color:var(--dom);}
+.ul-sub{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--ink-2);}
+.ul-stripes{display:flex;gap:6px;margin:2px 0 8px;}
+.ul-stripes i{display:block;width:34px;height:6px;border-radius:3px;}
+#unlock-btn{border:none;cursor:pointer;width:200px;height:56px;border-radius:14px;font-size:16px;font-weight:700;letter-spacing:.2em;
+  background:var(--ink);color:var(--body);box-shadow:0 4px 0 #1c1510,0 10px 24px rgba(40,25,10,.25);}
+#unlock-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #1c1510;}
+.back-link{position:fixed;z-index:101;top:max(env(safe-area-inset-top),10px);left:max(env(safe-area-inset-left),10px);padding:8px;
+  font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);text-decoration:none;}
+
+/* ── PHONES / TABLETS HELD UPRIGHT: chords on top, plate on the right ── */
+@media (orientation:portrait),(max-width:700px){
+  #app{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);
+    grid-template-rows:auto auto minmax(0,1fr);
+    grid-template-areas:"chords chords" "next plate" "controls plate";gap:8px;}
+  #directions{grid-template-columns:repeat(2,minmax(0,1fr));}
+  #chord-grid{grid-template-columns:minmax(40px,.95fr) repeat(12,minmax(0,1fr));gap:4px;}
+  .key{height:38px;font-size:12px;}
+}
 @media (max-width:480px){
-  #fx-knobs{grid-template-columns:repeat(3,minmax(0,1fr));}
-  .lp-btn{font-size:12px;}
-  .inst-gb .face{font-size:11px;}
-}
-/* Short phones held upright (iPhone SE and similar): slightly shorter buttons so the instrument row fits */
-@media (orientation:portrait) and (max-height:720px){
-  #chord-btns .gb-btn{height:32px;}
-  .sub-gb{height:31px;}
-  .chr-gb{height:28px;}
-  .inst-gb{height:28px;}
-}
-/* Phones held sideways: the left side splits into two columns (chords + instruments | key rows)
-   so nothing is cut off, and the strings get most of the right-hand side */
-@media (orientation:landscape) and (max-height:560px){
-  #app{grid-template-columns:minmax(0,64fr) minmax(0,36fr);gap:8px;
-    padding:max(env(safe-area-inset-top),6px) max(env(safe-area-inset-right),8px)
-            max(env(safe-area-inset-bottom),6px) max(env(safe-area-inset-left),8px);}
-  #left-panel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-    grid-template-rows:auto minmax(0,1fr);grid-template-areas:"chords keys" "inst keys";
-    column-gap:8px;row-gap:4px;}
-  #chord-block{grid-area:chords;gap:4px;}
-  #sub-buttons{gap:4px;}
-  #key-rows{grid-area:keys;gap:5px;justify-content:center;}
-  .key-row{gap:4px;margin-top:0;}
-  #bottom-dock{grid-area:inst;margin-top:0;align-self:end;}
-  #inst-block{gap:4px;}
-  #app-foot{display:none;}
-  .block-label{margin-bottom:0;}
-  #chord-btns .gb-btn{height:clamp(24px,7.6vh,34px);}
-  #chord-btns .gb-btn .face{font-size:17px;}
-  .sub-gb{height:clamp(22px,7.2vh,32px);}
-  .sub-gb .face{font-size:13px;}
-  .chr-gb{height:clamp(22px,8.4vh,36px);}
-  .chr-gb .face{font-size:13px;}
-  .inst-gb{height:clamp(22px,7.2vh,32px);}
-  .inst-gb .face{font-size:10px;}
+  #app{padding-left:max(env(safe-area-inset-left),8px);padding-right:max(env(safe-area-inset-right),8px);}
+  .panel{padding:8px;border-radius:12px;}
+  #chord-grid{gap:3px;grid-template-columns:38px repeat(12,minmax(0,1fr));}
+  .key{height:36px;font-size:11px;border-radius:6px;}
+  .row-head{padding:0 4px;} .row-head b{font-size:10px;} .row-head small{font-size:9px;}
+  .panel-label .hint{display:none;}
+  .dir b{font-size:13px;} .dir small{font-size:9px;}
+  .memory .mini{width:40px;font-size:9px;}
+  .inst{font-size:8px;height:28px;letter-spacing:0;border-radius:6px;}
   #inst-btns{gap:3px;}
-  #fx-block{gap:2px;}
-  #fx-knobs{gap:4px;}
-  .fx-name{font-size:7px;}
-  .fader-wrap{height:20px;}
-  #looper-panel{flex-direction:row;align-items:center;padding:4px 6px;gap:6px;}
-  #looper-transport{flex:1;}
-  .lp-btn{height:30px;font-size:12px;}
-  #led-panel{width:44px;margin-top:0;align-self:center;}
-  #scope-wrap{grid-template-columns:1fr;}
-  #scope-side{display:none;}
+  #controls-panel .panel-label{display:none;}
+  #controls-panel{gap:8px;}
+  #fx-knobs{gap:4px 6px;} .fader-wrap{height:20px;} .fx-name{font-size:8px;}
+  .lp-btn{font-size:10px;height:32px;letter-spacing:0;}
+  #led-panel,#brand{display:none;}
+  #disp-chord{font-size:20px;}
+}
+/* short phones held upright (iPhone SE etc.) */
+@media (orientation:portrait) and (max-height:740px){
+  .key{height:30px;}
+  #chord-panel,#next-panel{gap:5px;}
+  .dir{padding:4px 5px;} .dir b{font-size:12px;}
+  .dir:nth-child(n+7){display:none;}
+}
+/* ── PHONES HELD SIDEWAYS: tighter everything ── */
+@media (orientation:landscape) and (max-height:560px){
+  #app{gap:6px;padding:max(env(safe-area-inset-top),6px) max(env(safe-area-inset-right),8px)
+       max(env(safe-area-inset-bottom),6px) max(env(safe-area-inset-left),8px);
+       grid-template-columns:minmax(0,1.55fr) minmax(0,.8fr) minmax(0,.75fr);}
+  .panel{padding:6px;gap:5px;border-radius:10px;}
+  .panel-label{font-size:9px;} .panel-label .hint{font-size:9px;}
+  #chord-grid{gap:3px;grid-template-columns:40px repeat(12,minmax(0,1fr));}
+  .key{height:clamp(22px,7.4vh,34px);font-size:11px;border-radius:6px;}
+  .key::after{bottom:3px;height:2px;}
+  .row-head{padding:0 4px;border-radius:6px;} .row-head b{font-size:9px;} .row-head small{font-size:8px;}
+  #directions{gap:4px;}
+  .dir{padding:3px 5px;border-radius:8px;} .dir b{font-size:12px;} .dir small{font-size:8px;}
+  .chip{padding:3px 8px;font-size:11px;} #fav-btn{padding:3px 8px;font-size:11px;}
+  .memory .mini{width:42px;font-size:8px;}
+  #display{padding:4px 8px;} #disp-chord{font-size:16px;}
+  #controls-panel{gap:6px;}
+  .inst{height:26px;font-size:8px;letter-spacing:0;}
+  #inst-btns{gap:3px;}
+  #fx-knobs{gap:3px 5px;} .fader-wrap{height:18px;} .fader-line{width:10px;margin-left:-5px;} .fx-name{font-size:7px;}
+  .lp-btn{height:28px;font-size:10px;letter-spacing:.02em;}
+  #led-panel{width:52px;} #scope-wrap{grid-template-columns:1fr;} #scope-side{display:none;}
+  #brand{display:none;}
 }
 </style>
 </head>
 <body>
 <div id="unlock-overlay">
   <a class="back-link site-back" href="javascript:history.back()" hidden>&#8249; back</a>
-  <div class="ul-title">HARPMOG</div>
-  <div style="font-family:var(--pf);font-size:9px;letter-spacing:.2em;color:#666;margin-top:-8px;">HARMONIC STRING INSTRUMENT</div>
-  <div class="ul-sub">PRESS START</div>
-  <button id="unlock-btn"><div class="well"></div><div class="face">START</div></button>
+  <div class="ul-title">Harp<span>Mog</span></div>
+  <div class="ul-stripes"><i style="background:var(--maj)"></i><i style="background:var(--min)"></i><i style="background:var(--dom)"></i><i style="background:var(--dim)"></i><i style="background:var(--aug)"></i></div>
+  <div class="ul-sub">harmonic string instrument</div>
+  <button id="unlock-btn">START</button>
 </div>
 <div id="app" style="visibility:hidden">
-  <div id="left-panel">
-    <div id="chord-block">
-      <div class="block-label">· chord ·</div>
-      <div id="chord-btns">
-        <button class="gb-btn gb-yellow" id="btn-cmin" data-chord="cmin"><div class="well"></div><div class="face">C-</div></button>
-        <button class="gb-btn gb-yellow" id="btn-fmin" data-chord="fmin"><div class="well"></div><div class="face">F-</div></button>
-      </div>
-      <div id="sub-buttons">
-        <button class="gb-btn sub-gb gb-red" data-sub="base"><div class="well"></div><div class="face">BASE</div></button>
-        <button class="gb-btn sub-gb gb-red" data-sub="deep"><div class="well"></div><div class="face">DEEP</div></button>
-        <button class="gb-btn sub-gb gb-red" data-sub="shimmer"><div class="well"></div><div class="face">SHIM</div></button>
-        <button class="gb-btn sub-gb gb-red" data-sub="blue"><div class="well"></div><div class="face">BLUE</div></button>
-        <button class="gb-btn sub-gb gb-red" data-sub="45"><div class="well"></div><div class="face">45</div></button>
-        <button class="gb-btn sub-gb gb-red" data-sub="fminarp"><div class="well"></div><div class="face">F-</div></button>
-        <button class="gb-btn sub-gb gb-red" data-sub="copper"><div class="well"></div><div class="face">COPR</div></button>
-        <button class="gb-btn sub-gb gb-red" data-sub="darp"><div class="well"></div><div class="face">D</div></button>
-        <button class="gb-btn sub-gb gb-red" data-sub="garp"><div class="well"></div><div class="face">G</div></button>
-        <button class="gb-btn sub-gb gb-red" data-sub="bbarp"><div class="well"></div><div class="face">Bb</div></button>
-        <button class="gb-btn sub-gb gb-red" data-sub="abmaj7"><div class="well"></div><div class="face">Ab^7</div></button>
-        <button class="gb-btn sub-gb gb-red" data-sub="ebmaj"><div class="well"></div><div class="face">Eb^</div></button>
-      </div>
-    </div>
-    <div id="key-rows">
-      <div id="chromatic-btns" class="key-row">
-        <button class="gb-btn chr-gb gb-purple" data-chord="k45_c"><div class="well"></div><div class="face">C</div></button>
-        <button class="gb-btn chr-gb gb-purple" data-chord="k45_db"><div class="well"></div><div class="face">Db</div></button>
-        <button class="gb-btn chr-gb gb-purple" data-chord="k45_d"><div class="well"></div><div class="face">D</div></button>
-        <button class="gb-btn chr-gb gb-purple" data-chord="k45_eb"><div class="well"></div><div class="face">Eb</div></button>
-        <button class="gb-btn chr-gb gb-purple" data-chord="k45_e"><div class="well"></div><div class="face">E</div></button>
-        <button class="gb-btn chr-gb gb-purple" data-chord="k45_f"><div class="well"></div><div class="face">F</div></button>
-        <button class="gb-btn chr-gb gb-purple" data-chord="k45_gb"><div class="well"></div><div class="face">Gb</div></button>
-        <button class="gb-btn chr-gb gb-purple" data-chord="k45_g"><div class="well"></div><div class="face">G</div></button>
-        <button class="gb-btn chr-gb gb-purple" data-chord="k45_ab"><div class="well"></div><div class="face">Ab</div></button>
-        <button class="gb-btn chr-gb gb-purple" data-chord="k45_a"><div class="well"></div><div class="face">A</div></button>
-        <button class="gb-btn chr-gb gb-purple" data-chord="k45_bb"><div class="well"></div><div class="face">Bb</div></button>
-        <button class="gb-btn chr-gb gb-purple" data-chord="k45_b"><div class="well"></div><div class="face">B</div></button>
-      </div>
+  <section id="chord-panel" class="panel">
+    <div class="panel-label">Chords <span class="hint">tap to choose · hold for extensions</span></div>
+    <div id="chord-grid"></div>
+  </section>
 
-      <div id="fifths-btns" class="key-row">
-        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_c"><div class="well"></div><div class="face">C</div></button>
-        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_db"><div class="well"></div><div class="face">Db</div></button>
-        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_d"><div class="well"></div><div class="face">D</div></button>
-        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_eb"><div class="well"></div><div class="face">Eb</div></button>
-        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_e"><div class="well"></div><div class="face">E</div></button>
-        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_f"><div class="well"></div><div class="face">F</div></button>
-        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_gb"><div class="well"></div><div class="face">Gb</div></button>
-        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_g"><div class="well"></div><div class="face">G</div></button>
-        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_ab"><div class="well"></div><div class="face">Ab</div></button>
-        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_a"><div class="well"></div><div class="face">A</div></button>
-        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_bb"><div class="well"></div><div class="face">Bb</div></button>
-        <button class="gb-btn chr-gb gb-teal" data-chord="k5th_b"><div class="well"></div><div class="face">B</div></button>
-      </div>
+  <section id="next-panel" class="panel">
+    <div class="panel-label">Where next <span class="hint">from the chord you're on</span></div>
+    <div id="directions"></div>
+    <div class="memory"><span class="mini">Saved</span><div class="chips" id="favs"></div><button id="fav-btn">&#9734; Save</button></div>
+    <div class="memory"><span class="mini">Recent</span><div class="chips" id="recents"></div></div>
+  </section>
 
-      <div id="ong-btns" class="key-row">
-        <button class="gb-btn chr-gb gb-orange" data-chord="kong_c"><div class="well"></div><div class="face">C</div></button>
-        <button class="gb-btn chr-gb gb-orange" data-chord="kong_db"><div class="well"></div><div class="face">Db</div></button>
-        <button class="gb-btn chr-gb gb-orange" data-chord="kong_d"><div class="well"></div><div class="face">D</div></button>
-        <button class="gb-btn chr-gb gb-orange" data-chord="kong_eb"><div class="well"></div><div class="face">Eb</div></button>
-        <button class="gb-btn chr-gb gb-orange" data-chord="kong_e"><div class="well"></div><div class="face">E</div></button>
-        <button class="gb-btn chr-gb gb-orange" data-chord="kong_f"><div class="well"></div><div class="face">F</div></button>
-        <button class="gb-btn chr-gb gb-orange" data-chord="kong_gb"><div class="well"></div><div class="face">Gb</div></button>
-        <button class="gb-btn chr-gb gb-orange" data-chord="kong_g"><div class="well"></div><div class="face">G</div></button>
-        <button class="gb-btn chr-gb gb-orange" data-chord="kong_ab"><div class="well"></div><div class="face">Ab</div></button>
-        <button class="gb-btn chr-gb gb-orange" data-chord="kong_a"><div class="well"></div><div class="face">A</div></button>
-        <button class="gb-btn chr-gb gb-orange" data-chord="kong_bb"><div class="well"></div><div class="face">Bb</div></button>
-        <button class="gb-btn chr-gb gb-orange" data-chord="kong_b"><div class="well"></div><div class="face">B</div></button>
-      </div>
+  <section id="plate-panel">
+    <div id="display"><div id="disp-chord">C</div><div id="disp-inst">HARP</div></div>
+    <div id="harp-board"></div>
+  </section>
 
-      <div id="pink-btns" class="key-row">
-        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_c"><div class="well"></div><div class="face">C</div></button>
-        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_db"><div class="well"></div><div class="face">Db</div></button>
-        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_d"><div class="well"></div><div class="face">D</div></button>
-        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_eb"><div class="well"></div><div class="face">Eb</div></button>
-        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_e"><div class="well"></div><div class="face">E</div></button>
-        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_f"><div class="well"></div><div class="face">F</div></button>
-        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_gb"><div class="well"></div><div class="face">Gb</div></button>
-        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_g"><div class="well"></div><div class="face">G</div></button>
-        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_ab"><div class="well"></div><div class="face">Ab</div></button>
-        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_a"><div class="well"></div><div class="face">A</div></button>
-        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_bb"><div class="well"></div><div class="face">Bb</div></button>
-        <button class="gb-btn chr-gb gb-pink" data-chord="kpnk_b"><div class="well"></div><div class="face">B</div></button>
-      </div>
+  <section id="controls-panel" class="panel">
+    <div class="panel-label">Sound</div>
+    <div id="inst-btns">
+      <button class="inst active" data-inst="harp">HARP</button>
+      <button class="inst" data-inst="bell">BELL</button>
+      <button class="inst" data-inst="sine">SINE</button>
+      <button class="inst" data-inst="bass">BASS</button>
+      <button class="inst" data-inst="pad">PAD</button>
+      <button class="inst" data-inst="organ">ORGAN</button>
+      <button class="inst" data-inst="choir">CHOIR</button>
+      <button class="inst" data-inst="cello">CELLO</button>
+      <button class="inst" data-inst="wood">WOOD</button>
+      <button class="inst" data-inst="thumb">THUMB</button>
     </div>
-    <div id="bottom-dock">
-      <div id="inst-block">
-        <div class="block-label">· instrument ·</div>
-        <div id="inst-btns">
-          <button class="gb-btn inst-gb gb-bluelt active" data-inst="harp"> <div class="well"></div><div class="face">HARP</div></button>
-          <button class="gb-btn inst-gb gb-bluelt"        data-inst="bell"> <div class="well"></div><div class="face">BELL</div></button>
-          <button class="gb-btn inst-gb gb-bluelt"        data-inst="sine"> <div class="well"></div><div class="face">SINE</div></button>
-          <button class="gb-btn inst-gb gb-bluelt"        data-inst="bass"> <div class="well"></div><div class="face">BASS</div></button>
-          <button class="gb-btn inst-gb gb-bluelt"        data-inst="pad">  <div class="well"></div><div class="face">PAD</div></button>
-          <button class="gb-btn inst-gb gb-bluelt"        data-inst="organ"><div class="well"></div><div class="face">ORGN</div></button>
-          <button class="gb-btn inst-gb gb-bluelt"        data-inst="choir"><div class="well"></div><div class="face">CHIR</div></button>
-          <button class="gb-btn inst-gb gb-bluelt"        data-inst="cello"><div class="well"></div><div class="face">CELO</div></button>
-          <button class="gb-btn inst-gb gb-bluelt"        data-inst="wood"> <div class="well"></div><div class="face">WOOD</div></button>
-          <button class="gb-btn inst-gb gb-bluelt"        data-inst="thumb"><div class="well"></div><div class="face">THMB</div></button>
-          <button class="gb-btn inst-gb gb-red"           data-inst="laser"><div class="well"></div><div class="face">LAZR</div></button>
-        </div>
-      </div>
+    <div class="panel-label">Effects</div>
+    <div id="fx-knobs">
+      <div class="fx-unit"><div class="fader-wrap" id="knob-verb" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-verb"></div><div class="fader-line"></div></div><div class="fx-name">reverb</div></div>
+      <div class="fx-unit"><div class="fader-wrap" id="knob-delay" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-delay"></div><div class="fader-line"></div></div><div class="fx-name">delay</div></div>
+      <div class="fx-unit"><div class="fader-wrap" id="knob-ping" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-ping"></div><div class="fader-line"></div></div><div class="fx-name">ping</div></div>
+      <div class="fx-unit"><div class="fader-wrap" id="knob-warble" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-warble"></div><div class="fader-line"></div></div><div class="fx-name">warble</div></div>
+      <div class="fx-unit"><div class="fader-wrap" id="knob-crush" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-crush"></div><div class="fader-line"></div></div><div class="fx-name">crush</div></div>
+      <div class="fx-unit"><div class="fader-wrap" id="knob-tape" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-tape"></div><div class="fader-line"></div></div><div class="fx-name">twang</div></div>
     </div>
-    <div id="app-foot">
-      <a class="site-back" href="javascript:history.back()" hidden>&#8249; back</a>
-      <span>HARPMOG</span>
-    </div>
-  </div>
-  <div id="right-panel">
-    <div id="screen-housing">
-      <div id="screen-label"><span id="led-chord">C-</span> · <span id="led-mode">SCALE</span> · <span id="led-inst">HARP</span></div>
-      <div id="harp-board"></div>
-    </div>
-    <div id="fx-block">
-      <div class="block-label">· fx ·</div>
-      <div id="fx-knobs">
-        <div class="fx-unit">
-        <div class="fader-wrap" id="knob-verb" data-val="50" data-min="0" data-max="100">
-          <div class="fader-fill" id="fader-fill-verb"></div>
-          <div class="fader-line"></div>
-        </div>
-        <div class="fx-name" style="margin-top:3px;">reverb</div>
-        </div>
-        <div class="fx-unit">
-        <div class="fader-wrap" id="knob-delay" data-val="0" data-min="0" data-max="100">
-          <div class="fader-fill" id="fader-fill-delay"></div>
-          <div class="fader-line"></div>
-        </div>
-        <div class="fx-name" style="margin-top:3px;">delay</div>
-        </div>
-        <div class="fx-unit">
-        <div class="fader-wrap" id="knob-ping" data-val="0" data-min="0" data-max="100">
-          <div class="fader-fill" id="fader-fill-ping"></div>
-          <div class="fader-line"></div>
-        </div>
-        <div class="fx-name" style="margin-top:3px;">ping</div>
-        </div>
-        <div class="fx-unit">
-        <div class="fader-wrap" id="knob-warble" data-val="0" data-min="0" data-max="100">
-          <div class="fader-fill" id="fader-fill-warble"></div>
-          <div class="fader-line"></div>
-        </div>
-        <div class="fx-name" style="margin-top:3px;">warble</div>
-        </div>
-        <div class="fx-unit">
-        <div class="fader-wrap" id="knob-crush" data-val="0" data-min="0" data-max="100">
-          <div class="fader-fill" id="fader-fill-crush"></div>
-          <div class="fader-line"></div>
-        </div>
-        <div class="fx-name" style="margin-top:3px;">crush</div>
-        </div>
-        <div class="fx-unit">
-        <div class="fader-wrap" id="knob-tape" data-val="0" data-min="0" data-max="100">
-          <div class="fader-fill" id="fader-fill-tape"></div>
-          <div class="fader-line"></div>
-        </div>
-        <div class="fx-name" style="margin-top:3px;">twang</div>
-        </div>
-      </div>
-      </div>
     <div id="looper-panel">
       <div id="looper-transport">
         <button class="lp-btn" id="lp-rec">REC</button>
@@ -587,46 +287,26 @@ body::after{
         <div id="scope-wrap">
           <canvas id="waveform-canvas"></canvas>
           <div id="scope-side">
-            <div class="scope-unit">
-              <div class="scope-dial" id="scope-dial-time" data-scope-key="time" data-val="50" role="slider" aria-valuenow="50" aria-label="Time base">
-                <div class="scope-dial-ring"></div>
-                <div class="scope-dial-pointer"></div>
-              </div>
-              <div class="scope-dial-name">time</div>
-            </div>
-            <div class="scope-unit">
-              <div class="scope-dial" id="scope-dial-volts" data-scope-key="gain" data-val="55" role="slider" aria-valuenow="55" aria-label="Full-scale per division">
-                <div class="scope-dial-ring"></div>
-                <div class="scope-dial-pointer"></div>
-              </div>
-              <div class="scope-dial-name">fs/div</div>
-            </div>
-            <div class="scope-unit">
-              <div class="scope-dial" id="scope-dial-phos" data-scope-key="persist" data-val="28" role="slider" aria-valuenow="28" aria-label="Phosphor persistence">
-                <div class="scope-dial-ring"></div>
-                <div class="scope-dial-pointer"></div>
-              </div>
-              <div class="scope-dial-name">phos</div>
-            </div>
-            <div class="scope-unit">
-              <div class="scope-dial" id="scope-dial-xy" data-scope-key="xy" data-val="18" role="slider" aria-valuenow="18" aria-label="X-Y mix and phase">
-                <div class="scope-dial-ring"></div>
-                <div class="scope-dial-pointer"></div>
-              </div>
-              <div class="scope-dial-name">x-y</div>
-            </div>
+            <div class="scope-unit"><div class="scope-dial" data-scope-key="time" role="slider" aria-label="Time base"><div class="scope-dial-ring"></div><div class="scope-dial-pointer"></div></div><div class="scope-dial-name">time</div></div>
+            <div class="scope-unit"><div class="scope-dial" data-scope-key="gain" role="slider" aria-label="Scope gain"><div class="scope-dial-ring"></div><div class="scope-dial-pointer"></div></div><div class="scope-dial-name">gain</div></div>
+            <div class="scope-unit"><div class="scope-dial" data-scope-key="persist" role="slider" aria-label="Phosphor persistence"><div class="scope-dial-ring"></div><div class="scope-dial-pointer"></div></div><div class="scope-dial-name">phos</div></div>
+            <div class="scope-unit"><div class="scope-dial" data-scope-key="xy" role="slider" aria-label="X-Y mix"><div class="scope-dial-ring"></div><div class="scope-dial-pointer"></div></div><div class="scope-dial-name">x-y</div></div>
           </div>
         </div>
       </div>
     </div>
-    </div>
-  </div>
+    <div id="brand"><span>HarpMog</span><a class="site-back" href="javascript:history.back()" hidden>&#8249; back</a></div>
+  </section>
 </div>
-<canvas id="crt-overlay"></canvas>
+<div id="var-pop" hidden><div class="pop-title"></div><div class="pop-grid"></div></div>
 <script>
 (function(){
 'use strict';
 
+// ══ LEGACY CHORD SETS (C- / F-, red patterns, coloured key rows) ══
+// Hidden for now while we try the omnichord-style system below. The data
+// and voicing() are kept so they can be brought back. NN/NM/C2/C8/MAX_STRINGS
+// are still used by the new system.
 // ── NOTES ─────────────────────────────────────────────────────
 const NN=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 const NM={C:0,Db:1,D:2,Eb:3,E:4,F:5,Gb:6,G:7,Ab:8,A:9,Bb:10,B:11};
@@ -703,65 +383,293 @@ const KEYS=['c','db','d','eb','e','f','gb','g','ab','a','bb','b'];
 const KEY_SETS={};
 for(const row in KEY_ROWS)KEYS.forEach((k,i)=>{KEY_SETS[row+'_'+k]=voicing(transpose(KEY_ROWS[row].cell,i));});
 
-const state={chord:'cmin',mode:'scale',insts:new Set(['harp']),ds:[],vis:[]};
-function isKeyRow(id){return id in KEY_SETS;}
-function getSet(){
-  if(isKeyRow(state.chord))return KEY_SETS[state.chord];
-  const c=CHORDS[state.chord];
-  return c[state.mode]||c.scale;
+// ══ NEW CHORD SYSTEM (omnichord-style) ═══════════════════════
+// Roots run across in 4ths; chord families run down. Tap a key for that
+// root in the row's current chord; hold a key for its extensions.
+//
+// Each chord is written as intervals (semitones above the root) in VOICING
+// ORDER: the bass root sits in octave 2, then the list is walked upward,
+// each note going to the nearest copy above the one before, repeating the
+// list until the top. So the order spreads the chord: [7,4,11,2] on C gives
+// C2 G2 E3 B3 D4 G4 E5 B5 D6 …  lv = how rich it is (0 triad … 3 lush/altered).
+const ROOTS=[0,5,10,3,8,1,6,11,4,9,2,7];            // C F B♭ E♭ A♭ D♭ G♭ B E A D G
+const PC_NAMES=['C','D♭','D','E♭','E','F','G♭','G','A♭','A','B♭','B'];
+const FAMILIES=[
+  {id:'maj',name:'MAJ',color:'var(--maj)',vars:[
+    {s:'',        iv:[7,4,0],      lv:0},
+    {s:'sus2',    iv:[7,2,0],      lv:0},
+    {s:'sus4',    iv:[7,5,0],      lv:0},
+    {s:'add9',    iv:[7,2,4],      lv:1},
+    {s:'6',       iv:[7,4,9,0],    lv:1},
+    {s:'maj7',    iv:[7,4,11],     lv:1},
+    {s:'6/9',     iv:[7,2,4,9],    lv:2},
+    {s:'maj9',    iv:[7,4,11,2],   lv:2},
+    {s:'maj7♯11', iv:[7,4,11,6],   lv:2},
+    {s:'maj13',   iv:[11,4,9,2],   lv:3},
+    {s:'maj9♯11', iv:[7,4,11,2,6], lv:3},
+  ]},
+  {id:'min',name:'MIN',color:'var(--min)',vars:[
+    {s:'m',         iv:[7,3,0],       lv:0},
+    {s:'m6',        iv:[7,3,9,0],     lv:1},
+    {s:'m7',        iv:[7,3,10],      lv:1},
+    {s:'m(maj7)',   iv:[7,3,11],      lv:1},
+    {s:'m6/9',      iv:[7,2,3,9],     lv:2},
+    {s:'m9',        iv:[10,3,7,2],    lv:2},
+    {s:'m(maj9)',   iv:[11,3,7,2],    lv:2},
+    {s:'m11',       iv:[10,3,7,2,5],  lv:3},
+    {s:'m13',       iv:[10,3,9,2,5],  lv:3},
+    {s:'m7 4ths',   iv:[5,10,3,7],    lv:3},
+  ]},
+  {id:'dom',name:'7',color:'var(--dom)',vars:[
+    {s:'7',      iv:[10,4,7],      lv:1},
+    {s:'7sus4',  iv:[10,5,7],      lv:1},
+    {s:'9',      iv:[10,4,7,2],    lv:2},
+    {s:'9sus4',  iv:[7,10,2,5],    lv:2},
+    {s:'7♭9',    iv:[10,4,7,1],    lv:2},
+    {s:'7♯9',    iv:[10,4,7,3],    lv:2},
+    {s:'13',     iv:[10,4,9,2],    lv:3},
+    {s:'13sus4', iv:[10,5,9,2],    lv:3},
+    {s:'9♯11',   iv:[10,4,2,6],    lv:3},
+    {s:'13♯11',  iv:[10,4,6,9,2],  lv:3},
+    {s:'13♭9',   iv:[10,4,9,1],    lv:3},
+    {s:'9♭13',   iv:[10,4,2,8],    lv:3},
+    {s:'7alt',   iv:[10,4,8,1,3],  lv:3},
+  ]},
+  {id:'dim',name:'DIM',color:'var(--dim)',vars:[
+    {s:'°',       iv:[6,3,0],      lv:0},
+    {s:'°7',      iv:[6,3,9,0],    lv:1},
+    {s:'ø',       iv:[6,10,3],     lv:1},
+    {s:'ø9',      iv:[10,3,6,2],   lv:2},
+    {s:'°(maj7)', iv:[6,3,11],     lv:2},
+    {s:'ø11',     iv:[6,10,3,5],   lv:3},
+    {s:'°7(9)',   iv:[6,3,9,2],    lv:3},
+  ]},
+  {id:'aug',name:'AUG',color:'var(--aug)',vars:[
+    {s:'+',       iv:[8,4,0],      lv:0},
+    {s:'+(add9)', iv:[8,2,4],      lv:1},
+    {s:'+7',      iv:[10,4,8],     lv:1},
+    {s:'maj7♯5',  iv:[11,4,8],     lv:1},
+    {s:'9♯5',     iv:[10,4,8,2],   lv:2},
+    {s:'maj9♯5',  iv:[11,4,8,2],   lv:3},
+  ]},
+];
+const FAM=Object.fromEntries(FAMILIES.map(f=>[f.id,f]));
+function findVar(fam,s){const i=FAM[fam].vars.findIndex(v=>v.s===s);return i<0?0:i;}
+const rowVar={maj:0,min:0,dom:0,dim:0,aug:0};          // each row remembers its last extension
+const VOICE_TOP=100;                                    // E7: the top string
+
+function chordVar(c){return FAM[c.fam].vars[c.v];}
+function chordName(c){return PC_NAMES[c.root]+chordVar(c).s;}
+function chordKey(c){return c.root+':'+c.fam+':'+c.v;}
+function chordNotes(c){
+  const iv=chordVar(c).iv;
+  let last=C2+c.root;const out=[last];
+  for(let k=0;;k=(k+1)%iv.length){
+    let m=Math.floor(last/12)*12+(c.root+iv[k])%12;
+    if(m<=last)m+=12;
+    if(m>VOICE_TOP)break;
+    out.push(m);last=m;
+  }
+  return out;
 }
+
+// ── WHERE NEXT: labelled moves from the current chord ─────────
+// Each move: semitones up from the current root, a family, and a "ladder"
+// of extensions from plain to lush; the rung used matches how rich the
+// current chord is, so a maj9 leads to m9 / 13 / maj9 rather than triads.
+const LADDERS={
+  maj:['maj',['','maj7','maj9','maj9♯11']],
+  six:['maj',['6','6','6/9','6/9']],
+  min:['min',['m','m7','m9','m11']],
+  dom:['dom',['7','7','9','13']],
+  alt:['dom',['7','7♭9','7♭9','7alt']],
+  trit:['dom',['7','7','9♯11','13♯11']],
+  sus:['dom',['7sus4','7sus4','9sus4','13sus4']],
+  half:['dim',['ø','ø','ø9','ø11']],
+  dim:['dim',['°','°7','°7','°7(9)']],
+};
+const MOVES={
+  maj:[[5,'maj','to IV'],[2,'min','ii, heads to V'],[7,'dom','V7, back home'],[9,'min','vi, relative minor'],
+       [9,'alt','VI7, pulls to ii'],[5,'min','iv, borrowed'],[10,'dom','♭VII7, backdoor'],[8,'maj','♭VI, borrowed']],
+  min:[[5,'dom','V7 of ii–V'],[5,'min','to iv'],[7,'alt','V7, back to i'],[8,'maj','♭VI'],
+       [3,'maj','♭III, relative major'],[10,'dom','♭VII7'],[2,'half','iiø, minor ii–V'],[10,'sus','sus, floating']],
+  dom:[[5,'maj','resolve to I'],[5,'min','resolve to i'],[6,'trit','tritone sub'],[2,'min','deceptive vi'],
+       [8,'maj','deceptive ♭VI'],[5,'dom','next in cycle of 4ths'],[7,'min','its ii, before it'],[0,'sus','sus it first']],
+  half:[[5,'alt','V7, minor ii–V'],[10,'min','i, ii–V–i target'],[6,'maj','♭VI of the key'],[3,'min','iv of the key'],
+        [0,'dim','°7 colour'],[1,'maj','up a half step']],
+  dim:[[1,'maj','up a half step'],[1,'min','up a half step, minor'],[11,'alt','same notes as V7♭9'],
+       [3,'dim','shift a minor 3rd'],[11,'min','down a half step'],[2,'dom','as a passing V']],
+  aug:[[5,'maj','V+ to I'],[5,'min','V+ to i'],[0,'six','line cliché to 6'],[9,'min','to vi'],[4,'maj','up a major 3rd']],
+};
+function suggestions(c){
+  const v=chordVar(c);
+  const kind=c.fam==='dim'&&v.s.startsWith('ø')?'half':c.fam;
+  return MOVES[kind].map(([d,lad,label])=>{
+    const [fam,rungs]=LADDERS[lad];
+    const s=rungs[Math.min(3,v.lv)];
+    return {chord:{root:(c.root+d)%12,fam,v:findVar(fam,s)},label};
+  });
+}
+
+// ── STATE / STRINGS ───────────────────────────────────────────
+const state={chord:{root:0,fam:'maj',v:0},insts:new Set(['harp']),ds:[],vis:[]};
 function applySet(){
-  state.ds=[...getSet()].reverse(); // real notes, high → low (top string first)
-  // Spread the real notes evenly over the 42 drawn strings
+  state.ds=chordNotes(state.chord).reverse();   // top string first
   state.vis=[];
   for(let i=0;i<MAX_STRINGS;i++){
     const ri=Math.round(i*(state.ds.length-1)/Math.max(1,MAX_STRINGS-1));
     state.vis.push(state.ds[ri]);
   }
-  buildBoard();updateLED();prewarm();
+  buildBoard();updateDisplay();prewarm();
 }
-
-// ── HARP BOARD ────────────────────────────────────────────────
 function buildBoard(){
   const board=document.getElementById('harp-board');board.innerHTML='';
-  const vis=state.vis;
-  const NUM=vis.length;
+  const NUM=state.vis.length;
   for(let i=0;i<NUM;i++){
     const row=document.createElement('div');row.className='string-row';
     const wrap=document.createElement('div');wrap.className='string-line-wrap';
     const line=document.createElement('div');line.className='string-line';line.id='S'+i;
-    line.dataset.midi=vis[i]||60;
-    const mid=(NUM-1)/2,dist=Math.abs(i-mid)/Math.max(1,mid);
-    const thick=(1.7-dist*.8).toFixed(1);
-    line.style.cssText=`height:${thick}px;margin-top:${(-thick/2).toFixed(1)}px;`;
-    const g=Math.round(60+(1-dist)*40);
-    line.style.background=`rgba(180,${g+60},0,0.45)`;line.dataset.g=g;
+    line.dataset.midi=state.vis[i];
+    // thicker (wound) strings at the bottom, a new note gets a brighter string
+    const newNote=i===0||state.vis[i]!==state.vis[i-1];
+    const thick=(0.8+(i/NUM)*1.6).toFixed(1);
+    line.dataset.base=newNote?'rgba(214,176,104,.9)':'rgba(214,176,104,.32)';
+    line.style.cssText=`height:${thick}px;background:${line.dataset.base};`;
     wrap.appendChild(line);row.appendChild(wrap);board.appendChild(row);
   }
 }
 function flash(i){
   const s=document.getElementById('S'+i);if(!s)return;
-  s.style.background='rgba(255,200,80,0.98)';
-  s.style.boxShadow='0 0 12px rgba(255,179,71,1),0 0 24px rgba(255,140,0,0.6)';
-  setTimeout(()=>{
-    s.style.background=`rgba(180,${parseInt(s.dataset.g)+60},0,0.42)`;s.style.boxShadow='none';},170);
+  s.style.background='#fff3cf';s.style.boxShadow='0 0 10px rgba(243,220,164,.95)';
+  setTimeout(()=>{s.style.background=s.dataset.base;s.style.boxShadow='none';},160);
 }
-// Readout above the strings: chord · pattern · instruments
-const KEY_NAMES={c:'C',db:'Db',d:'D',eb:'Eb',e:'E',f:'F',gb:'Gb',g:'G',ab:'Ab',a:'A',bb:'Bb',b:'B'};
-const MODE_NAMES={scale:'SCALE',base:'BASE ARP',deep:'DEEP ARP',shimmer:'SHIMMER',blue:'BLUE','45':'45',
-  fminarp:'F MINOR',copper:'COPPER',darp:'D',garp:'G',bbarp:'Bb',abmaj7:'Ab MAJ 7',ebmaj:'Eb MAJ'};
-function updateLED(){
-  let chord,mode;
-  if(isKeyRow(state.chord)){
-    const [row,key]=state.chord.split('_');
-    chord=KEY_NAMES[key];mode=KEY_ROWS[row].label;
-  } else {
-    chord={cmin:'C-',fmin:'F-'}[state.chord];mode=MODE_NAMES[state.mode]||'';
+function updateDisplay(){
+  document.getElementById('disp-chord').textContent=chordName(state.chord);
+  document.getElementById('disp-inst').textContent=[...state.insts].join(' + ');
+}
+
+// ── CHORD GRID ────────────────────────────────────────────────
+const HOLD_MS=320;
+function buildGrid(){
+  const g=document.getElementById('chord-grid');g.innerHTML='';
+  for(const f of FAMILIES){
+    const head=document.createElement('div');head.className='row-head';head.id='head-'+f.id;
+    head.style.setProperty('--fam',f.color);
+    g.appendChild(head);
+    for(const r of ROOTS){
+      const k=document.createElement('button');k.className='key';
+      k.dataset.fam=f.id;k.dataset.root=r;k.textContent=PC_NAMES[r];
+      k.style.setProperty('--fam',f.color);
+      attachKey(k);g.appendChild(k);
+    }
   }
-  document.getElementById('led-chord').textContent=chord;
-  document.getElementById('led-mode').textContent=mode;
-  document.getElementById('led-inst').textContent=[...state.insts].map(s=>s.toUpperCase()).join('+');
+  updateGrid();
 }
+function updateGrid(){
+  for(const f of FAMILIES){
+    const v=f.vars[rowVar[f.id]];
+    document.getElementById('head-'+f.id).innerHTML=`<b>${f.name}</b><small>${v.s||'triad'}</small>`;
+  }
+  const c=state.chord;
+  document.querySelectorAll('#chord-grid .key').forEach(k=>
+    k.classList.toggle('active',k.dataset.fam===c.fam&&+k.dataset.root===c.root));
+}
+function selectChord(c,{setRow=false}={}){
+  if(setRow)rowVar[c.fam]=c.v;
+  state.chord={...c};
+  applySet();updateGrid();renderNext();addRecent(c);
+}
+function attachKey(k){
+  let timer=null,held=false;
+  k.addEventListener('pointerdown',e=>{
+    e.preventDefault();k.setPointerCapture(e.pointerId);k.classList.add('pressed');held=false;
+    timer=setTimeout(()=>{held=true;openPop(k);},HOLD_MS);
+  });
+  k.addEventListener('pointermove',e=>{if(held)hoverPop(e.clientX,e.clientY);});
+  k.addEventListener('pointerup',e=>{
+    clearTimeout(timer);k.classList.remove('pressed');
+    if(!held){selectChord({root:+k.dataset.root,fam:k.dataset.fam,v:rowVar[k.dataset.fam]});return;}
+    // held: releasing over an extension picks it; releasing elsewhere leaves the list open to tap
+    const b=popButtonAt(e.clientX,e.clientY);
+    if(b)pickFromPop(b);
+  });
+  k.addEventListener('pointercancel',()=>{clearTimeout(timer);k.classList.remove('pressed');});
+  k.addEventListener('contextmenu',e=>e.preventDefault());
+}
+
+// Hold-for-extensions list
+const pop=document.getElementById('var-pop');
+function openPop(k){
+  const fam=FAM[k.dataset.fam],root=+k.dataset.root;
+  pop.style.setProperty('--fam',fam.color);
+  pop.querySelector('.pop-title').textContent=PC_NAMES[root]+' · '+{maj:'major',min:'minor',dom:'dominant 7',dim:'diminished',aug:'augmented'}[fam.id];
+  const grid=pop.querySelector('.pop-grid');grid.innerHTML='';
+  fam.vars.forEach((v,i)=>{
+    const b=document.createElement('button');
+    b.textContent=PC_NAMES[root]+v.s;b.dataset.root=root;b.dataset.fam=fam.id;b.dataset.v=i;
+    if(state.chord.fam===fam.id&&state.chord.root===root&&state.chord.v===i)b.classList.add('current');
+    b.addEventListener('pointerup',e=>{e.stopPropagation();pickFromPop(b);});
+    grid.appendChild(b);
+  });
+  pop.hidden=false;
+  // place it next to the key, kept on screen
+  const r=k.getBoundingClientRect(),pw=pop.offsetWidth,ph=pop.offsetHeight,M=8;
+  let x=r.left+r.width/2-pw/2,y=r.bottom+8;
+  if(y+ph>innerHeight-M)y=r.top-ph-8;
+  pop.style.left=Math.max(M,Math.min(innerWidth-pw-M,x))+'px';
+  pop.style.top=Math.max(M,Math.min(innerHeight-ph-M,y))+'px';
+}
+function popButtonAt(x,y){return document.elementsFromPoint(x,y).find(el=>el.parentNode&&el.parentNode.classList&&el.parentNode.classList.contains('pop-grid'));}
+function hoverPop(x,y){const b=popButtonAt(x,y);pop.querySelectorAll('button').forEach(el=>el.classList.toggle('hover',el===b));}
+function pickFromPop(b){
+  closePop();
+  selectChord({root:+b.dataset.root,fam:b.dataset.fam,v:+b.dataset.v},{setRow:true});
+}
+function closePop(){pop.hidden=true;}
+document.addEventListener('pointerdown',e=>{if(!pop.hidden&&!pop.contains(e.target))closePop();},true);
+
+// ── WHERE NEXT + SAVED + RECENT ───────────────────────────────
+function famColor(c){return FAM[c.fam].color;}
+function renderNext(){
+  const box=document.getElementById('directions');box.innerHTML='';
+  for(const {chord,label} of suggestions(state.chord)){
+    const b=document.createElement('button');b.className='dir';
+    b.style.setProperty('--fam',famColor(chord));
+    b.innerHTML=`<b>${chordName(chord)}</b><small>${label}</small>`;
+    b.addEventListener('click',()=>selectChord(chord));
+    box.appendChild(b);
+  }
+  renderMemory();
+}
+function loadList(k){try{const v=JSON.parse(localStorage.getItem(k)||'[]');return Array.isArray(v)?v.filter(c=>FAM[c.fam]&&FAM[c.fam].vars[c.v]):[];}catch(e){return[];}}
+function saveList(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+let favs=loadList('harpmog.favs'),recents=loadList('harpmog.recents');
+function addRecent(c){
+  recents=[c,...recents.filter(r=>chordKey(r)!==chordKey(c))].slice(0,10);
+  saveList('harpmog.recents',recents);renderMemory();
+}
+function renderChips(id,list,empty){
+  const box=document.getElementById(id);box.innerHTML='';
+  if(!list.length){box.innerHTML=`<span class="empty">${empty}</span>`;return;}
+  for(const c of list){
+    const b=document.createElement('button');b.className='chip';b.textContent=chordName(c);
+    b.style.setProperty('--fam',famColor(c));
+    b.addEventListener('click',()=>selectChord(c));
+    box.appendChild(b);
+  }
+}
+function renderMemory(){
+  const cur=chordKey(state.chord);
+  renderChips('favs',favs,'tap ☆ Save to keep a chord here');
+  renderChips('recents',recents.filter(c=>chordKey(c)!==cur),'chords you play show up here');
+  const on=favs.some(c=>chordKey(c)===cur);
+  const fb=document.getElementById('fav-btn');fb.classList.toggle('on',on);fb.innerHTML=on?'&#9733; Saved':'&#9734; Save';
+}
+document.getElementById('fav-btn').addEventListener('click',()=>{
+  const cur=chordKey(state.chord);
+  favs=favs.some(c=>chordKey(c)===cur)?favs.filter(c=>chordKey(c)!==cur):[{...state.chord},...favs].slice(0,12);
+  saveList('harpmog.favs',favs);renderMemory();
+});
 
 // ── AUDIO — pre-baked buffer cache, distinct synthesis per voice ─
 let actx=null,master=null,reverbConv=null,reverbSend=null,delayNode=null,delaySend=null;
@@ -1020,31 +928,6 @@ function bakeThumb(freq,sr){
   return buf;
 }
 
-// LASER — descending frequency sweep on sawtooth/triangle, sci-fi zap
-function bakeLaser(freq,sr){
-  const dur=1.8,bufLen=Math.ceil(sr*dur);
-  const buf=actx.createBuffer(1,bufLen,sr);
-  const data=buf.getChannelData(0);
-  // Start 3 octaves above target, sweep down exponentially
-  const startFreq=freq*8;
-  const k=Math.log(startFreq/freq)/dur; // exponential decay constant
-  let phase=0;
-  for(let i=0;i<bufLen;i++){
-    const t=i/sr;
-    const f=startFreq*Math.exp(-k*t);
-    phase+=2*Math.PI*f/sr;
-    if(phase>2*Math.PI)phase-=2*Math.PI;
-    // Mix sawtooth and triangle for that metallic laser character
-    const saw=(phase/Math.PI)-1;
-    const tri=Math.abs((phase/Math.PI)-1)*2-1;
-    const env=Math.exp(-t*2.2);
-    // Add slight ring mod shimmer
-    const ring=Math.sin(2*Math.PI*freq*2.7*t);
-    data[i]=(saw*0.6+tri*0.3+ring*0.1)*env*0.55;
-  }
-  return buf;
-}
-
 function bakeBuffer(inst,midi){
   const freq=440*Math.pow(2,(midi-69)/12);
   const sr=actx.sampleRate;
@@ -1058,7 +941,6 @@ function bakeBuffer(inst,midi){
   if(inst==='cello') return bakeCello(freq,sr);
   if(inst==='wood')  return bakeWood(freq,sr);
   if(inst==='thumb') return bakeThumb(freq,sr);
-  if(inst==='laser') return bakeLaser(freq,sr);
   return bakeHarp(freq,sr);
 }
 
@@ -1633,65 +1515,18 @@ function initScopeKnobs(){
   });
 }
 
-// ── INSTRUMENT BUTTONS ────────────────────────────────────────
-document.querySelectorAll('.gb-btn[data-inst]').forEach(btn=>{
-  btn.addEventListener('pointerdown',e=>{e.preventDefault();btn.classList.add('sunken');});
+// ── INSTRUMENT BUTTONS (tap to layer; at least one stays on) ──
+document.querySelectorAll('.inst[data-inst]').forEach(btn=>{
   btn.addEventListener('pointerup',e=>{
-    e.preventDefault();btn.classList.remove('sunken');
+    e.preventDefault();
     const inst=btn.dataset.inst;
     if(state.insts.has(inst)){
-      // Deactivate only if at least one other remains
       if(state.insts.size>1){state.insts.delete(inst);btn.classList.remove('active');}
     } else {
       state.insts.add(inst);btn.classList.add('active');
     }
-    updateLED();prewarm();
+    updateDisplay();prewarm();
   });
-  btn.addEventListener('pointercancel',()=>btn.classList.remove('sunken'));
-});
-
-// ── CHORD BUTTONS ─────────────────────────────────────────────
-function showSubs(){document.getElementById('sub-buttons').classList.add('visible');}
-function hideSubs(){document.getElementById('sub-buttons').classList.remove('visible');
-  document.querySelectorAll('[data-sub]').forEach(b=>b.classList.remove('active','sunken'));}
-function activateChord(id){
-  const subs=document.getElementById('sub-buttons');
-  const keyRow=isKeyRow(id);
-  // Tapping the selected C- / F- again folds the pattern buttons away
-  if(!keyRow&&state.chord===id&&subs.classList.contains('visible')){hideSubs();state.mode='scale';applySet();return;}
-  state.chord=id;state.mode='scale';
-  document.querySelectorAll('[data-chord]').forEach(b=>b.classList.toggle('active',b.dataset.chord===id));
-  document.querySelectorAll('[data-sub]').forEach(b=>b.classList.remove('active'));
-  // The red patterns only apply to C- / F-: dim them (in place) for the coloured keys
-  subs.classList.toggle('inactive',keyRow);
-  if(!keyRow)showSubs();
-  applySet();
-}
-function activateSub(id){
-  if(isKeyRow(state.chord))return;
-  state.mode=id;
-  document.querySelectorAll('[data-sub]').forEach(b=>b.classList.toggle('active',b.dataset.sub===id));
-  applySet();
-}
-document.querySelectorAll('[data-chord]').forEach(btn=>{
-  btn.addEventListener('pointerdown',e=>{e.preventDefault();btn.setPointerCapture(e.pointerId);
-    btn.classList.add('sunken');activateChord(btn.dataset.chord);});
-  btn.addEventListener('pointermove',e=>{
-    const sub=document.elementsFromPoint(e.clientX,e.clientY).find(el=>el.dataset&&el.dataset.sub);
-    document.querySelectorAll('[data-sub]').forEach(b=>b.classList.remove('sunken'));
-    if(sub)sub.classList.add('sunken');});
-  btn.addEventListener('pointerup',e=>{
-    btn.classList.remove('sunken');
-    const sub=document.elementsFromPoint(e.clientX,e.clientY).find(el=>el.dataset&&el.dataset.sub);
-    document.querySelectorAll('[data-sub]').forEach(b=>b.classList.remove('sunken'));
-    if(sub)activateSub(sub.dataset.sub);});
-  btn.addEventListener('pointercancel',()=>{btn.classList.remove('sunken');
-    document.querySelectorAll('[data-sub]').forEach(b=>b.classList.remove('sunken'));});
-});
-document.querySelectorAll('[data-sub]').forEach(btn=>{
-  btn.addEventListener('pointerdown',e=>{e.preventDefault();btn.classList.add('sunken');});
-  btn.addEventListener('pointerup',e=>{e.preventDefault();btn.classList.remove('sunken');activateSub(btn.dataset.sub);});
-  btn.addEventListener('pointercancel',()=>btn.classList.remove('sunken'));
 });
 
 // ── UNLOCK ────────────────────────────────────────────────────
@@ -1702,12 +1537,9 @@ function doUnlock(e){
   if(e&&e.cancelable)e.preventDefault();
   document.getElementById('unlock-overlay').style.display='none';
   document.getElementById('app').style.visibility='visible';
-  state.chord='cmin';state.mode='scale';
-  applySet();attachBoard();
+  buildGrid();applySet();renderNext();attachBoard();
   initFaders();
   initScopeKnobs();
-  document.getElementById('btn-cmin').classList.add('active');
-  showSubs();
   initAudio();
   prewarm();
   // Resume AudioContext after iOS rotation / interruption / tab switch
@@ -1779,120 +1611,6 @@ try{
 }catch(e){}
 
 })();
-
-// ── CRT EFFECT ───────────────────────────────────────────────
-(function initCRT(){
-  const canvas = document.getElementById('crt-overlay');
-  if(!canvas) return;
-  const ctx = canvas.getContext('2d');
-
-  let W=0, H=0;
-  function resize(){
-    W = canvas.width  = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-  }
-  resize();
-  window.addEventListener('resize', resize);
-
-  // Flicker state
-  let flickerVal   = 1.0;
-  let flickerTarget = 1.0;
-  let flickerTimer  = 0;
-
-  // A handful of grain tiles made once, then cycled with random offsets
-  // (much cheaper on phones than making fresh noise every other frame)
-  const TILE = 256, NUM_TILES = 6, tiles = [];
-  for(let t=0; t<NUM_TILES; t++){
-    const c = document.createElement('canvas');
-    c.width = c.height = TILE;
-    const nCtx = c.getContext('2d');
-    const id = nCtx.createImageData(TILE, TILE);
-    const d  = id.data;
-    for(let i=0; i<d.length; i+=4){
-      const v = (Math.random() * 255)|0;
-      d[i]=d[i+1]=d[i+2]=v;
-      d[i+3] = (Math.random() * 38)|0; // alpha: max ~15% opacity
-    }
-    nCtx.putImageData(id, 0, 0);
-    tiles.push(ctx.createPattern(c, 'repeat'));
-  }
-  let tile = tiles[0], tileX = 0, tileY = 0;
-
-  let frame = 0;
-  function draw(){
-    requestAnimationFrame(draw);
-    frame++;
-
-    ctx.clearRect(0,0,W,H);
-
-    // ── FLICKER ──
-    // Drift toward target with some smoothing
-    flickerVal += (flickerTarget - flickerVal) * 0.18;
-    flickerTimer--;
-    if(flickerTimer <= 0){
-      // Occasional strong dip (phosphor flutter)
-      const r = Math.random();
-      if(r < 0.015){
-        // Big flutter — quick brightness drop
-        flickerTarget = 0.72 + Math.random() * 0.1;
-        flickerTimer  = 2 + (Math.random() * 3)|0;
-      } else if(r < 0.08){
-        // Mild wobble
-        flickerTarget = 0.88 + Math.random() * 0.1;
-        flickerTimer  = 3 + (Math.random() * 5)|0;
-      } else {
-        // Normal — slight variation
-        flickerTarget = 0.93 + Math.random() * 0.07;
-        flickerTimer  = 8 + (Math.random() * 12)|0;
-      }
-    }
-
-    // Apply flicker as a dark overlay
-    const flicker_dark = 1.0 - flickerVal;
-    if(flicker_dark > 0.01){
-      ctx.fillStyle = `rgba(0,0,0,${(flicker_dark * 0.85).toFixed(3)})`;
-      ctx.fillRect(0, 0, W, H);
-    }
-
-    // ── GRAIN ──
-    // New grain every 2 frames: another tile at a random offset
-    if(frame % 2 === 0){
-      tile = tiles[(Math.random() * NUM_TILES)|0];
-      tileX = (Math.random() * TILE)|0; tileY = (Math.random() * TILE)|0;
-    }
-    ctx.save();
-    ctx.globalAlpha = 0.22 + Math.random() * 0.06; // vary grain intensity
-    ctx.globalCompositeOperation = 'screen';
-    ctx.translate(-tileX, -tileY);
-    ctx.fillStyle = tile;
-    ctx.fillRect(tileX, tileY, W, H);
-    ctx.restore();
-
-    // ── HORIZONTAL INTERFERENCE LINE (occasional) ──
-    if(Math.random() < 0.04){
-      const y   = (Math.random() * H)|0;
-      const lh  = 1 + (Math.random() * 3)|0;
-      const lop = 0.04 + Math.random() * 0.08;
-      ctx.fillStyle = `rgba(255,255,255,${lop.toFixed(3)})`;
-      ctx.fillRect(0, y, W, lh);
-    }
-
-    // ── SUBTLE RGB CHROMATIC BLEED (top edge of screen only) ──
-    if(frame % 4 === 0){
-      const gradH = 3 + (Math.random() * 4)|0;
-      const grd = ctx.createLinearGradient(0,0,W,0);
-      grd.addColorStop(0,   'rgba(255,0,0,0.03)');
-      grd.addColorStop(0.33,'rgba(0,0,0,0)');
-      grd.addColorStop(0.66,'rgba(0,0,0,0)');
-      grd.addColorStop(1,   'rgba(0,0,255,0.03)');
-      ctx.fillStyle = grd;
-      ctx.fillRect(0, 0, W, gradH);
-    }
-  }
-
-  draw();
-})();
-
 </script>
 </body>
 </html>
