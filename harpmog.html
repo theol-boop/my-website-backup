@@ -257,6 +257,8 @@ button{font-family:var(--font);color:inherit;}
 .inst.active{background:var(--ink);color:var(--body);box-shadow:0 1px 0 rgba(0,0,0,.3),inset 0 2px 3px rgba(0,0,0,.4);transform:translateY(1px);}
 #fx-knobs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px 8px;}
 .fx-unit{min-width:0;display:flex;flex-direction:column;gap:3px;}
+.fx-room{border:none;background:none;cursor:pointer;padding:0;font-family:var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+.fx-room::after{content:' ▾';opacity:.6;}
 .fx-name{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);text-align:center;}
 .fader-wrap{width:100%;height:24px;position:relative;cursor:pointer;touch-action:none;border-radius:12px;
   background:var(--body-3);box-shadow:inset 0 2px 3px rgba(0,0,0,.2),0 1px 0 var(--hi);overflow:hidden;}
@@ -455,7 +457,7 @@ button{font-family:var(--font);color:inherit;}
     </div>
     <div class="panel-label">Effects</div>
     <div id="fx-knobs">
-      <div class="fx-unit"><div class="fader-wrap" id="knob-verb" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-verb"></div><div class="fader-line"></div></div><div class="fx-name">reverb</div></div>
+      <div class="fx-unit"><div class="fader-wrap" id="knob-verb" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-verb"></div><div class="fader-line"></div></div><button class="fx-name fx-room" id="room-btn" title="Reverb room: tap to change">rev · hall</button></div>
       <div class="fx-unit"><div class="fader-wrap" id="knob-delay" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-delay"></div><div class="fader-line"></div></div><div class="fx-name">delay</div></div>
       <div class="fx-unit"><div class="fader-wrap" id="knob-ping" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-ping"></div><div class="fader-line"></div></div><div class="fx-name">ping</div></div>
       <div class="fx-unit"><div class="fader-wrap" id="knob-warble" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-warble"></div><div class="fader-line"></div></div><div class="fx-name">warble</div></div>
@@ -1236,7 +1238,7 @@ window.addEventListener('pointercancel',e=>endDrag(e,true));
 document.getElementById('display').addEventListener('pointerdown',e=>{if(!e.target.closest('#settings-btn'))dragStart(e,state.chord);});
 
 // ── AUDIO — pre-baked buffer cache, distinct synthesis per voice ─
-let actx=null,master=null,reverbConv=null,delayNode=null;
+let actx=null,master=null,delayNode=null;
 let analyser=null,waveRaf=null;
 let scopeWaveBuf=null;
 // Scope settings are fixed (the old dials, all turned fully right): longest window,
@@ -2008,7 +2010,7 @@ let takeSig='';
 function fxSummary(fx){
   if(!fx)return 'rec…';
   const p=[];
-  if(fx.verb>0)p.push('REV '+Math.round(fx.verb));
+  if(fx.verb>0)p.push((ROOMS[fx.room]||'HALL')+' '+Math.round(fx.verb));
   if(fx.delay>0)p.push('DLY '+Math.round(fx.delay));
   if(fx.ping>0)p.push('PING '+Math.round(fx.ping));
   if(fx.warble>0)p.push('WARB '+Math.round(fx.warble));
@@ -2303,12 +2305,6 @@ function initAudio(){
   startWaveform();
 
   // ── shared effect processors (fed by the buses below) ──
-  // Reverb
-  const sr=actx.sampleRate,rl=Math.ceil(sr*2.4);
-  const rbuf=actx.createBuffer(2,rl,sr);
-  for(let c=0;c<2;c++){const d=rbuf.getChannelData(c);
-    for(let i=0;i<rl;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/rl,2.0);}
-  reverbConv=actx.createConvolver();reverbConv.buffer=rbuf;reverbConv.connect(master);
   // DELAY: echo locked to the tempo (a dotted 8th; see syncDelays)
   delayNode=actx.createDelay(2.0);delayNode.delayTime.value=0.18;
   const fb=actx.createGain();fb.gain.value=0.28;
@@ -2331,6 +2327,45 @@ function initAudio(){
 // own bus, frozen with the settings at the end of that take, so one take can
 // keep its reverb while the next is dry.
 let liveBus=null;
+// REVERB ROOMS: each impulse response is built from shaped noise. Highs die
+// faster than lows (a low-pass that closes over time), plus pre-delay and a
+// few early reflections; SPRING is made of repeating falling chirps instead.
+const ROOMS={room:'ROOM',hall:'HALL',plate:'PLATE',spring:'SPRING',cathedral:'CATH'};
+const ROOM_ORDER=['room','hall','plate','spring','cathedral'];
+const roomNodes={};
+function makeIR(type){
+  const sr=actx.sampleRate;
+  const P={room:{len:1.0,rt:0.7,pre:0.004,damp:5,bright:0.55,early:[[.007,.7],[.011,.55],[.017,.5],[.023,.4],[.031,.32],[.041,.22]]},
+           hall:{len:3.0,rt:2.4,pre:0.022,damp:2.2,bright:0.45,early:[[.019,.35],[.027,.3],[.041,.25]]},
+           plate:{len:2.2,rt:1.8,pre:0,damp:1.0,bright:0.9,early:[]},
+           spring:{len:2.6,rt:2.0,pre:0.008,early:[]},
+           cathedral:{len:5.0,rt:4.4,pre:0.045,damp:3.5,bright:0.35,early:[[.05,.3],[.083,.25],[.12,.2]]}}[type];
+  const n=Math.ceil(sr*P.len),buf=actx.createBuffer(2,n,sr);
+  for(let ch=0;ch<2;ch++){
+    const d=buf.getChannelData(ch);let lp=0,ph=0,lastK=-1;
+    const period=ch?0.029:0.032;                 // spring: slightly different bounce per side
+    for(let i=0;i<n;i++){
+      const t=i/sr-P.pre;if(t<0){d[i]=0;continue;}
+      const env=Math.exp(-6.9*t/P.rt),w=Math.random()*2-1;
+      if(type==='spring'){
+        const k=Math.floor(t/period),tl=t-k*period;if(k!==lastK){lastK=k;ph=0;}
+        ph+=2*Math.PI*3000*Math.pow(400/3000,Math.min(1,tl/0.03))/sr;   // a chirp falling 3 kHz → 400 Hz
+        lp+=0.3*(w-lp);
+        d[i]=(Math.sin(ph)*Math.exp(-tl/0.012)*0.6+lp*0.25)*env;
+      } else {
+        lp+=Math.max(0.02,P.bright*Math.exp(-P.damp*t))*(w-lp);         // darker as it decays
+        d[i]=lp*env;
+      }
+    }
+    for(const [et,g] of P.early){const k=Math.floor((et+P.pre+(ch?0.0023:0))*sr);if(k<n)d[k]+=g*(ch?0.9:1);}
+  }
+  return buf;
+}
+function getRoom(type){
+  if(!ROOMS[type])type='hall';
+  if(!roomNodes[type]){const c=actx.createConvolver();c.buffer=makeIR(type);c.connect(master);roomNodes[type]=c;}
+  return roomNodes[type];
+}
 const TANH_CURVE=(()=>{const c=new Float32Array(257);for(let i=0;i<257;i++)c[i]=Math.tanh(i/128-1);return c;})();  // 257 points: 0 in → 0 out
 function crushCurve(amt){
   const steps=Math.max(2,Math.round(256*(1-amt*0.98)));   // 0 → 256 steps (clean), 1 → ~5 steps (crushed)
@@ -2342,7 +2377,8 @@ function makeBus(fx){
   b.tone=actx.createBiquadFilter();b.tone.type='lowpass';b.tone.Q.value=0.5;
   b.input.connect(b.tone);b.tone.connect(master);
   const send=dest=>{const g=actx.createGain();g.gain.value=0;b.tone.connect(g);g.connect(dest);return g;};
-  b.rv=send(reverbConv);b.dl=send(delayNode);b.pg=send(pingDelay);
+  b.rv=actx.createGain();b.rv.gain.value=0;b.tone.connect(b.rv);b.room=null;   // connected to its room in set()
+  b.dl=send(delayNode);b.pg=send(pingDelay);
   // warble: a short delay wobbled by a slow LFO (chorus / vibrato)
   b.wd=actx.createDelay(0.05);b.wd.delayTime.value=0.01;
   b.wl=actx.createOscillator();b.wl.frequency.value=4.2;b.wlg=actx.createGain();b.wlg.gain.value=0;
@@ -2359,6 +2395,8 @@ function makeBus(fx){
   b.ts=send(b.td);b.td.connect(b.tf);b.tf.connect(sat);sat.connect(master);
   b.set=f=>{
     b.fx={...f};const now=actx.currentTime,T=(p,v,k)=>p.setTargetAtTime(v,now,k||0.02);
+    const room=ROOMS[f.room]?f.room:'hall';
+    if(b.room!==room){if(b.room)b.rv.disconnect();b.rv.connect(getRoom(room));b.room=room;}
     T(b.rv.gain,f.verb/100*0.6);T(b.dl.gain,f.delay/100*0.45);T(b.pg.gain,f.ping/100*0.5);
     T(b.wlg.gain,f.warble/100*0.006,0.05);T(b.ws.gain,f.warble/100*0.7,0.05);
     T(b.cs.gain,f.crush/100*0.65);if(b.crush!==f.crush){b.crush=f.crush;b.cw.curve=crushCurve(f.crush/100);}
@@ -2498,9 +2536,16 @@ const FADER_DEFS=[
 const FX_DEFAULTS={verb:50,delay:0,ping:0,warble:0,crush:0,tape:0,tone:100,width:30};
 // effects are remembered between visits
 const fxState=Object.assign({},FX_DEFAULTS,(()=>{try{const o=JSON.parse(localStorage.getItem('harpmog.fx')||'{}');
-  const r={};for(const k in FX_DEFAULTS)if(typeof o[k]==='number')r[k]=Math.max(0,Math.min(100,o[k]));return r;}catch(e){return{};}})());
+  const r={};for(const k in FX_DEFAULTS)if(typeof o[k]==='number')r[k]=Math.max(0,Math.min(100,o[k]));
+  r.room=['room','hall','plate','spring','cathedral'].includes(o.room)?o.room:'hall';return r;}catch(e){return{room:'hall'};}})());
 function saveFx(){try{localStorage.setItem('harpmog.fx',JSON.stringify(fxState));}catch(e){}}
 const faderSet={};   // stateKey → function(value) that moves the fader (used by presets)
+function paintRoom(){const b=document.getElementById('room-btn');b.textContent='rev · '+ROOMS[fxState.room].toLowerCase();}
+document.getElementById('room-btn').addEventListener('click',()=>{
+  fxState.room=ROOM_ORDER[(ROOM_ORDER.indexOf(fxState.room)+1)%ROOM_ORDER.length];
+  paintRoom();saveFx();updateFX();if(typeof currentPreset!=='undefined'){currentPreset=null;updateDisplay();}
+});
+paintRoom();
 
 function initFaders(){
   FADER_DEFS.forEach(({id,fillId,stateKey,def})=>{
@@ -2868,15 +2913,15 @@ function setBpm(b){
 // A preset = sounds + their volumes + effects + the auto-strum feel.
 let currentPreset=null;
 const BUILT_PRESETS=[
-  {name:'Classic harp', insts:['harp'],           fx:{verb:50,delay:0,ping:0,warble:0,crush:0,tape:0,tone:100,width:30}, rh:{pat:'strum8',bpm:96,swing:0}},
-  {name:'Dreamy',       insts:['pad','vibes'],    fx:{verb:85,delay:30,ping:0,warble:25,crush:0,tape:0,tone:80,width:70}, rh:{pat:'pad',bpm:70,swing:0}},
-  {name:'Lo-fi keys',   insts:['epiano'],         fx:{verb:35,delay:0,ping:0,warble:0,crush:20,tape:45,tone:55,width:40}, rh:{pat:'comp',bpm:84,swing:1}},
-  {name:'Music box night',insts:['mbox','bell'],  fx:{verb:75,delay:0,ping:30,warble:0,crush:0,tape:0,tone:90,width:60}, rh:{pat:'arpud',bpm:76,swing:0}},
-  {name:'Pulse strum',  insts:['pulse','bass'],    fx:{verb:40,delay:15,ping:0,warble:0,crush:0,tape:0,tone:85,width:40}, rh:{pat:'strum8',bpm:104,swing:0}},
-  {name:'Bossa nylon',  insts:['nylon','bass'],   fx:{verb:35,delay:0,ping:0,warble:0,crush:0,tape:0,tone:85,width:35}, rh:{pat:'bossa',bpm:128,swing:0}},
-  {name:'Cathedral',    insts:['organ','choir'],  fx:{verb:95,delay:0,ping:0,warble:0,crush:0,tape:0,tone:75,width:80}, rh:{pat:'pad',bpm:60,swing:0}},
-  {name:'Folk porch',   insts:['thumb','nylon'],  fx:{verb:30,delay:20,ping:0,warble:0,crush:0,tape:15,tone:90,width:50}, rh:{pat:'travis',bpm:100,swing:0}},
-  {name:'Funk room',    insts:['epiano','bass'],  fx:{verb:20,delay:0,ping:0,warble:0,crush:10,tape:0,tone:90,width:45}, rh:{pat:'funk',bpm:100,swing:0}},
+  {name:'Classic harp', insts:['harp'],           fx:{verb:50,delay:0,ping:0,warble:0,crush:0,tape:0,tone:100,width:30,room:'hall'}, rh:{pat:'strum8',bpm:96,swing:0}},
+  {name:'Dreamy',       insts:['pad','vibes'],    fx:{verb:85,delay:30,ping:0,warble:25,crush:0,tape:0,tone:80,width:70,room:'hall'}, rh:{pat:'pad',bpm:70,swing:0}},
+  {name:'Lo-fi keys',   insts:['epiano'],         fx:{verb:35,delay:0,ping:0,warble:0,crush:20,tape:45,tone:55,width:40,room:'spring'}, rh:{pat:'comp',bpm:84,swing:1}},
+  {name:'Music box night',insts:['mbox','bell'],  fx:{verb:75,delay:0,ping:30,warble:0,crush:0,tape:0,tone:90,width:60,room:'plate'}, rh:{pat:'arpud',bpm:76,swing:0}},
+  {name:'Pulse strum',  insts:['pulse','bass'],    fx:{verb:40,delay:15,ping:0,warble:0,crush:0,tape:0,tone:85,width:40,room:'room'}, rh:{pat:'strum8',bpm:104,swing:0}},
+  {name:'Bossa nylon',  insts:['nylon','bass'],   fx:{verb:35,delay:0,ping:0,warble:0,crush:0,tape:0,tone:85,width:35,room:'room'}, rh:{pat:'bossa',bpm:128,swing:0}},
+  {name:'Cathedral',    insts:['organ','choir'],  fx:{verb:95,delay:0,ping:0,warble:0,crush:0,tape:0,tone:75,width:80,room:'cathedral'}, rh:{pat:'pad',bpm:60,swing:0}},
+  {name:'Folk porch',   insts:['thumb','nylon'],  fx:{verb:30,delay:20,ping:0,warble:0,crush:0,tape:15,tone:90,width:50,room:'spring'}, rh:{pat:'travis',bpm:100,swing:0}},
+  {name:'Funk room',    insts:['epiano','bass'],  fx:{verb:20,delay:0,ping:0,warble:0,crush:10,tape:0,tone:90,width:45,room:'room'}, rh:{pat:'funk',bpm:100,swing:0}},
 ];
 let myPresets=(()=>{try{const l=JSON.parse(localStorage.getItem('harpmog.presets')||'[]');return Array.isArray(l)?l.filter(x=>x&&x.name&&Array.isArray(x.insts)).map(x=>({...x,insts:x.insts.map(i=>i==='omni'?'pulse':i)})):[];}catch(e){return[];}})();
 function saveMyPresets(){try{localStorage.setItem('harpmog.presets',JSON.stringify(myPresets));}catch(e){}}
@@ -2892,6 +2937,7 @@ function applyPreset(pr){
   try{localStorage.setItem('harpmog.vol',JSON.stringify(instVol));}catch(e){}
   paintLevels();
   for(const k in FX_DEFAULTS){const v=pr.fx&&typeof pr.fx[k]==='number'?pr.fx[k]:FX_DEFAULTS[k];if(faderSet[k])faderSet[k](v);else fxState[k]=v;}
+  fxState.room=pr.fx&&ROOMS[pr.fx.room]?pr.fx.room:'hall';paintRoom();
   saveFx();updateFX();
   if(pr.rh){
     if(RHYTHMS[pr.rh.pat])setPattern(pr.rh.pat);
