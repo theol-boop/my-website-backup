@@ -257,8 +257,9 @@ button{font-family:var(--font);color:inherit;}
 .inst.active{background:var(--ink);color:var(--body);box-shadow:0 1px 0 rgba(0,0,0,.3),inset 0 2px 3px rgba(0,0,0,.4);transform:translateY(1px);}
 #fx-knobs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px 8px;}
 .fx-unit{min-width:0;display:flex;flex-direction:column;gap:3px;}
-.fx-room{border:none;background:none;cursor:pointer;padding:0;font-family:var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+.fx-room{border:none;background:none;cursor:pointer;padding:0;font-family:var(--font);color:var(--dom);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
 .fx-room::after{content:' ▾';opacity:.6;}
+@media (max-width:480px){.fx-room::after{content:'';}}
 .fx-name{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);text-align:center;}
 .fader-wrap{width:100%;height:24px;position:relative;cursor:pointer;touch-action:none;border-radius:12px;
   background:var(--body-3);box-shadow:inset 0 2px 3px rgba(0,0,0,.2),0 1px 0 var(--hi);overflow:hidden;}
@@ -457,7 +458,7 @@ button{font-family:var(--font);color:inherit;}
     </div>
     <div class="panel-label">Effects</div>
     <div id="fx-knobs">
-      <div class="fx-unit"><div class="fader-wrap" id="knob-verb" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-verb"></div><div class="fader-line"></div></div><button class="fx-name fx-room" id="room-btn" title="Reverb room: tap to change">rev · hall</button></div>
+      <div class="fx-unit"><div class="fader-wrap" id="knob-verb" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-verb"></div><div class="fader-line"></div></div><button class="fx-name fx-room" id="room-btn" title="Reverb room: tap to change" aria-label="Reverb room">hall</button></div>
       <div class="fx-unit"><div class="fader-wrap" id="knob-delay" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-delay"></div><div class="fader-line"></div></div><div class="fx-name">delay</div></div>
       <div class="fx-unit"><div class="fader-wrap" id="knob-ping" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-ping"></div><div class="fader-line"></div></div><div class="fx-name">ping</div></div>
       <div class="fx-unit"><div class="fader-wrap" id="knob-warble" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-warble"></div><div class="fader-line"></div></div><div class="fx-name">warble</div></div>
@@ -2540,7 +2541,7 @@ const fxState=Object.assign({},FX_DEFAULTS,(()=>{try{const o=JSON.parse(localSto
   r.room=['room','hall','plate','spring','cathedral'].includes(o.room)?o.room:'hall';return r;}catch(e){return{room:'hall'};}})());
 function saveFx(){try{localStorage.setItem('harpmog.fx',JSON.stringify(fxState));}catch(e){}}
 const faderSet={};   // stateKey → function(value) that moves the fader (used by presets)
-function paintRoom(){const b=document.getElementById('room-btn');b.textContent='rev · '+ROOMS[fxState.room].toLowerCase();}
+function paintRoom(){const b=document.getElementById('room-btn');b.textContent=ROOMS[fxState.room].toLowerCase();}   // label under REVERB = its room
 document.getElementById('room-btn').addEventListener('click',()=>{
   fxState.room=ROOM_ORDER[(ROOM_ORDER.indexOf(fxState.room)+1)%ROOM_ORDER.length];
   paintRoom();saveFx();updateFX();if(typeof currentPreset!=='undefined'){currentPreset=null;updateDisplay();}
