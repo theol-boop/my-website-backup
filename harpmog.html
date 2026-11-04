@@ -422,6 +422,8 @@ button{font-family:var(--font);color:inherit;}
     <div class="seg" data-setting="voicing"><button data-val="smooth">Smooth</button><button data-val="spread">Spread</button></div></div>
   <div class="set-row"><div class="set-text"><b>Density</b><small>How many notes are on the strings. Sparse is clean for arpeggios; Full adds chord tones through the middle for big strums.</small></div>
     <div class="seg" data-setting="density"><button data-val="sparse">Sparse</button><button data-val="normal">Normal</button><button data-val="full">Full</button></div></div>
+  <div class="set-row"><div class="set-text"><b>When you lift your finger</b><small>Ring lets every string ring out. Hold to sustain works like an autoharp: notes ring while your finger stays down and are damped when you lift it. (Auto-strum and loops always ring.)</small></div>
+    <div class="seg" data-setting="damp"><button data-val="ring">Ring</button><button data-val="hold">Hold to sustain</button></div></div>
   <div class="set-group">Export</div>
   <div class="set-row"><div class="set-text"><b>Save loop as audio</b><small id="wav-status">Plays your looper recording once more and saves it as a WAV file that loops seamlessly.</small></div>
     <button class="set-btn" id="save-wav">Save WAV</button></div>
@@ -691,10 +693,11 @@ function lanes(c){
 }
 
 // ── SETTINGS (⚙ panel) ───────────────────────────────────────
-const settings=Object.assign({voicing:'smooth',density:'normal'},
-  (()=>{try{const o=JSON.parse(localStorage.getItem('harpmog.settings')||'{}');return {voicing:o.voicing,density:o.density};}catch(e){return{};}})());
+const settings=Object.assign({voicing:'smooth',density:'normal',damp:'ring'},
+  (()=>{try{const o=JSON.parse(localStorage.getItem('harpmog.settings')||'{}');return {voicing:o.voicing,density:o.density,damp:o.damp};}catch(e){return{};}})());
 if(!['smooth','spread'].includes(settings.voicing))settings.voicing='smooth';
 if(!['sparse','normal','full'].includes(settings.density))settings.density='normal';
+if(!['ring','hold'].includes(settings.damp))settings.damp='ring';
 function saveSettings(){try{localStorage.setItem('harpmog.settings',JSON.stringify(settings));}catch(e){}}
 
 // ── VOICING: density + smooth voice-leading ───────────────────
@@ -1845,8 +1848,9 @@ function initAudio(){
   tapeLFO.start();
   tapeFilter=actx.createBiquadFilter();tapeFilter.type='lowpass';tapeFilter.frequency.value=20000;
   // soft-clip waveshaper for tape saturation
-  const wsCurve=new Float32Array(256);
-  for(let i=0;i<256;i++){const x=(i/128)-1;wsCurve[i]=Math.tanh(x);}
+  // 257 points so silence maps exactly to 0 (an even-length curve adds a small DC offset)
+  const wsCurve=new Float32Array(257);
+  for(let i=0;i<257;i++){const x=(i/128)-1;wsCurve[i]=Math.tanh(x);}
   const ws=actx.createWaveShaper();ws.curve=wsCurve;ws.oversample='2x';
   tapeSend=actx.createGain();tapeSend.gain.value=0.0;
   tapeSend.connect(tapeDelay);tapeDelay.connect(tapeFilter);tapeFilter.connect(ws);ws.connect(master);
@@ -1879,8 +1883,8 @@ function initAudio(){
 function _setCrushCurve(amt){
   if(!crushWS)return;
   const steps=Math.max(2,Math.round(256*(1-amt*0.98))); // amt=0 → 256 steps (clean), amt=1 → ~5 steps (crushed)
-  const curve=new Float32Array(256);
-  for(let i=0;i<256;i++){
+  const curve=new Float32Array(257);   // odd length: 0 in → exactly 0 out
+  for(let i=0;i<257;i++){
     const x=(i/128)-1;
     curve[i]=Math.round(x*steps)/steps;
   }
@@ -1907,7 +1911,7 @@ function updateFX(){
 
 // Play one note on one instrument at audio time `when` (now if omitted).
 // Returns its output nodes so the looper can cut notes it has queued.
-function pluckInst(inst,midi,velocity,volScale,when){
+function pluckInst(inst,midi,velocity,volScale,when,damper){
   const buf=getBuffer(inst,midi);
   const t=Math.max(when||0,actx.currentTime);
   const src=actx.createBufferSource();src.buffer=buf;
@@ -1926,26 +1930,44 @@ function pluckInst(inst,midi,velocity,volScale,when){
     outs.push(og);
   }
   src.connect(gain);
-  gain.connect(master);
-  gain.connect(reverbSend);
+  let out=gain;
+  if(damper){                                  // hold-to-sustain: one more gain the finger can close
+    const dg=actx.createGain();gain.connect(dg);out=dg;outs.damp=dg;
+    if(outs[1]){outs[1].disconnect();outs[1].connect(dg);}   // bass sub-octave goes through it too
+  }
+  out.connect(master);
+  out.connect(reverbSend);
   if(inst==='drum'){src.start(t);src.stop(t+buf.duration+0.05);return outs;}   // drums: dry + a little room, no echoes
-  gain.connect(delaySend);
-  gain.connect(pingSend);
-  gain.connect(warbleSend);
-  gain.connect(crushSend);
-  gain.connect(tapeSend);
+  out.connect(delaySend);
+  out.connect(pingSend);
+  out.connect(warbleSend);
+  out.connect(crushSend);
+  out.connect(tapeSend);
   src.start(t);src.stop(t+buf.duration+0.05);
   return outs;
 }
 
 // Play a note on every selected instrument, `delay` seconds from now
-function pluck(midi,velocity,delay){
+const fingerNotes=new Map();   // pointer id → damper gains of the notes that finger played (hold-to-sustain)
+function pluck(midi,velocity,delay,pid){
   if(!actx)return;
   const when=actx.currentTime+(delay||0);
   looperRecord(midi,velocity,when);
   const volScale=state.insts.size>1?(1/Math.sqrt(state.insts.size)):1;
-  state.insts.forEach(inst=>pluckInst(inst,midi,velocity,volScale,when));
+  const hold=settings.damp==='hold'&&pid!=null;
+  state.insts.forEach(inst=>{
+    const outs=pluckInst(inst,midi,velocity,volScale,when,hold);
+    if(hold){if(!fingerNotes.has(pid))fingerNotes.set(pid,[]);fingerNotes.get(pid).push(outs.damp);}
+  });
   midiNote(midi,velocity,when);
+}
+
+// lifting a finger damps everything it played (a fast ~0.1 s fade, like a felt damper)
+function releaseFinger(pid){
+  const list=fingerNotes.get(pid);if(!list)return;
+  fingerNotes.delete(pid);
+  const now=actx.currentTime;
+  for(const dg of list)dg.gain.setTargetAtTime(0,now,0.035);
 }
 
 // ── STRUM ─────────────────────────────────────────────────────
@@ -1962,7 +1984,7 @@ function strum(pid,cy){
     // First touch: play the string under the finger
     const midi=gmidi(idx);
     flash(idx);
-    pluck(midi,0.62);
+    pluck(midi,0.62,0,pid);
     p.lastMidi=midi;
   } else if(idx!==p.li){
     // Sound every string crossed since the last move (not only the one the
@@ -1977,7 +1999,7 @@ function strum(pid,cy){
       if(m!==p.lastMidi){crossed.push(m);p.lastMidi=m;}
     }
     const gap=Math.min(dt,30)/1000/Math.max(1,crossed.length);
-    crossed.forEach((m,k)=>pluck(m,vel,k*gap));
+    crossed.forEach((m,k)=>pluck(m,vel,k*gap,pid));
   }
   p.li=idx;p.lt=now;
 }
@@ -1986,8 +2008,8 @@ function attachBoard(){
   b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);
     ptrs.set(e.pointerId,{li:-1,lt:0,lastMidi:-1});strum(e.pointerId,e.clientY);});
   b.addEventListener('pointermove',e=>{if(ptrs.has(e.pointerId))strum(e.pointerId,e.clientY);});
-  b.addEventListener('pointerup',e=>ptrs.delete(e.pointerId));
-  b.addEventListener('pointercancel',e=>ptrs.delete(e.pointerId));
+  b.addEventListener('pointerup',e=>{ptrs.delete(e.pointerId);releaseFinger(e.pointerId);});
+  b.addEventListener('pointercancel',e=>{ptrs.delete(e.pointerId);releaseFinger(e.pointerId);});
 }
 
 // ── FX FADERS ────────────────────────────────────────────────
