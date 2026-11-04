@@ -157,6 +157,8 @@ button{font-family:var(--font);color:inherit;}
 
 #lib-btn{margin-left:auto;flex:none;border:none;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;letter-spacing:.06em;cursor:pointer;
   background:transparent;box-shadow:inset 0 0 0 1px var(--edge-d);color:var(--ink-2);}
+#presets{position:fixed;inset:0;z-index:150;background:rgba(40,28,18,.35);display:flex;align-items:center;justify-content:center;padding:16px;}
+#presets .sheet{width:min(560px,100%);max-height:100%;overflow:auto;background:var(--body);border:1px solid var(--edge);border-radius:16px;padding:16px;box-shadow:0 20px 50px rgba(40,25,10,.4);touch-action:pan-y;-webkit-overflow-scrolling:touch;}
 #lib{position:fixed;inset:0;z-index:150;background:rgba(40,28,18,.35);display:flex;align-items:center;justify-content:center;padding:16px;}
 #lib .sheet{width:min(620px,100%);max-height:100%;overflow:auto;background:var(--body);border:1px solid var(--edge);border-radius:16px;padding:16px;
   box-shadow:0 20px 50px rgba(40,25,10,.4);touch-action:pan-y;-webkit-overflow-scrolling:touch;}
@@ -208,7 +210,7 @@ button{font-family:var(--font);color:inherit;}
   box-shadow:inset 0 2px 6px rgba(0,0,0,.6),0 1px 0 rgba(255,255,255,.6);
   display:flex;align-items:baseline;justify-content:space-between;gap:10px;min-width:0;}
 #disp-chord{flex:none;max-width:70%;font-size:24px;font-weight:700;color:var(--lcd);text-shadow:0 0 10px rgba(185,224,122,.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#disp-inst{flex:1;min-width:0;text-align:right;font-size:10px;letter-spacing:.14em;color:var(--lcd-dim);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#disp-inst{border:none;background:transparent;cursor:pointer;font-family:var(--font);padding:0;flex:1;min-width:0;text-align:right;font-size:10px;letter-spacing:.14em;color:var(--lcd-dim);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #harp-board{flex:1;min-height:0;position:relative;touch-action:none;
   background:
     linear-gradient(90deg,rgba(255,255,255,.04),transparent 18%,transparent 82%,rgba(255,255,255,.04)),
@@ -230,7 +232,7 @@ button{font-family:var(--font);color:inherit;}
   background:linear-gradient(180deg,#fffaf0,var(--key));color:var(--ink-2);
   box-shadow:0 2px 0 var(--key-shadow),inset 0 0 0 1px rgba(0,0,0,.06);min-width:0;}
 .inst.active{background:var(--ink);color:var(--body);box-shadow:0 1px 0 rgba(0,0,0,.3),inset 0 2px 3px rgba(0,0,0,.4);transform:translateY(1px);}
-#fx-knobs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 8px;}
+#fx-knobs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px 8px;}
 .fx-unit{min-width:0;display:flex;flex-direction:column;gap:3px;}
 .fx-name{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);text-align:center;}
 .fader-wrap{width:100%;height:24px;position:relative;cursor:pointer;touch-action:none;border-radius:12px;
@@ -371,7 +373,7 @@ button{font-family:var(--font);color:inherit;}
   </section>
 
   <section id="plate-panel">
-    <div id="display"><div id="disp-chord">C</div><div id="disp-inst">HARP</div><button id="settings-btn" aria-label="Settings">&#9881;</button></div>
+    <div id="display"><div id="disp-chord">C</div><button id="disp-inst" aria-label="Sound presets">HARP</button><button id="settings-btn" aria-label="Settings">&#9881;</button></div>
     <div id="rhythm-bar"><button id="rh-play" aria-label="Start auto-strum"><svg viewBox="0 0 10 10" width="11" height="11" aria-hidden="true"><path d="M2 1 L9 5 L2 9 Z" fill="currentColor"/></svg></button><button id="rh-open" aria-label="Rhythm settings"><span id="rh-name">Strum 8ths</span><span id="rh-dots"></span><span id="rh-bpm">96</span></button></div>
     <div id="harp-board"></div>
   </section>
@@ -403,6 +405,8 @@ button{font-family:var(--font);color:inherit;}
       <div class="fx-unit"><div class="fader-wrap" id="knob-warble" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-warble"></div><div class="fader-line"></div></div><div class="fx-name">warble</div></div>
       <div class="fx-unit"><div class="fader-wrap" id="knob-crush" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-crush"></div><div class="fader-line"></div></div><div class="fx-name">crush</div></div>
       <div class="fx-unit"><div class="fader-wrap" id="knob-tape" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-tape"></div><div class="fader-line"></div></div><div class="fx-name">twang</div></div>
+      <div class="fx-unit"><div class="fader-wrap" id="knob-tone" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-tone"></div><div class="fader-line"></div></div><div class="fx-name">tone</div></div>
+      <div class="fx-unit"><div class="fader-wrap" id="knob-width" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-width"></div><div class="fader-line"></div></div><div class="fx-name">width</div></div>
     </div>
     <div id="looper-panel">
       <div id="scope-box"><div id="led-panel"><canvas id="waveform-canvas"></canvas></div></div>
@@ -448,6 +452,15 @@ button{font-family:var(--font);color:inherit;}
   <div class="set-row"><div class="set-text"><b>Lock the looper to the beat</b><small>While auto-strum plays, REC starts on the next bar and loops round to whole bars, so they stay in time. The auto-strum keeps playing and isn't recorded into the loop.</small></div>
     <div class="seg" id="rh-lock"><button data-val="on">On</button><button data-val="off">Off</button></div></div>
   <div class="set-foot">You can keep strumming by hand on top. On a keyboard, Space starts and stops it.</div>
+</div></div>
+<div id="presets" hidden><div class="sheet">
+  <div class="sheet-head"><b>Sound presets</b><button id="pre-close">Done</button></div>
+  <div class="set-foot" style="margin:0 0 6px">A preset sets the sounds, their volumes, the effects and the auto-strum feel (pattern, tempo, swing, percussion).</div>
+  <div class="set-group">Yours</div>
+  <div class="lib-actions"><button class="set-btn" id="pre-save">Save current sound</button></div>
+  <div id="pre-mine"></div>
+  <div class="set-group">Built-in</div>
+  <div id="pre-built"></div>
 </div></div>
 <div id="lib" hidden><div class="sheet">
   <div class="sheet-head"><b>Progressions</b><button id="lib-close">Done</button></div>
@@ -763,7 +776,7 @@ function flash(i){
 }
 function updateDisplay(){
   document.getElementById('disp-chord').textContent=chordName(state.chord);
-  document.getElementById('disp-inst').textContent=[...state.insts].join(' + ');
+  document.getElementById('disp-inst').textContent=(currentPreset?currentPreset+' · ':'')+[...state.insts].join(' + ')+' ▾';
 }
 
 // ── CHORD GRID ────────────────────────────────────────────────
@@ -1120,7 +1133,7 @@ function scopeFftFromTime(t){
 }
 let tapeDelay=null,tapeLFO=null,tapeLFOGain=null,tapeFilter=null,tapeSend=null;
 let pingDelay=null,pingSend=null,warbleLFO=null,warbleLFOGain=null,warbleDelay=null,warbleSend=null,crushSend=null,crushWS=null;
-let limiter=null;
+let limiter=null,toneFilter=null,pingDelayR=null;
 // per-sound volume (hold a sound button), 0–1.5, 1 = normal
 const instVol=(()=>{try{const o=JSON.parse(localStorage.getItem('harpmog.vol')||'{}');return o&&typeof o==='object'?o:{};}catch(e){return{};}})();
 
@@ -1815,7 +1828,9 @@ function initAudio(){
   limiter.attack.value=0.003;limiter.release.value=0.25;
   limiter.connect(actx.destination);
   master=actx.createGain();master.gain.value=0.80;
-  master.connect(limiter);
+  // TONE: a gentle low-pass on everything (fully open at 100)
+  toneFilter=actx.createBiquadFilter();toneFilter.type='lowpass';toneFilter.Q.value=0.5;toneFilter.frequency.value=20000;
+  master.connect(toneFilter);toneFilter.connect(limiter);
   analyser=actx.createAnalyser();
   analyser.fftSize=scopeFftFromTime(scopeState.time);
   analyser.smoothingTimeConstant=0.45;
@@ -1832,8 +1847,8 @@ function initAudio(){
   reverbSend=actx.createGain();reverbSend.gain.value=0.18;
   reverbSend.connect(reverbConv);reverbConv.connect(master);
 
-  // Delay 180ms slapback
-  delayNode=actx.createDelay(1.0);delayNode.delayTime.value=0.18;
+  // DELAY: echo locked to the tempo (a dotted 8th; see syncDelays)
+  delayNode=actx.createDelay(2.0);delayNode.delayTime.value=0.18;
   const fb=actx.createGain();fb.gain.value=0.28;
   delaySend=actx.createGain();delaySend.gain.value=0.0;
   delaySend.connect(delayNode);
@@ -1855,11 +1870,13 @@ function initAudio(){
   tapeSend=actx.createGain();tapeSend.gain.value=0.0;
   tapeSend.connect(tapeDelay);tapeDelay.connect(tapeFilter);tapeFilter.connect(ws);ws.connect(master);
 
-  // Ping delay — 320ms, 50% feedback, longer echo
-  pingDelay=actx.createDelay(1.0);pingDelay.delayTime.value=0.32;
+  // PING: stereo ping-pong, a quarter note per bounce, left then right
+  pingDelay=actx.createDelay(2.0);pingDelayR=actx.createDelay(2.0);
   const pfb=actx.createGain();pfb.gain.value=0.5;
   pingSend=actx.createGain();pingSend.gain.value=0.0;
-  pingSend.connect(pingDelay);pingDelay.connect(pfb);pfb.connect(pingDelay);pingDelay.connect(master);
+  pingSend.connect(pingDelay);pingDelay.connect(pingDelayR);pingDelayR.connect(pfb);pfb.connect(pingDelay);
+  const toLR=(node,side)=>{if(actx.createStereoPanner){const pn=actx.createStereoPanner();pn.pan.value=side;node.connect(pn);pn.connect(master);}else node.connect(master);};
+  toLR(pingDelay,-0.8);toLR(pingDelayR,0.8);
 
   // Warble — slow LFO modulating a short delay line (chorus/vibrato shimmer)
   warbleDelay=actx.createDelay(0.05);warbleDelay.delayTime.value=0.01;
@@ -1877,7 +1894,16 @@ function initAudio(){
   // Initial curve (full resolution = passthrough)
   _setCrushCurve(0);
 
-  updateFX();
+  updateFX();syncDelays();
+}
+
+// delay times follow the tempo (the auto-strum's BPM, even when it isn't playing)
+function syncDelays(){
+  if(!delayNode)return;
+  const beat=60/rhythm.bpm,now=actx.currentTime;
+  delayNode.delayTime.setTargetAtTime(Math.min(1.9,beat*0.75),now,0.05);   // dotted 8th
+  pingDelay.delayTime.setTargetAtTime(Math.min(1.9,beat),now,0.05);         // quarter note each side
+  pingDelayR.delayTime.setTargetAtTime(Math.min(1.9,beat),now,0.05);
 }
 
 function _setCrushCurve(amt){
@@ -1907,6 +1933,7 @@ function updateFX(){
   tapeLFOGain.gain.setTargetAtTime(tv*0.003,now,0.05); // max 3ms wow
   tapeFilter.frequency.setTargetAtTime(20000-tv*16000,now,0.05); // 20kHz→4kHz rolloff
   tapeSend.gain.setTargetAtTime(tv*0.7,now,0.05);
+  toneFilter.frequency.setTargetAtTime(300*Math.pow(2,fxState.tone/100*6),now,0.03);   // 300 Hz … 19 kHz
 }
 
 // Play one note on one instrument at audio time `when` (now if omitted).
@@ -1934,6 +1961,10 @@ function pluckInst(inst,midi,velocity,volScale,when,damper){
   if(damper){                                  // hold-to-sustain: one more gain the finger can close
     const dg=actx.createGain();gain.connect(dg);out=dg;outs.damp=dg;
     if(outs[1]){outs[1].disconnect();outs[1].connect(dg);}   // bass sub-octave goes through it too
+  }
+  if(inst!=='drum'&&actx.createStereoPanner&&fxState.width>0){   // WIDTH: low strings left, high right
+    const pn=actx.createStereoPanner();pn.pan.value=Math.max(-1,Math.min(1,(midi-66)/30))*fxState.width/100;
+    out.connect(pn);out=pn;
   }
   out.connect(master);
   out.connect(reverbSend);
@@ -2021,8 +2052,15 @@ const FADER_DEFS=[
   {id:'knob-warble', fillId:'fader-fill-warble', stateKey:'warble', def:0},
   {id:'knob-crush',  fillId:'fader-fill-crush',  stateKey:'crush',  def:0},
   {id:'knob-tape',   fillId:'fader-fill-tape',   stateKey:'tape',   def:0},
+  {id:'knob-tone',   fillId:'fader-fill-tone',   stateKey:'tone',   def:100},  // brightness: 100 = open
+  {id:'knob-width',  fillId:'fader-fill-width',  stateKey:'width',  def:30},   // stereo spread, low strings left, high right
 ];
-const fxState={verb:50,delay:0,ping:0,warble:0,crush:0,tape:0};
+const FX_DEFAULTS={verb:50,delay:0,ping:0,warble:0,crush:0,tape:0,tone:100,width:30};
+// effects are remembered between visits
+const fxState=Object.assign({},FX_DEFAULTS,(()=>{try{const o=JSON.parse(localStorage.getItem('harpmog.fx')||'{}');
+  const r={};for(const k in FX_DEFAULTS)if(typeof o[k]==='number')r[k]=Math.max(0,Math.min(100,o[k]));return r;}catch(e){return{};}})());
+function saveFx(){try{localStorage.setItem('harpmog.fx',JSON.stringify(fxState));}catch(e){}}
+const faderSet={};   // stateKey → function(value) that moves the fader (used by presets)
 
 function initFaders(){
   FADER_DEFS.forEach(({id,fillId,stateKey,def})=>{
@@ -2040,16 +2078,16 @@ function initFaders(){
       const rect=wrap.getBoundingClientRect();
       return min+(max-min)*Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));
     }
-    set(def);
+    set(fxState[stateKey]);faderSet[stateKey]=set;
     wrap.addEventListener('pointerdown',e=>{
       e.preventDefault();e.stopPropagation();
       wrap.setPointerCapture(e.pointerId);
-      set(valFromEvent(e));updateFX();
+      set(valFromEvent(e));updateFX();saveFx();
     },{passive:false});
     wrap.addEventListener('pointermove',e=>{
       if(!wrap.hasPointerCapture(e.pointerId))return;
       e.preventDefault();e.stopPropagation();
-      set(valFromEvent(e));updateFX();
+      set(valFromEvent(e));updateFX();saveFx();
     },{passive:false});
     wrap.addEventListener('pointerup',e=>wrap.releasePointerCapture(e.pointerId));
     wrap.addEventListener('pointercancel',e=>wrap.releasePointerCapture(e.pointerId));
@@ -2095,7 +2133,7 @@ document.querySelectorAll('.inst[data-inst]').forEach(btn=>{
     } else {
       state.insts.add(inst);btn.classList.add('active');
     }
-    updateDisplay();prewarm();
+    currentPreset=null;updateDisplay();prewarm();
   });
 });
 paintLevels();
@@ -2394,8 +2432,69 @@ function setBpm(b){
     const now=actx.currentTime,pos=(now-rhythm.barStart)/stepDur();
     rhythm.bpm=b;rhythm.barStart=now-pos*stepDur();
   } else rhythm.bpm=b;
-  saveRhythm();paintRhythm();
+  saveRhythm();paintRhythm();syncDelays();
 }
+// ── SOUND PRESETS ─────────────────────────────────────────────
+// A preset = sounds + their volumes + effects + the auto-strum feel.
+let currentPreset=null;
+const BUILT_PRESETS=[
+  {name:'Classic harp', insts:['harp'],           fx:{verb:50,delay:0,ping:0,warble:0,crush:0,tape:0,tone:100,width:30}, rh:{pat:'strum8',bpm:96,swing:0,perc:0.6}},
+  {name:'Dreamy',       insts:['pad','vibes'],    fx:{verb:85,delay:30,ping:0,warble:25,crush:0,tape:0,tone:80,width:70}, rh:{pat:'pad',bpm:70,swing:0,perc:0}},
+  {name:'Lo-fi keys',   insts:['epiano'],         fx:{verb:35,delay:0,ping:0,warble:0,crush:20,tape:45,tone:55,width:40}, rh:{pat:'comp',bpm:84,swing:1,perc:0.6}},
+  {name:'Music box night',insts:['mbox','bell'],  fx:{verb:75,delay:0,ping:30,warble:0,crush:0,tape:0,tone:90,width:60}, rh:{pat:'arpud',bpm:76,swing:0,perc:0}},
+  {name:'Omnichord',    insts:['omni','bass'],    fx:{verb:40,delay:15,ping:0,warble:0,crush:0,tape:0,tone:85,width:40}, rh:{pat:'strum8',bpm:104,swing:0,perc:0.6}},
+  {name:'Bossa nylon',  insts:['nylon','bass'],   fx:{verb:35,delay:0,ping:0,warble:0,crush:0,tape:0,tone:85,width:35}, rh:{pat:'bossa',bpm:128,swing:0,perc:0.6}},
+  {name:'Cathedral',    insts:['organ','choir'],  fx:{verb:95,delay:0,ping:0,warble:0,crush:0,tape:0,tone:75,width:80}, rh:{pat:'pad',bpm:60,swing:0,perc:0}},
+  {name:'Folk porch',   insts:['thumb','nylon'],  fx:{verb:30,delay:20,ping:0,warble:0,crush:0,tape:15,tone:90,width:50}, rh:{pat:'travis',bpm:100,swing:0,perc:0.6}},
+  {name:'Funk room',    insts:['epiano','bass'],  fx:{verb:20,delay:0,ping:0,warble:0,crush:10,tape:0,tone:90,width:45}, rh:{pat:'funk',bpm:100,swing:0,perc:1.1}},
+];
+let myPresets=(()=>{try{const l=JSON.parse(localStorage.getItem('harpmog.presets')||'[]');return Array.isArray(l)?l.filter(x=>x&&x.name&&Array.isArray(x.insts)):[];}catch(e){return[];}})();
+function saveMyPresets(){try{localStorage.setItem('harpmog.presets',JSON.stringify(myPresets));}catch(e){}}
+function snapshotPreset(name){
+  const vol={};for(const i of state.insts)vol[i]=instVol[i]??1;
+  return {name,insts:[...state.insts],vol,fx:{...fxState},rh:{pat:rhythm.pat,bpm:rhythm.bpm,swing:rhythm.swing,perc:rhythm.perc}};
+}
+function applyPreset(pr){
+  const valid=pr.insts.filter(i=>document.querySelector(`.inst[data-inst="${i}"]`));
+  if(valid.length){state.insts=new Set(valid);
+    document.querySelectorAll('.inst[data-inst]').forEach(b=>b.classList.toggle('active',state.insts.has(b.dataset.inst)));}
+  for(const i of state.insts)instVol[i]=pr.vol&&pr.vol[i]!=null?pr.vol[i]:1;
+  try{localStorage.setItem('harpmog.vol',JSON.stringify(instVol));}catch(e){}
+  paintLevels();
+  for(const k in FX_DEFAULTS){const v=pr.fx&&typeof pr.fx[k]==='number'?pr.fx[k]:FX_DEFAULTS[k];if(faderSet[k])faderSet[k](v);else fxState[k]=v;}
+  saveFx();updateFX();
+  if(pr.rh){
+    if(RHYTHMS[pr.rh.pat])setPattern(pr.rh.pat);
+    rhythm.swing=pr.rh.swing||0;rhythm.perc=pr.rh.perc??rhythm.perc;saveRhythm();
+    if(pr.rh.bpm)setBpm(pr.rh.bpm);
+  }
+  currentPreset=pr.name;updateDisplay();prewarm();paintRhythm();
+}
+const preEl=document.getElementById('presets');
+function renderPresets(){
+  const mine=document.getElementById('pre-mine');mine.innerHTML='';
+  if(!myPresets.length)mine.innerHTML='<div class="lib-empty">Nothing saved yet. Set up sounds and effects you like, then tap “Save current sound”.</div>';
+  const desc=pr=>pr.insts.map(i=>i.toUpperCase()).join(' + ')+(pr.rh&&RHYTHMS[pr.rh.pat]?' · '+RHYTHMS[pr.rh.pat].name+' '+pr.rh.bpm:'');
+  const item=(pr,onDel)=>{const b=document.createElement('button');b.className='lib-item';
+    b.innerHTML='<span class="lib-text"><b></b><span class="lib-chords"></span></span>';
+    b.querySelector('b').textContent=pr.name;b.querySelector('.lib-chords').textContent=desc(pr);
+    b.addEventListener('click',()=>{applyPreset(pr);preEl.hidden=true;});
+    if(onDel){const x=document.createElement('span');x.className='lib-del';x.textContent='✕';
+      x.addEventListener('click',e=>{e.stopPropagation();if(confirm(`Delete “${pr.name}”?`))onDel();});b.appendChild(x);}
+    return b;};
+  myPresets.forEach((pr,i)=>mine.appendChild(item(pr,()=>{myPresets.splice(i,1);saveMyPresets();renderPresets();})));
+  const built=document.getElementById('pre-built');built.innerHTML='';
+  BUILT_PRESETS.forEach(pr=>built.appendChild(item(pr)));
+}
+document.getElementById('disp-inst').addEventListener('click',()=>{if(dragJustEnded())return;renderPresets();preEl.hidden=false;});
+document.getElementById('pre-close').addEventListener('click',()=>{preEl.hidden=true;});
+preEl.addEventListener('click',e=>{if(e.target===preEl)preEl.hidden=true;});
+document.getElementById('pre-save').addEventListener('click',()=>{
+  const name=prompt('Name this sound:',[...state.insts].map(i=>i[0].toUpperCase()+i.slice(1)).join(' + '));
+  if(name==null)return;
+  myPresets.unshift(snapshotPreset(name.trim()||'My sound'));saveMyPresets();currentPreset=name.trim()||'My sound';updateDisplay();renderPresets();
+});
+
 // ── RHYTHM CONTROLS ──
 const rhSheet=document.getElementById('rh-sheet');
 function paintRhythm(){
