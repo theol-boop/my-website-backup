@@ -372,7 +372,7 @@ button{font-family:var(--font);color:inherit;}
 
   <section id="plate-panel">
     <div id="display"><div id="disp-chord">C</div><div id="disp-inst">HARP</div><button id="settings-btn" aria-label="Settings">&#9881;</button></div>
-    <div id="rhythm-bar"><button id="rh-play" aria-label="Start auto-strum">&#9654;</button><button id="rh-open" aria-label="Rhythm settings"><span id="rh-name">Strum 8ths</span><span id="rh-dots"></span><span id="rh-bpm">96</span></button></div>
+    <div id="rhythm-bar"><button id="rh-play" aria-label="Start auto-strum"><svg viewBox="0 0 10 10" width="11" height="11" aria-hidden="true"><path d="M2 1 L9 5 L2 9 Z" fill="currentColor"/></svg></button><button id="rh-open" aria-label="Rhythm settings"><span id="rh-name">Strum 8ths</span><span id="rh-dots"></span><span id="rh-bpm">96</span></button></div>
     <div id="harp-board"></div>
   </section>
 
@@ -1314,16 +1314,18 @@ function bakeCello(freq,sr){
   return buf;
 }
 
-// WOOD — log drum / woodblock: strong fundamental + 3rd harmonic + very fast noise attack
+// WOOD — tuned like a marimba bar: the partials that ring are two octaves and
+// two octaves + a major 3rd above the note (as real marimba bars are cut);
+// the raw bar partial (2.76, an out-of-tune octave + tritone) is only in the strike
 function bakeWood(freq,sr){
   const dur=1.2,bufLen=Math.ceil(sr*dur);
   const buf=actx.createBuffer(1,bufLen,sr);
   const data=buf.getChannelData(0);
-  // hollow wood resonance: odd harmonics with specific envelope
   const partials=[
-    {r:1.0, a:0.70, d:1.2},
-    {r:2.76,a:0.20, d:0.4}, // slight inharmonicity for wood character
-    {r:5.0, a:0.10, d:0.2},
+    {r:1.0, a:0.70, d:1.2},     // the note
+    {r:4.0, a:0.18, d:0.35},    // two octaves (marimba tuning)
+    {r:5.0, a:0.08, d:0.2},     // two octaves + major 3rd
+    {r:2.76,a:0.12, d:0.05},    // wooden knock, strike only
   ].filter(p=>audible(freq,p.r,sr));
   for(let i=0;i<bufLen;i++){
     let s=0;
@@ -2275,7 +2277,7 @@ const rhSheet=document.getElementById('rh-sheet');
 function paintRhythm(){
   const pat=RHYTHMS[rhythm.pat];
   const play=document.getElementById('rh-play');
-  play.classList.toggle('on',rhythm.on);play.innerHTML=rhythm.on?'&#9632;':'&#9654;';
+  play.classList.toggle('on',rhythm.on);play.innerHTML=rhythm.on?'<svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true"><rect x="1.5" y="1.5" width="7" height="7" rx="1" fill="currentColor"/></svg>':'<svg viewBox="0 0 10 10" width="11" height="11" aria-hidden="true"><path d="M2 1 L9 5 L2 9 Z" fill="currentColor"/></svg>';   // drawn, not ▶ ■ characters (iOS shows those as emoji)
   play.setAttribute('aria-label',rhythm.on?'Stop auto-strum':'Start auto-strum');
   document.getElementById('rh-name').textContent=pat.name+(rhythm.follow?' · strip':'');
   document.getElementById('rh-bpm').textContent=rhythm.bpm;
