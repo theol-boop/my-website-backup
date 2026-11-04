@@ -240,13 +240,11 @@ button{font-family:var(--font);color:inherit;}
     linear-gradient(180deg,var(--win-2),var(--win));
   border-radius:12px;border:1px solid #14100d;
   box-shadow:inset 0 3px 10px rgba(0,0,0,.6),0 1px 0 var(--hi);
-  display:flex;flex-direction:column;padding:8px 16px;overflow:hidden;}
-#harp-board::before,#harp-board::after{content:'';position:absolute;top:6px;bottom:6px;width:6px;border-radius:3px;
+  overflow:hidden;}
+#strings-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;}
+#harp-board::before,#harp-board::after{content:'';position:absolute;z-index:1;top:6px;bottom:6px;width:6px;border-radius:3px;
   background:linear-gradient(90deg,#7d6234,var(--brass),#7d6234);opacity:.85;}
 #harp-board::before{left:5px;} #harp-board::after{right:5px;}
-.string-row{display:flex;align-items:center;flex:1;min-height:0;}
-.string-line-wrap{flex:1;height:100%;position:relative;}
-.string-line{position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);pointer-events:none;border-radius:1px;}
 
 /* ── CONTROLS ── */
 #controls-panel{gap:10px;}
@@ -337,6 +335,61 @@ button{font-family:var(--font);color:inherit;}
 #unlock-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #1c1510;}
 .back-link{position:fixed;z-index:101;top:max(env(safe-area-inset-top),10px);left:max(env(safe-area-inset-left),10px);padding:8px;
   font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);text-decoration:none;}
+
+/* ══ MATERIALS & LIGHT ══════════════════════════════════════════
+   One light source, top-left, everywhere: highlights on top/left edges,
+   shade on bottom/right. Surfaces get a faint grain (wood grain in dark mode). */
+:root{
+  --grain:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .35  0 0 0 0 .26  0 0 0 0 .16  0 0 0 .09 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  --screw:#bfae8a; --screw-hi:#fffaf0; --screw-sh:rgba(80,60,35,.55);
+  --led-strip:.5;
+}
+:root[data-theme="dark"]{
+  --grain:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><filter id='w'><feTurbulence type='fractalNoise' baseFrequency='.008 .35' numOctaves='3' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .55  0 0 0 0 .38  0 0 0 0 .22  0 0 0 .16 0'/></filter><rect width='100%' height='100%' filter='url(%23w)'/></svg>");
+  --screw:#4a3e34; --screw-hi:#8a7a66; --screw-sh:rgba(0,0,0,.7);
+}
+#app{background:var(--grain),radial-gradient(120% 90% at 30% 0%,var(--hi-b),transparent 60%),linear-gradient(180deg,var(--body),var(--body-2));}
+/* faceplates: bevel + four screw heads */
+.panel{position:relative;
+  background:linear-gradient(180deg,var(--hi-a),rgba(255,255,255,.04)),var(--grain);
+  box-shadow:inset 1px 1px 0 var(--hi),inset -1px -1px 0 rgba(0,0,0,.07),0 1px 1px rgba(0,0,0,.06),0 10px 18px -12px rgba(50,30,10,.35);}
+.panel::before{content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  --s:radial-gradient(circle at 35% 35%,var(--screw-hi) 0 .6px,var(--screw) 1.4px 2.3px,var(--screw-sh) 2.9px,transparent 3.4px);
+  background:var(--s) 3px 3px/8px 8px no-repeat,var(--s) calc(100% - 3px) 3px/8px 8px no-repeat,
+             var(--s) 3px calc(100% - 3px)/8px 8px no-repeat,var(--s) calc(100% - 3px) calc(100% - 3px)/8px 8px no-repeat;}
+/* chord keys: sculpted, slightly dished caps; springy press; backlit when on */
+.key{background:radial-gradient(130% 90% at 50% 25%,var(--card) 0%,var(--key) 72%);
+  box-shadow:0 3px 0 var(--key-shadow),0 5px 8px -3px rgba(50,30,10,.3),inset 1px 1px 0 var(--hi),inset 0 3px 4px -3px rgba(0,0,0,.18),inset 0 -2px 3px rgba(0,0,0,.05);
+  transition:transform .16s cubic-bezier(.3,1.7,.5,1),box-shadow .12s,background .12s;}
+.key::after{opacity:var(--led-strip);box-shadow:inset 0 1px 1px rgba(0,0,0,.25);}
+.key.pressed{transform:translateY(2px);transition-duration:.04s;}
+.key.active{background:radial-gradient(circle at 50% 35%,color-mix(in srgb,var(--fam) 55%,#fff) 0%,var(--fam) 68%);
+  box-shadow:0 0 16px -3px var(--fam),0 1px 0 rgba(0,0,0,.25),inset 0 2px 5px rgba(0,0,0,.22),inset 0 -1px 0 rgba(255,255,255,.25);}
+.key.active::after{opacity:1;background:#fff;box-shadow:0 0 6px #fff,0 0 12px color-mix(in srgb,var(--fam) 70%,#fff);}
+/* row names: glossy enamel badges */
+.row-head{background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0) 48%),var(--fam);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -2px 0 rgba(0,0,0,.18),0 2px 3px -1px rgba(0,0,0,.25);text-shadow:0 1px 0 rgba(0,0,0,.2);}
+/* buttons, tiles, chips, slots: same light */
+.inst,.lp-btn,.dir,.slot:not(.empty),.chip{box-shadow:0 2px 0 var(--key-shadow),0 4px 7px -4px rgba(50,30,10,.3),inset 1px 1px 0 var(--hi),inset 0 -1px 2px rgba(0,0,0,.05);}
+.inst,.lp-btn{background:radial-gradient(130% 100% at 50% 20%,var(--card),var(--key) 75%);transition:transform .14s cubic-bezier(.3,1.7,.5,1);}
+.inst:active,.lp-btn:active,.dir:active{transform:translateY(1px);}
+.inst.active{background:radial-gradient(130% 100% at 50% 15%,color-mix(in srgb,var(--ink) 85%,#fff),var(--ink) 70%);
+  box-shadow:0 1px 0 rgba(0,0,0,.3),inset 0 2px 4px rgba(0,0,0,.45),0 0 0 1px rgba(0,0,0,.2);}
+.lp-btn.active,.lp-btn.rec-active{box-shadow:0 1px 0 rgba(0,0,0,.3),inset 0 2px 4px rgba(0,0,0,.35);}
+.lp-btn.rec-active{box-shadow:0 0 14px -2px var(--dom),inset 0 2px 4px rgba(0,0,0,.3);}
+/* faders: recessed slot, LED-segment fill, gripped cap */
+.fader-wrap{background:linear-gradient(180deg,rgba(0,0,0,.16),rgba(0,0,0,.03)),var(--body-3);
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.3),inset 0 -1px 0 rgba(255,255,255,.18),0 1px 0 var(--hi);}
+.fader-fill{background:repeating-linear-gradient(90deg,rgba(235,120,55,.9) 0 3px,rgba(235,120,55,.25) 3px 5px);
+  box-shadow:inset 0 0 6px rgba(255,160,90,.35);filter:drop-shadow(0 0 3px rgba(235,120,55,.35));}
+.fader-line{background:repeating-linear-gradient(90deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px),linear-gradient(180deg,var(--card),var(--knob-lo));
+  box-shadow:0 1px 3px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.6),inset 0 0 0 1px rgba(0,0,0,.12);}
+/* glass on the display and rhythm bar */
+#display,#rh-open{position:relative;}
+#display::after,#rh-open::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(160deg,rgba(255,255,255,.09) 0%,rgba(255,255,255,.02) 30%,transparent 45%);}
+#disp-chord{text-shadow:0 0 10px rgba(185,224,122,.45),0 0 2px rgba(185,224,122,.6);}
+#harp-board{box-shadow:inset 0 3px 10px rgba(0,0,0,.6),0 1px 0 var(--hi),0 10px 18px -10px rgba(30,15,5,.5);}
 
 /* ── PHONES / TABLETS HELD UPRIGHT: chords on top, plate on the right ── */
 @media (orientation:portrait),(max-width:700px) and (min-height:561px){
@@ -836,26 +889,115 @@ function applySet(lead){
   }
   buildBoard();updateDisplay();prewarm();
 }
+// ══ STRUM PLATE: WebGL strings that really vibrate ════════════
+// Each string is a standing wave (fixed at both rails): its amplitude follows
+// how hard it was played and fades (high notes faster), and it wobbles faster
+// for higher notes. A fragment shader draws them anti-aliased with bronze
+// (wound, below middle C) or steel colour, a sheen from the top-left light,
+// a glow while ringing, and a soft light under your finger.
+const STR={n:0,amp:new Float32Array(64),t0:new Float64Array(64),rate:new Float32Array(64),tau:new Float32Array(64),tauBase:new Float32Array(64),
+  bright:new Float32Array(64),wound:new Float32Array(64),touch:[0.5,0.5,0],gl:null,canvas:null,data:new Uint8Array(64*4)};
 function buildBoard(){
-  const board=document.getElementById('harp-board');board.innerHTML='';
-  const NUM=state.vis.length;
-  for(let i=0;i<NUM;i++){
-    const row=document.createElement('div');row.className='string-row';
-    const wrap=document.createElement('div');wrap.className='string-line-wrap';
-    const line=document.createElement('div');line.className='string-line';line.id='S'+i;
-    line.dataset.midi=state.vis[i];
-    // thicker (wound) strings at the bottom, a new note gets a brighter string
-    const newNote=i===0||state.vis[i]!==state.vis[i-1];
-    const thick=(0.8+(i/NUM)*1.6).toFixed(1);
-    line.dataset.base=newNote?'rgba(214,176,104,.9)':'rgba(214,176,104,.32)';
-    line.style.cssText=`height:${thick}px;background:${line.dataset.base};`;
-    wrap.appendChild(line);row.appendChild(wrap);board.appendChild(row);
+  if(!STR.canvas)initStrings();
+  STR.n=state.vis.length;
+  for(let i=0;i<STR.n;i++){
+    const m=state.vis[i],k=Math.max(0,Math.min(1,(m-36)/64));
+    STR.bright[i]=(i===0||state.vis[i]!==state.vis[i-1])?1:0.4;   // where a new note starts, the line is brighter
+    STR.wound[i]=m<60?1:0;
+    STR.rate[i]=6+k*18;                  // visible wobble, 6 Hz (low) … 24 Hz (high), stylised
+    STR.tauBase[i]=STR.tau[i]=2.6-k*2.0; // low strings ring longer
   }
 }
-function flash(i){
-  const s=document.getElementById('S'+i);if(!s)return;
-  s.style.background='#fff3cf';s.style.boxShadow='0 0 10px rgba(243,220,164,.95)';
-  setTimeout(()=>{s.style.background=s.dataset.base;s.style.boxShadow='none';},160);
+function stringLevel(i,now){return STR.amp[i]*Math.exp(-(now-STR.t0[i])/STR.tau[i]);}
+function excite(i,v){
+  if(i<0||i>=STR.n)return;
+  const now=performance.now()/1000;
+  STR.amp[i]=Math.min(1,stringLevel(i,now)*0.6+v);STR.t0[i]=now;STR.tau[i]=STR.tauBase[i];
+}
+function flash(i){excite(i,0.55);}        // a finger crossing a string
+function exciteNote(midi,at,v){            // every line carrying this note, at audio time `at`
+  const ms=Math.max(0,(at-(actx?actx.currentTime:0))*1000);
+  const go=()=>{for(let i=0;i<STR.n;i++)if(state.vis[i]===midi)excite(i,v);};
+  if(ms<8)go();else setTimeout(go,ms);
+}
+function dampStrings(){                    // hold-to-sustain release: strings stop quickly
+  const now=performance.now()/1000;
+  for(let i=0;i<STR.n;i++){STR.amp[i]=stringLevel(i,now);STR.t0[i]=now;STR.tau[i]=0.08;}
+}
+const STR_FRAG=`precision mediump float;
+uniform sampler2D u_data;uniform vec2 u_res;uniform float u_n;uniform vec3 u_touch;varying vec2 v;
+float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+void main(){
+  vec2 px=v*u_res;float sp=u_res.y/u_n;
+  float grain=hash(vec2(floor(px.y),floor(px.x*0.015)))*0.035+hash(vec2(floor(px.y*0.5),3.))*0.02;   // brushed metal
+  vec3 col=mix(vec3(.105,.088,.072),vec3(.05,.042,.036),v.y)+grain;
+  col*=.82+.18*smoothstep(0.,.2,v.x)*smoothstep(1.,.8,v.x);
+  float fi=floor(px.y/sp);
+  for(int k=-2;k<=2;k++){
+    float i=fi+float(k);
+    if(i<0.||i>=u_n)continue;
+    vec4 d=texture2D(u_data,vec2((i+.5)/64.,.5));
+    float y=(i+.5)*sp+(d.r*2.-1.)*sp*.45*sin(3.14159*v.x);   // standing wave: still at both ends
+    float th=mix(.5,1.15,d.a)+.55*(i/u_n);
+    float dist=abs(px.y-y);
+    float core=smoothstep(th+.9,th-.35,dist);
+    float halo=exp(-dist/(2.5+5.*d.g))*d.g*.5;
+    vec3 metal=d.a>.5?vec3(.80,.58,.31):vec3(.84,.82,.76);   // bronze (wound) / steel
+    float sheen=pow(max(0.,1.-abs(v.x-.27)*2.3),3.);           // light from the top-left
+    float wind=d.a>.5?.72+.28*sin(px.x*2.4):1.;
+    vec3 lit=metal*(.32+.5*d.b+.55*d.g)*wind+vec3(1.,.93,.76)*sheen*(.28+.6*d.g)*d.b;
+    col=mix(col,lit,core*(.6+.4*d.b));
+    col+=vec3(1.,.8,.48)*halo;
+  }
+  float td=length((v-u_touch.xy)*vec2(u_res.x/u_res.y,1.));
+  col+=vec3(1.,.84,.55)*exp(-td*8.)*u_touch.z*.3;
+  vec2 q=v*(1.-v);col*=.72+.28*pow(clamp(q.x*q.y*16.,0.,1.),.3);
+  gl_FragColor=vec4(col,1.);
+}`;
+function initStrings(){
+  const board=document.getElementById('harp-board');
+  STR.canvas=document.createElement('canvas');STR.canvas.id='strings-canvas';board.appendChild(STR.canvas);
+  try{
+    const gl=STR.canvas.getContext('webgl',{antialias:false})||STR.canvas.getContext('experimental-webgl');
+    if(gl){
+      const sh=(t,src)=>{const o=gl.createShader(t);gl.shaderSource(o,src);gl.compileShader(o);if(!gl.getShaderParameter(o,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(o));return o;};
+      const pr=gl.createProgram();
+      gl.attachShader(pr,sh(gl.VERTEX_SHADER,'attribute vec2 p;varying vec2 v;void main(){v=vec2(p.x*.5+.5,.5-p.y*.5);gl_Position=vec4(p,0.,1.);}'));
+      gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,STR_FRAG));gl.linkProgram(pr);
+      if(!gl.getProgramParameter(pr,gl.LINK_STATUS))throw new Error('link');
+      gl.useProgram(pr);
+      const bf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,bf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+      const loc=gl.getAttribLocation(pr,'p');gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+      const tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);
+      for(const [k,val] of [[gl.TEXTURE_MIN_FILTER,gl.NEAREST],[gl.TEXTURE_MAG_FILTER,gl.NEAREST],[gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE],[gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE]])gl.texParameteri(gl.TEXTURE_2D,k,val);
+      STR.gl=gl;STR.u={};for(const n of ['u_data','u_res','u_n','u_touch'])STR.u[n]=gl.getUniformLocation(pr,n);
+    }
+  }catch(e){STR.gl=null;}
+  if(!STR.gl)STR.ctx2d=STR.canvas.getContext('2d');
+  (function frame(){
+    requestAnimationFrame(frame);
+    const c=STR.canvas,dpr=Math.min(1.5,window.devicePixelRatio||1),W=Math.round(c.offsetWidth*dpr),H=Math.round(c.offsetHeight*dpr);
+    if(!W||!H||!STR.n)return;
+    if(c.width!==W||c.height!==H){c.width=W;c.height=H;if(STR.gl)STR.gl.viewport(0,0,W,H);}
+    const now=performance.now()/1000;STR.touch[2]*=0.9;
+    for(let i=0;i<STR.n;i++){
+      const a=stringLevel(i,now),w=2*Math.PI*STR.rate[i]*(now-STR.t0[i]);
+      const disp=a*(Math.cos(w)+0.35*Math.cos(2.3*w+1))/1.35;
+      STR.data[i*4]=Math.round((disp*0.5+0.5)*255);STR.data[i*4+1]=Math.round(Math.min(1,a)*255);
+      STR.data[i*4+2]=Math.round(STR.bright[i]*255);STR.data[i*4+3]=STR.wound[i]*255;
+    }
+    if(STR.gl){
+      const gl=STR.gl;
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,64,1,0,gl.RGBA,gl.UNSIGNED_BYTE,STR.data);
+      gl.uniform1i(STR.u.u_data,0);gl.uniform2f(STR.u.u_res,W,H);gl.uniform1f(STR.u.u_n,STR.n);gl.uniform3f(STR.u.u_touch,...STR.touch);
+      gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+    } else {                                     // no WebGL: plain lines that still wobble
+      const x=STR.ctx2d,sp=H/STR.n;x.fillStyle='#14100d';x.fillRect(0,0,W,H);
+      for(let i=0;i<STR.n;i++){const y=(i+.5)*sp,d=(STR.data[i*4]/255*2-1)*sp*0.45;
+        x.strokeStyle=`rgba(214,176,104,${0.3+0.5*STR.bright[i]+0.2*STR.data[i*4+1]/255})`;x.lineWidth=(0.8+i/STR.n*1.2)*dpr;
+        x.beginPath();x.moveTo(0,y);x.quadraticCurveTo(W/2,y+d*2,W,y);x.stroke();}
+    }
+  })();
 }
 function updateDisplay(){
   document.getElementById('disp-chord').textContent=chordName(state.chord);
@@ -1945,6 +2087,7 @@ try{const m=SCOPE_MODES.findIndex(x=>x.id===localStorage.getItem('harpmog.scope'
 function scopeNote(midi,at){
   const ms=performance.now()+Math.max(0,(at-(actx?actx.currentTime:0))*1000);
   SC.notes.push({midi,t:ms});if(SC.notes.length>96)SC.notes.shift();
+  exciteNote(midi,at,0.7);   // every note that sounds also sets its strings vibrating
 }
 function setScopeMode(i){
   SC.mode=(i+SCOPE_MODES.length)%SCOPE_MODES.length;SC.label=performance.now();
@@ -2478,6 +2621,7 @@ function releaseFinger(pid){
   fingerNotes.delete(pid);
   const now=actx.currentTime;
   for(const dg of list)dg.gain.setTargetAtTime(0,now,0.035);
+  dampStrings();
 }
 
 // ── STRUM ─────────────────────────────────────────────────────
@@ -2485,9 +2629,9 @@ const ptrs=new Map();
 function rowY(cy){
   const b=document.getElementById('harp-board'),r=b.getBoundingClientRect();
   const NUM=state.vis.length;
-  return Math.max(0,Math.min(NUM-1,Math.round(((cy-r.top)/r.height)*(NUM-1))));
+  return Math.max(0,Math.min(NUM-1,Math.floor(((cy-r.top)/r.height)*NUM)));   // matches where the strings are drawn
 }
-function gmidi(i){const s=document.getElementById('S'+i);return s?parseInt(s.dataset.midi)||60:60;}
+function gmidi(i){return state.vis[i]||60;}
 function strum(pid,cy){
   const idx=rowY(cy),now=performance.now(),p=ptrs.get(pid);if(!p)return;
   if(p.li===-1){
@@ -2518,6 +2662,8 @@ function attachBoard(){
   b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);
     ptrs.set(e.pointerId,{li:-1,lt:0,lastMidi:-1});strum(e.pointerId,e.clientY);});
   b.addEventListener('pointermove',e=>{if(ptrs.has(e.pointerId))strum(e.pointerId,e.clientY);});
+  const glow=e=>{const r=b.getBoundingClientRect();STR.touch=[(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height,1];};
+  b.addEventListener('pointerdown',glow);b.addEventListener('pointermove',e=>{if(ptrs.has(e.pointerId))glow(e);});
   b.addEventListener('pointerup',e=>{ptrs.delete(e.pointerId);releaseFinger(e.pointerId);});
   b.addEventListener('pointercancel',e=>{ptrs.delete(e.pointerId);releaseFinger(e.pointerId);});
 }
@@ -2810,8 +2956,6 @@ function rhythmNote(midi,v,at){
   state.insts.forEach(inst=>rhythm.queued.push({at,outs:pluckInst(inst,midi,v,vol,at)}));
   midiNote(midi,v,at);scopeNote(midi,at);
   if(!(rhythm.lockLoop&&looper.locked))looperRecord(midi,v,at);
-  const i=state.vis.indexOf(midi);
-  if(i>=0)setTimeout(()=>flash(i),Math.max(0,(at-actx.currentTime)*1000));
 }
 function rhythmEvent(e,at){
   const asc=[...state.ds].reverse(),n=asc.length;if(!n)return;
