@@ -1150,18 +1150,24 @@ function bakeBass(freq,sr){return bakeKS(freq,sr,3.5,0.4952,1200);}
 // Partials above ~Nyquist fold back as out-of-tune junk on high notes: skip them
 function audible(freq,ratio,sr){return freq*ratio<sr*0.45;}
 
-// BELL — additive harmonics with inharmonic partials, metallic shimmer
+// BELL — tuned bell: the partials that RING are in tune (octave, octave+5th,
+// two octaves, with a 3-cent detuned octave for a slow shimmer); the clangy
+// metal-bar partials (2.756, 5.404, 8.933 — a flat tritone, a sharp 4th, a 2nd)
+// only sound in the strike and fade within ~0.1 s, so they read as the hit,
+// not as out-of-tune pitches.
 function bakeBell(freq,sr){
   const dur=3.5,bufLen=Math.ceil(sr*dur);
   const buf=actx.createBuffer(1,bufLen,sr);
   const data=buf.getChannelData(0);
-  // bell partials: ratios and relative amplitudes (slightly inharmonic)
   const partials=[
-    {r:1.0,  a:0.60, d:3.5},
-    {r:2.756,a:0.25, d:1.8},
-    {r:5.404,a:0.12, d:1.0},
-    {r:8.933,a:0.06, d:0.6},
-    {r:13.46,a:0.03, d:0.4},
+    {r:1.0,   a:0.60, d:3.5},    // the note
+    {r:2.0,   a:0.22, d:2.2},    // octave
+    {r:2.0035,a:0.08, d:2.0},    // octave, 3 cents sharp: slow beating shimmer
+    {r:3.0,   a:0.10, d:1.2},    // octave + 5th
+    {r:4.0,   a:0.05, d:0.7},    // two octaves
+    {r:2.756, a:0.14, d:0.09},   // strike only
+    {r:5.404, a:0.08, d:0.06},   // strike only
+    {r:8.933, a:0.04, d:0.04},   // strike only
   ];
   const parts=partials.filter(p=>audible(freq,p.r,sr));
   for(let i=0;i<bufLen;i++){
