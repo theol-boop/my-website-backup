@@ -274,9 +274,6 @@ button{font-family:var(--font);color:inherit;}
   border:4px solid #2a221d;box-shadow:inset 0 0 0 1px rgba(0,0,0,.8),0 1px 0 var(--hi),0 0 0 1px var(--edge);}
 #waveform-canvas{position:absolute;inset:0;display:block;width:100%;height:100%;}
 #led-panel{cursor:pointer;touch-action:none;}
-#scope-max{position:absolute;top:4px;right:4px;z-index:2;width:22px;height:22px;border:none;border-radius:6px;background:rgba(0,0,0,.35);
-  color:rgba(185,224,122,.6);font-size:12px;line-height:22px;padding:0;cursor:pointer;}
-#scope-max:hover{color:var(--lcd);}
 #scope-full{position:fixed;inset:0;z-index:160;background:#000;}
 #scope-full-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;}
 #scope-full-close{position:absolute;top:max(env(safe-area-inset-top),12px);right:max(env(safe-area-inset-right),12px);width:40px;height:40px;border:none;border-radius:12px;
@@ -433,7 +430,7 @@ button{font-family:var(--font);color:inherit;}
       <div class="fx-unit"><div class="fader-wrap" id="knob-width" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-width"></div><div class="fader-line"></div></div><div class="fx-name">width</div></div>
     </div>
     <div id="looper-panel">
-      <div id="scope-box"><div id="led-panel" title="Tap to change view"><canvas id="waveform-canvas"></canvas><button id="scope-max" aria-label="Full-screen visualizer">&#10530;</button></div></div>
+      <div id="scope-box"><div id="led-panel" title="Tap to change view · hold for full screen"><canvas id="waveform-canvas"></canvas></div></div>
       <div id="looper-transport">
         <button class="lp-btn" id="lp-rec">REC</button>
         <button class="lp-btn" id="lp-play">PLAY</button>
@@ -1640,11 +1637,11 @@ function closeLoop(at){
   setLooperState('playing');
   startPlayback(at);
 }
-// LOOP LENGTH (the button next to CLR): FREE, or 1/2/4/8 bars of 4/4 at the
+// LOOP LENGTH (the button next to CLR): FREE, or 1–8 bars of 4/4 at the
 // current tempo. With a length, recording starts on your first note (or the next
 // bar line while auto-strum plays), a soft click keeps time if auto-strum isn't
 // playing, and the loop closes itself exactly at the end — no need to press stop.
-const LOOP_LENS=[0,1,2,4,8];
+const LOOP_LENS=[0,1,2,3,4,5,6,7,8];
 let loopBars=(()=>{try{const v=+localStorage.getItem('harpmog.loopbars');return LOOP_LENS.includes(v)&&localStorage.getItem('harpmog.loopbars')!==null?v:2;}catch(e){return 2;}})();
 function paintLoopLen(){document.getElementById('lp-len').textContent=loopBars?loopBars+(loopBars>1?' BARS':' BAR'):'FREE';}
 let clickNodes=[];
@@ -2067,13 +2064,18 @@ function startWaveform(){
     if(document.getElementById('led-panel').offsetWidth)renderScope(scopeMain,time);
     if(scopeFull&&!document.getElementById('scope-full').hidden)renderScope(scopeFull,time);
   })();
-  // tap the screen: next view; ⤢: full-screen visualizer
-  onTap(document.getElementById('led-panel'),e=>{if(!e.target.closest('#scope-max'))setScopeMode(SC.mode+1);});
-  document.getElementById('scope-max').addEventListener('pointerup',e=>{
-    e.stopPropagation();const full=document.getElementById('scope-full');full.hidden=false;
-    if(!scopeFull){scopeFull=makeScope(document.getElementById('scope-full-canvas'));scopeFull.full=true;}
-    SC.label=performance.now();
-  });
+  // tap the screen: next view · press and hold: full-screen visualizer
+  {const led=document.getElementById('led-panel');let timer=null,id=null,x0=0,y0=0,held=false;
+   const openFull=()=>{const full=document.getElementById('scope-full');full.hidden=false;
+     if(!scopeFull){scopeFull=makeScope(document.getElementById('scope-full-canvas'));scopeFull.full=true;}
+     SC.label=performance.now();};
+   led.addEventListener('pointerdown',e=>{id=e.pointerId;x0=e.clientX;y0=e.clientY;held=false;clearTimeout(timer);
+     timer=setTimeout(()=>{held=true;openFull();},550);});
+   led.addEventListener('pointermove',e=>{if(e.pointerId===id&&Math.hypot(e.clientX-x0,e.clientY-y0)>10)clearTimeout(timer);});
+   led.addEventListener('pointerup',e=>{if(e.pointerId!==id)return;id=null;clearTimeout(timer);
+     if(!held&&Math.hypot(e.clientX-x0,e.clientY-y0)<=10)setScopeMode(SC.mode+1);});
+   led.addEventListener('pointercancel',()=>{id=null;clearTimeout(timer);});
+   led.addEventListener('contextmenu',e=>e.preventDefault());}
   onTap(document.getElementById('scope-full-canvas'),()=>setScopeMode(SC.mode+1));
   document.getElementById('scope-full-close').addEventListener('click',()=>{document.getElementById('scope-full').hidden=true;});
   document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('scope-full').hidden=true;});
