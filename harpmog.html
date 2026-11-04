@@ -441,7 +441,11 @@ button{font-family:var(--font);color:inherit;}
     <div class="seg" id="rh-swing"><button data-val="0">Off</button><button data-val="0.5">Light</button><button data-val="1">Full</button></div></div>
   <div class="set-row"><div class="set-text"><b>Play the progression</b><small>Each chord in the progression strip gets one bar, then it moves to the next and loops.</small></div>
     <div class="seg" id="rh-follow"><button data-val="off">Off</button><button data-val="on">On</button></div></div>
-  <div class="set-foot">You can keep strumming by hand on top. REC records the auto-strum too. On a keyboard, Space starts and stops it.</div>
+  <div class="set-row"><div class="set-text"><b>Percussion</b><small>Soft drums that follow each pattern: kick, rim, shaker, hi-hat, ride.</small></div>
+    <div class="seg" id="rh-perc"><button data-val="0">Off</button><button data-val="0.6">Soft</button><button data-val="1.1">Loud</button></div></div>
+  <div class="set-row"><div class="set-text"><b>Lock the looper to the beat</b><small>While auto-strum plays, REC starts on the next bar and loops round to whole bars, so they stay in time. The auto-strum keeps playing and isn't recorded into the loop.</small></div>
+    <div class="seg" id="rh-lock"><button data-val="on">On</button><button data-val="off">Off</button></div></div>
+  <div class="set-foot">You can keep strumming by hand on top. On a keyboard, Space starts and stops it.</div>
 </div></div>
 <div id="lib" hidden><div class="sheet">
   <div class="sheet-head"><b>Progressions</b><button id="lib-close">Done</button></div>
@@ -1436,7 +1440,27 @@ function bakeOmni(freq,sr){
   return buf;
 }
 
+// DRUMS for the rhythm's percussion layer (GM numbers: 36 kick, 37 cross-stick rim,
+// 42 closed hat, 51 ride, 70 shaker)
+function bakeDrum(code,sr){
+  const dur={36:0.5,37:0.12,42:0.12,51:1.2,70:0.16}[code]||0.2,n=Math.ceil(sr*dur);
+  const buf=actx.createBuffer(1,n,sr),d=buf.getChannelData(0);
+  let ph=0,prev=0,prev2=0;
+  for(let i=0;i<n;i++){
+    const t=i/sr,w=Math.random()*2-1,hp=w-2*prev+prev2;prev2=prev;prev=w;   // 2nd-order difference: bright noise
+    let y=0;
+    if(code===36){ph+=2*Math.PI*(45+70*Math.exp(-t*30))/sr;y=Math.sin(ph)*Math.exp(-t*7)*0.95+w*Math.exp(-t/0.002)*0.25;}
+    else if(code===37)y=(Math.sin(2*Math.PI*1750*t)*0.5+Math.sin(2*Math.PI*830*t)*0.5)*Math.exp(-t/0.018)*0.6+w*Math.exp(-t/0.003)*0.3;
+    else if(code===42)y=hp*Math.exp(-t/0.022)*0.18;
+    else if(code===70)y=hp*Math.min(1,t/0.008)*Math.exp(-t/0.045)*0.14;
+    else if(code===51)y=hp*Math.exp(-t/0.35)*0.06+(Math.sin(2*Math.PI*3150*t)+Math.sin(2*Math.PI*4720*t)*0.7+Math.sin(2*Math.PI*6210*t)*0.5)*Math.exp(-t/0.6)*0.035;
+    d[i]=y;
+  }
+  return buf;
+}
+
 function bakeBuffer(inst,midi){
+  if(inst==='drum')return bakeDrum(midi,actx.sampleRate);
   const freq=440*Math.pow(2,(midi-69)/12);
   const sr=actx.sampleRate;
   if(inst==='harp')  return bakeHarp(freq,sr);
@@ -1562,12 +1586,35 @@ function stopLooper(){
 function beginRecording(at){
   looper.events=[];
   looper.loopStart=at;
-  looper.loopLen=0;
+  looper.loopLen=0;looper.locked=false;looper.closing=false;
   setLooperState('recording');
 }
 
+// LOCKED TO TEMPO: while auto-strum plays, REC starts on the next bar line and
+// the loop is rounded to whole bars (it keeps recording to the bar line if you
+// stop a little early), so the loop stays in step with the rhythm.
+function nextBarLine(){
+  const L=rhythm.cur.steps*stepDur(),now=actx.currentTime;let t=rhythm.barStart;
+  while(t<now-0.005)t+=L;while(t-L>=now-0.005)t-=L;return t;
+}
+function closeLoop(at){
+  looper.locked=false;
+  looper.events.forEach(e=>{e.t=((e.t%looper.loopLen)+looper.loopLen)%looper.loopLen;});
+  looper.events.sort((a,b)=>a.t-b.t);
+  setLooperState('playing');
+  startPlayback(at);
+}
 function finishRecording(){
   const now=actx.currentTime;
+  if(looper.locked){
+    const L=looper.barLen,bars=Math.max(1,Math.round((now-looper.loopStart)/L)),end=looper.loopStart+bars*L;
+    looper.loopLen=bars*L;
+    if(end>now+0.01){                        // stopped early: finish at the bar line
+      if(!looper.closing){looper.closing=true;setTimeout(()=>{looper.closing=false;if(looper.state==='recording')closeLoop(end);},(end-now)*1000);}
+      return;
+    }
+    return closeLoop(end);
+  }
   looper.loopLen=now-looper.loopStart;
   if(looper.loopLen<0.05){looper.events=[];looper.loopLen=0;stopLooper();return;}
   looper.events.forEach(e=>{e.t%=looper.loopLen;});
@@ -1576,10 +1623,11 @@ function finishRecording(){
   startPlayback(now);
 }
 
-function looperRecord(midi,velocity,when){
+function looperRecord(midi,velocity,when,insts){
+  insts=insts||[...state.insts];
   if(looper.state==='armed')beginRecording(when);
   if(looper.state==='recording'){
-    looper.events.push({midi,insts:[...state.insts],velocity,t:when-looper.loopStart});
+    looper.events.push({midi,insts,velocity,t:when-looper.loopStart});
   } else if(looper.state==='overdubbing'){
     const len=looper.loopLen;
     const t=(((when-looper.loopStart)%len)+len)%len;
@@ -1587,7 +1635,7 @@ function looperRecord(midi,velocity,when){
     // before the scheduler's position, step past it (don't play it twice).
     const ev=looper.events;
     let i=ev.findIndex(x=>x.t>t);if(i<0)i=ev.length;
-    ev.splice(i,0,{midi,insts:[...state.insts],velocity,t});
+    ev.splice(i,0,{midi,insts,velocity,t});
     if(i<=looper.idx)looper.idx++;
   }
 }
@@ -1596,7 +1644,9 @@ document.getElementById('lp-rec').addEventListener('pointerup',e=>{
   e.stopPropagation();
   if(!actx)return;
   const s=looper.state;
-  if(s==='stopped'){
+  if(s==='stopped'&&rhythm.on&&rhythm.lockLoop){
+    beginRecording(nextBarLine());looper.locked=true;looper.barLen=rhythm.cur.steps*stepDur();   // starts on the next bar line
+  } else if(s==='stopped'){
     setLooperState('armed');                 // recording starts on the next note
   } else if(s==='playing'){
     // Overdub for exactly one loop, then back to playing
@@ -1878,6 +1928,7 @@ function pluckInst(inst,midi,velocity,volScale,when){
   src.connect(gain);
   gain.connect(master);
   gain.connect(reverbSend);
+  if(inst==='drum'){src.start(t);src.stop(t+buf.duration+0.05);return outs;}   // drums: dry + a little room, no echoes
   gain.connect(delaySend);
   gain.connect(pingSend);
   gain.connect(warbleSend);
@@ -2122,10 +2173,11 @@ document.querySelectorAll('#midi-seg button').forEach(b=>b.addEventListener('cli
   catch(e){setMidiSeg(false);midiStatus('MIDI permission was refused.');}
 }));
 document.getElementById('midi-out').addEventListener('change',e=>{midiOut=midiAccess&&midiAccess.outputs.get(e.target.value)||null;});
-function midiNote(midi,velocity,when){
+function midiNote(midi,velocity,when,ch){
+  ch=ch||0;
   if(!midiOut||!actx)return;
   const ts=performance.now()+Math.max(0,(when-actx.currentTime)*1000);
-  try{midiOut.send([0x90,midi,Math.max(1,Math.min(127,Math.round(velocity*127)))],ts);midiOut.send([0x80,midi,0],ts+700);}catch(e){}
+  try{midiOut.send([0x90|ch,midi,Math.max(1,Math.min(127,Math.round(velocity*127)))],ts);midiOut.send([0x80|ch,midi,0],ts+(ch===9?100:700));}catch(e){}
 }
 
 // ══ AUTO-STRUM / RHYTHM ══════════════════════════════════════
@@ -2168,18 +2220,60 @@ const RHYTHMS=(()=>{
     ev:Array.from({length:16},(_,k)=>N(k,0.5+0.5*(k%8)/7,k%2?0.28:0.38))};
   R.pad={name:'Pad swell',desc:'one slow strum per bar (good with PAD / CHOIR)',steps:16,
     ev:[S(0,0,1,0.5,350)]};
-  for(const k in R)R[k].ev.sort((a,b)=>a.t-b.t);
+  R.samba={name:'Samba',desc:'busy 16ths, surdo bass on 2',steps:16,
+    ev:[B(0,0.6),B(8,0.8),S(0,0.4,1,0.5,8),S(3,0.4,1,0.42,8,false),S(6,0.4,1,0.5,8),S(8,0.4,1,0.42,8,false),S(11,0.4,1,0.5,8),S(14,0.4,1,0.42,8,false)]};
+  R.travis={name:'Fingerpick',desc:'Travis picking: alternating bass, treble in between',steps:16,
+    ev:[B(0,0.7),N(0,0.9,0.4),N(2,0.75,0.42),N(4,0.18,0.55),N(6,0.65,0.4),B(8,0.65),N(10,0.8,0.42),N(12,0.18,0.5),N(14,0.65,0.4)]};
+  R.sixeight={name:'6/8 lilt',desc:'two swaying groups of three',steps:12,
+    ev:[B(0,0.75),N(2,0.5,0.45),N(4,0.7,0.42),S(6,0.35,1,0.5,14),N(8,0.6,0.4),N(10,0.8,0.38)]};
+  R.funk={name:'Funk 16ths',desc:'tight, choppy stabs on the top strings',steps:16,
+    ev:[B(0,0.8),B(10,0.6),...[[0,.6],[3,.45],[6,.55],[7,.35],[10,.55],[12,.4],[14,.5]].map(([t,v])=>S(t,0.5,0.95,v,5,false))]};
+  R.clave={name:'Son clave',desc:'chords on the 3-2 clave',steps:16,
+    ev:[B(0,0.7),B(8,0.6),...[0,3,6,10,12].map(t=>S(t,0.3,1,0.55,10))]};
+  R.gliss={name:'Harp gliss',desc:'a sweep up on 1, back down on 3',steps:16,
+    ev:[S(0,0,1,0.55,700),S(8,0,1,0.45,700,false)]};
+  R.tremolo={name:'Tremolo',desc:'mandolin-style rapid strums',steps:16,
+    ev:[B(0,0.6),...Array.from({length:16},(_,k)=>S(k,0.45,1,k%4?0.28:0.38,6,k%2===0))]};
+  // percussion parts: [step, drum, loudness]  (36 kick, 37 rim, 42 hat, 51 ride, 70 shaker)
+  const sh8=(v1,v2)=>[0,2,4,6,8,10,12,14].map(t=>[t,70,t%4?v2:v1]);
+  const sh16=(v1,v2)=>Array.from({length:16},(_,t)=>[t,70,t%2?v2:v1]);
+  const P={
+    strum8:[[0,36,.9],[8,36,.8],[4,37,.6],[12,37,.6],...sh8(.45,.3)],
+    waltz:[[0,36,.85],[4,37,.4],[8,37,.4],...[0,2,4,6,8,10].map(t=>[t,70,.3])],
+    bossa:[[0,36,.8],[6,36,.5],[8,36,.8],[14,36,.5],...[0,3,6,10,12].map(t=>[t,37,.5]),...sh16(.32,.2)],
+    arpup:[[0,36,.6],...sh8(.3,.22)], arpud:[[0,36,.6],...sh8(.3,.22)],
+    comp:[[0,51,.5],[4,51,.45],[6,51,.4],[8,51,.5],[12,51,.45],[14,51,.4],[4,42,.4],[12,42,.4],[0,36,.35],[8,36,.3]],
+    skank:[[8,36,.9],[8,37,.7],...[0,2,4,6,8,10,12,14].map(t=>[t,42,.32])],
+    ballad:[[0,36,.7],[8,37,.45],...sh8(.25,.18)],
+    shimmer:[[0,36,.7],[8,36,.7],[4,37,.4],[12,37,.4],...sh16(.3,.2)],
+    pad:[[0,36,.5],[0,51,.25]],
+    samba:[[8,36,.9],[0,36,.5],...Array.from({length:16},(_,t)=>[t,70,[0,3,6,10,13].includes(t)?.45:.22]),...[3,6,10,13].map(t=>[t,37,.35])],
+    travis:sh8(.2,.15),
+    sixeight:[[0,36,.7],[6,37,.5],...[0,2,4,6,8,10].map(t=>[t,70,.3])],
+    funk:[[0,36,.85],[7,36,.7],[10,36,.8],[4,37,.75],[12,37,.75],...Array.from({length:16},(_,t)=>[t,42,t%2?.2:.32])],
+    clave:[[0,36,.6],[8,36,.6],...[0,3,6,10,12].map(t=>[t,37,.6]),...sh8(.3,.22)],
+    gliss:[[0,36,.4]], tremolo:[[0,36,.45]],
+  };
+  for(const k in R){R[k].perc=P[k]||[];R[k].ev.sort((a,b)=>a.t-b.t);}
   return R;
 })();
-const RHYTHM_ORDER=['strum8','waltz','bossa','arpup','arpud','comp','skank','ballad','shimmer','pad'];
+const RHYTHM_ORDER=['strum8','travis','waltz','sixeight','bossa','samba','clave','comp','funk','skank','arpup','arpud','ballad','shimmer','tremolo','gliss','pad'];
 
-const rhythm=Object.assign({pat:'strum8',bpm:96,swing:0,follow:false},
+const rhythm=Object.assign({pat:'strum8',bpm:96,swing:0,follow:false,perc:0.6,lockLoop:true},
   (()=>{try{const o=JSON.parse(localStorage.getItem('harpmog.rhythm')||'{}');
-    return {pat:RHYTHMS[o.pat]?o.pat:undefined,bpm:+o.bpm||undefined,swing:[0,0.5,1].includes(o.swing)?o.swing:undefined,follow:!!o.follow};}catch(e){return{};}})());
-for(const k of ['pat','bpm','swing'])if(rhythm[k]===undefined)delete rhythm[k];
-Object.assign(rhythm,{pat:rhythm.pat||'strum8',bpm:Math.max(50,Math.min(200,rhythm.bpm||96)),swing:rhythm.swing||0,
+    return {pat:RHYTHMS[o.pat]?o.pat:undefined,bpm:+o.bpm||undefined,swing:[0,0.5,1].includes(o.swing)?o.swing:undefined,follow:!!o.follow,
+      perc:[0,0.6,1.1].includes(o.perc)?o.perc:undefined,lockLoop:typeof o.lockLoop==='boolean'?o.lockLoop:undefined};}catch(e){return{};}})());
+for(const k of ['pat','bpm','swing','perc','lockLoop'])if(rhythm[k]===undefined)delete rhythm[k];
+Object.assign(rhythm,{pat:rhythm.pat||'strum8',bpm:Math.max(50,Math.min(200,rhythm.bpm||96)),swing:rhythm.swing||0,perc:rhythm.perc??0.6,lockLoop:rhythm.lockLoop??true,curId:null,
   on:false,timer:null,barStart:0,idx:0,cur:null,next:null,slot:-1,queued:[]});
-function saveRhythm(){try{localStorage.setItem('harpmog.rhythm',JSON.stringify({pat:rhythm.pat,bpm:rhythm.bpm,swing:rhythm.swing,follow:rhythm.follow}));}catch(e){}}
+function saveRhythm(){try{localStorage.setItem('harpmog.rhythm',JSON.stringify({pat:rhythm.pat,bpm:rhythm.bpm,swing:rhythm.swing,follow:rhythm.follow,perc:rhythm.perc,lockLoop:rhythm.lockLoop}));}catch(e){}}
+// one bar = the pattern's strings + (if on) its percussion part, merged in time order
+function buildBar(id){
+  const P=RHYTHMS[id],ev=[...P.ev];
+  if(rhythm.perc)for(const [t,d,v] of P.perc)ev.push({t,do:'drum',d,v:v*rhythm.perc});
+  ev.sort((a,b)=>a.t-b.t);
+  return {steps:P.steps,ev};
+}
 
 const RH_AHEAD=0.08;                              // seconds of rhythm queued in advance
 function stepDur(){return 60/rhythm.bpm/4;}       // one 16th note
@@ -2194,11 +2288,17 @@ function rhythmNote(midi,v,at){
   const vol=state.insts.size>1?1/Math.sqrt(state.insts.size):1;
   state.insts.forEach(inst=>rhythm.queued.push({at,outs:pluckInst(inst,midi,v,vol,at)}));
   midiNote(midi,v,at);
-  looperRecord(midi,v,at);
+  if(!(rhythm.lockLoop&&looper.locked))looperRecord(midi,v,at);
   const i=state.vis.indexOf(midi);
   if(i>=0)setTimeout(()=>flash(i),Math.max(0,(at-actx.currentTime)*1000));
 }
+function drumHit(code,v,at){
+  rhythm.queued.push({at,outs:pluckInst('drum',code,Math.min(1,v),1,at)});
+  midiNote(code,Math.min(1,v),at,9);
+  if(!(rhythm.lockLoop&&looper.locked))looperRecord(code,Math.min(1,v),at,['drum']);
+}
 function rhythmEvent(e,at){
+  if(e.do==='drum')return drumHit(e.d,e.v,at);
   const asc=[...state.ds].reverse(),n=asc.length;if(!n)return;
   if(e.do==='bass')return rhythmNote(asc[0],e.v,at);
   if(e.do==='note')return rhythmNote(asc[Math.round(e.p*(n-1))],e.v,at);
@@ -2209,7 +2309,8 @@ function rhythmEvent(e,at){
 }
 // called as each new bar is queued: switch pattern, step the progression strip
 function rhythmBar(){
-  if(rhythm.next){rhythm.cur=RHYTHMS[rhythm.next];rhythm.next=null;}
+  if(rhythm.next){rhythm.curId=rhythm.next;rhythm.next=null;}
+  rhythm.cur=buildBar(rhythm.curId);   // rebuilt every bar, so percussion on/off lands on the next bar
   if(rhythm.follow){
     const filled=prog.map((c,i)=>c?i:-1).filter(i=>i>=0);
     if(filled.length){
@@ -2240,7 +2341,8 @@ function rhythmTick(){
 }
 function rhythmStart(){
   if(!actx||rhythm.on)return;
-  rhythm.on=true;rhythm.cur=RHYTHMS[rhythm.pat];rhythm.next=null;rhythm.idx=0;
+  rhythm.on=true;rhythm.curId=rhythm.pat;rhythm.cur=buildBar(rhythm.curId);rhythm.next=null;rhythm.idx=0;
+  [36,37,42,51,70].forEach(c=>getBuffer('drum',c));   // drums are tiny; make them ready
   rhythm.barStart=actx.currentTime+0.06;
   if(rhythm.follow){               // start from the chord you're on if it's in the strip
     const k=chordKey(state.chord),here=prog.findIndex(c=>c&&chordKey(c)===k);
@@ -2287,6 +2389,8 @@ function paintRhythm(){
   document.querySelectorAll('#rh-pats button').forEach(b=>b.classList.toggle('on',b.dataset.pat===rhythm.pat));
   document.querySelectorAll('#rh-swing button').forEach(b=>b.classList.toggle('on',+b.dataset.val===rhythm.swing));
   document.querySelectorAll('#rh-follow button').forEach(b=>b.classList.toggle('on',(b.dataset.val==='on')===rhythm.follow));
+  document.querySelectorAll('#rh-perc button').forEach(b=>b.classList.toggle('on',+b.dataset.val===rhythm.perc));
+  document.querySelectorAll('#rh-lock button').forEach(b=>b.classList.toggle('on',(b.dataset.val==='on')===rhythm.lockLoop));
 }
 // beat lights follow the audio clock
 (function beatLoop(){
@@ -2327,6 +2431,8 @@ function paintRhythm(){
     if(taps.length>=3){const gaps=taps.slice(1).map((x,i)=>x-taps[i]);setBpm(60000/(gaps.reduce((a,b)=>a+b)/gaps.length));}
   });
   document.querySelectorAll('#rh-swing button').forEach(b=>b.addEventListener('click',()=>{rhythm.swing=+b.dataset.val;saveRhythm();paintRhythm();}));
+  document.querySelectorAll('#rh-perc button').forEach(b=>b.addEventListener('click',()=>{rhythm.perc=+b.dataset.val;saveRhythm();paintRhythm();}));
+  document.querySelectorAll('#rh-lock button').forEach(b=>b.addEventListener('click',()=>{rhythm.lockLoop=b.dataset.val==='on';saveRhythm();paintRhythm();}));
   document.querySelectorAll('#rh-follow button').forEach(b=>b.addEventListener('click',()=>{
     rhythm.follow=b.dataset.val==='on';saveRhythm();
     if(rhythm.follow&&rhythm.on){const k=chordKey(state.chord);rhythm.slot=prog.findIndex(c=>c&&chordKey(c)===k);}   // carry on from here
