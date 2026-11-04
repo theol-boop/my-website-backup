@@ -338,22 +338,16 @@ button{font-family:var(--font);color:inherit;}
    shade on bottom/right. Surfaces get a faint grain (wood grain in dark mode). */
 :root{
   --grain:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .35  0 0 0 0 .26  0 0 0 0 .16  0 0 0 .09 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-  --screw:#bfae8a; --screw-hi:#fffaf0; --screw-sh:rgba(80,60,35,.55);
   --led-strip:.5;
 }
 :root[data-theme="dark"]{
   --grain:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><filter id='w'><feTurbulence type='fractalNoise' baseFrequency='.008 .35' numOctaves='3' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .55  0 0 0 0 .38  0 0 0 0 .22  0 0 0 .16 0'/></filter><rect width='100%' height='100%' filter='url(%23w)'/></svg>");
-  --screw:#4a3e34; --screw-hi:#8a7a66; --screw-sh:rgba(0,0,0,.7);
 }
 #app{background:var(--grain),radial-gradient(120% 90% at 30% 0%,var(--hi-b),transparent 60%),linear-gradient(180deg,var(--body),var(--body-2));}
-/* faceplates: bevel + four screw heads */
+/* faceplates: bevel */
 .panel{position:relative;
   background:linear-gradient(180deg,var(--hi-a),rgba(255,255,255,.04)),var(--grain);
   box-shadow:inset 1px 1px 0 var(--hi),inset -1px -1px 0 rgba(0,0,0,.07),0 1px 1px rgba(0,0,0,.06),0 10px 18px -12px rgba(50,30,10,.35);}
-.panel::before{content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;
-  --s:radial-gradient(circle at 35% 35%,var(--screw-hi) 0 .6px,var(--screw) 1.4px 2.3px,var(--screw-sh) 2.9px,transparent 3.4px);
-  background:var(--s) 3px 3px/8px 8px no-repeat,var(--s) calc(100% - 3px) 3px/8px 8px no-repeat,
-             var(--s) 3px calc(100% - 3px)/8px 8px no-repeat,var(--s) calc(100% - 3px) calc(100% - 3px)/8px 8px no-repeat;}
 /* chord keys: sculpted, slightly dished caps; springy press; backlit when on */
 .key{background:radial-gradient(130% 90% at 50% 25%,var(--card) 0%,var(--key) 72%);
   box-shadow:0 3px 0 var(--key-shadow),0 5px 8px -3px rgba(50,30,10,.3),inset 1px 1px 0 var(--hi),inset 0 3px 4px -3px rgba(0,0,0,.18),inset 0 -2px 3px rgba(0,0,0,.05);
