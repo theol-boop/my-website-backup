@@ -275,6 +275,18 @@ button{font-family:var(--font);color:inherit;}
 #waveform-canvas{position:absolute;inset:0;display:block;width:100%;height:100%;}
 #led-panel{cursor:pointer;touch-action:none;}
 #scope-full{position:fixed;inset:0;z-index:160;background:#000;}
+.take-list{position:absolute;left:6px;bottom:6px;z-index:3;display:flex;flex-direction:column;gap:2px;max-width:calc(100% - 12px);max-height:48%;overflow:hidden;
+  font-family:-apple-system,Helvetica,Arial,sans-serif;font-size:9px;color:rgba(200,255,220,.85);}
+.take-row{display:flex;align-items:center;gap:4px;background:rgba(0,0,0,.55);border-radius:5px;padding:2px 3px 2px 5px;min-width:0;}
+.take-row i{flex:none;width:6px;height:6px;border-radius:50%;}
+.take-row b{flex:none;font-weight:700;}
+.take-row span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.75;}
+.take-row button{flex:none;border:none;border-radius:4px;background:rgba(255,255,255,.1);color:inherit;font-size:9px;font-weight:700;width:18px;height:16px;padding:0;cursor:pointer;}
+.take-row.muted{opacity:.45;} .take-row.muted .tk-m{background:rgba(255,196,90,.6);color:#000;}
+.take-list-full{left:max(env(safe-area-inset-left),16px);bottom:max(env(safe-area-inset-bottom),44px);max-width:340px;font-size:13px;gap:4px;}
+.take-list-full .take-row{padding:5px 6px 5px 9px;border-radius:8px;gap:8px;}
+.take-list-full .take-row i{width:9px;height:9px;}
+.take-list-full .take-row button{width:30px;height:26px;font-size:12px;border-radius:6px;}
 #scope-full-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;}
 #scope-full-close{position:absolute;top:max(env(safe-area-inset-top),12px);right:max(env(safe-area-inset-right),12px);width:40px;height:40px;border:none;border-radius:12px;
   background:rgba(255,255,255,.08);color:#b9e07a;font-size:18px;cursor:pointer;}
@@ -430,7 +442,7 @@ button{font-family:var(--font);color:inherit;}
       <div class="fx-unit"><div class="fader-wrap" id="knob-width" data-min="0" data-max="100"><div class="fader-fill" id="fader-fill-width"></div><div class="fader-line"></div></div><div class="fx-name">width</div></div>
     </div>
     <div id="looper-panel">
-      <div id="scope-box"><div id="led-panel" title="Tap to change view · hold for full screen"><canvas id="waveform-canvas"></canvas></div></div>
+      <div id="scope-box"><div id="led-panel" title="Tap to change view · hold for full screen"><canvas id="waveform-canvas"></canvas><div class="take-list" hidden></div></div></div>
       <div id="looper-transport">
         <button class="lp-btn" id="lp-rec">REC</button>
         <button class="lp-btn" id="lp-play">PLAY</button>
@@ -494,7 +506,7 @@ button{font-family:var(--font);color:inherit;}
   <div id="lib-keys"></div>
   <div id="lib-built"></div>
 </div></div>
-<div id="scope-full" hidden><canvas id="scope-full-canvas"></canvas><button id="scope-full-close" aria-label="Close">&#10005;</button><div class="scope-full-hint">tap to change view</div></div>
+<div id="scope-full" hidden><canvas id="scope-full-canvas"></canvas><div class="take-list take-list-full" hidden></div><button id="scope-full-close" aria-label="Close">&#10005;</button><div class="scope-full-hint">tap to change view</div></div>
 <div id="fam-pop" hidden><div class="pop-title">Show in this row</div><div class="fam-list"></div></div>
 <div id="var-pop" hidden><div class="pop-title"></div><div class="pop-grid"></div><div class="pop-bass-label">bass note <span>(for slash chords)</span></div><div class="pop-bass"></div></div>
 <script>
@@ -1565,6 +1577,7 @@ const looper={
   timer:null,overdubTimer:null,
   queued:[],          // {at, outs} for queued notes, so STOP can cut them
   takes:[],curTake:0, // FX bus per take (see freezeTake)
+  muted:new Set(),    // takes switched off in the take list
 };
 
 function setLooperState(s){
@@ -1590,10 +1603,10 @@ function schedulerTick(){
     if(looper.idx>=ev.length){looper.idx=0;looper.cycleStart+=len;}
     const e=ev[looper.idx],at=looper.cycleStart+e.t;
     if(at>horizon)break;
-    if(at>=now-0.02){
+    if(at>=now-0.02&&!looper.muted.has(e.take)){
       const vol=e.insts.length>1?1/Math.sqrt(e.insts.length):1;
       const bus=looper.takes[e.take]||liveBus;   // each take plays through its own effects
-      e.insts.forEach(inst=>looper.queued.push({at,outs:pluckInst(inst,e.midi,e.velocity,vol,at,false,bus)}));
+      e.insts.forEach(inst=>looper.queued.push({at,take:e.take,outs:pluckInst(inst,e.midi,e.velocity,vol,at,false,bus)}));
       midiNote(e.midi,e.velocity,at);scopeNote(e.midi,at);
     }
     looper.idx++;
@@ -1622,7 +1635,17 @@ function stopLooper(){
 function freezeTake(){
   if(looper.curTake!=null&&!looper.takes[looper.curTake])looper.takes[looper.curTake]=makeBus(fxState);
 }
-function clearTakes(){(looper.takes||[]).forEach(b=>b&&b.dispose());looper.takes=[];looper.curTake=0;}
+function clearTakes(){(looper.takes||[]).forEach(b=>b&&b.dispose());looper.takes=[];looper.curTake=0;looper.muted.clear();}
+// remove one take: its notes, its effects bus
+function deleteTake(k){
+  looper.events=looper.events.filter(e=>e.take!==k);
+  looper.idx=Math.min(looper.idx,looper.events.length);
+  const now=actx.currentTime;
+  for(const q of looper.queued)if(q.take===k&&q.at>now)q.outs.forEach(n=>n.disconnect());
+  if(looper.takes[k]){looper.takes[k].dispose();looper.takes[k]=null;}
+  looper.muted.delete(k);
+  if(!looper.events.length&&looper.state!=='recording'&&looper.state!=='overdubbing'){stopLooper();looper.loopLen=0;clearTakes();}
+}
 function beginRecording(at){
   clearTakes();
   looper.events=[];
@@ -1857,6 +1880,42 @@ function phosphor(a){
   return `rgba(${r},${g},${b},${a})`;
 }
 const NOTE_NAMES=['C','D♭','D','E♭','E','F','G♭','G','A♭','A','B♭','B'];
+// each take has its own colour on the Loop view and in the take list
+const TAKE_RGB=[[90,255,170],[90,210,255],[255,196,90],[255,120,190],[180,150,255],[235,240,220],[160,255,90],[255,140,100]];
+function takeColor(k,a){const c=TAKE_RGB[k%TAKE_RGB.length];return `rgba(${c[0]},${c[1]},${c[2]},${a})`;}
+// TAKE LIST: shown over the Loop view (small screen and full screen): mute (M) or delete (✕) each take
+let takeSig='';
+function takeInfo(){
+  const out=[];
+  const ids=[...new Set(looper.events.map(e=>e.take))].sort((a,b)=>a-b);
+  for(const k of ids){
+    const ev=looper.events.filter(e=>e.take===k),insts=[...new Set(ev.flatMap(e=>e.insts))];
+    const fx=looper.takes[k]?looper.takes[k].fx:null;
+    out.push({k,n:ev.length,insts,verb:fx?Math.round(fx.verb):null,live:!looper.takes[k]});
+  }
+  return out;
+}
+function renderTakeLists(){
+  const show=SCOPE_MODES[SC.mode].id==='loop'&&looper.events.length>0;
+  const info=show?takeInfo():[];
+  const sig=show+'|'+JSON.stringify(info)+'|'+[...looper.muted].join(',');
+  if(sig===takeSig)return;takeSig=sig;
+  document.querySelectorAll('.take-list').forEach(box=>{
+    box.hidden=!show;if(!show)return;
+    box.innerHTML='';
+    info.forEach((t,i)=>{
+      const row=document.createElement('div');row.className='take-row'+(looper.muted.has(t.k)?' muted':'');
+      row.innerHTML=`<i style="background:${takeColor(t.k,1)}"></i><b>T${i+1}</b><span></span><button class="tk-m" title="Mute">M</button><button class="tk-x" title="Delete">&#10005;</button>`;
+      row.querySelector('span').textContent=t.insts.map(x=>x.toUpperCase()).join('+')+(t.live?' · rec…':' · rev '+t.verb);
+      row.querySelector('.tk-m').addEventListener('pointerup',e=>{e.stopPropagation();
+        if(looper.muted.has(t.k))looper.muted.delete(t.k);else{looper.muted.add(t.k);
+          const now=actx.currentTime;for(const q of looper.queued)if(q.take===t.k&&q.at>now)q.outs.forEach(n=>n.disconnect());}
+        takeSig='';});
+      row.querySelector('.tk-x').addEventListener('pointerup',e=>{e.stopPropagation();deleteTake(t.k);takeSig='';});
+      box.appendChild(row);
+    });
+  });
+}
 function recentNotes(ms){const now=performance.now();return SC.notes.filter(n=>n.t<=now&&now-n.t<ms).map(n=>({...n,age:(now-n.t)/ms}));}
 
 function drawGrid(ctx,W,H,a){
@@ -1959,10 +2018,10 @@ const VIEWS={
       ctx.strokeStyle=phosphor(0.2);ctx.lineWidth=1*dpr;ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.stroke();
       for(let k=0;k<ticks;k++){const a=-Math.PI/2+k/ticks*Math.PI*2,r1=R*(k%4===0?0.9:0.95);
         ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1);ctx.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);ctx.stroke();}
-      for(const [pos,midi] of dots){
+      for(const [pos,midi,take] of dots){
         const a=-Math.PI/2+pos*Math.PI*2,rr=R*(0.25+0.6*Math.max(0,Math.min(1,(midi-36)/64)));
-        let since=(head-pos+1)%1;const hot=Math.max(0,1-since*8);
-        ctx.fillStyle=phosphor(0.35+0.65*hot);ctx.beginPath();ctx.arc(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr,(1.6+hot*3)*dpr,0,Math.PI*2);ctx.fill();
+        let since=(head-pos+1)%1;const muted=take!=null&&looper.muted.has(take),hot=muted?0:Math.max(0,1-since*8);
+        ctx.fillStyle=take!=null?takeColor(take,(muted?0.15:0.35)+0.65*hot):phosphor(0.35+0.65*hot);ctx.beginPath();ctx.arc(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr,(1.6+hot*3)*dpr,0,Math.PI*2);ctx.fill();
       }
       if(head!=null){const a=-Math.PI/2+head*Math.PI*2;
         ctx.strokeStyle=phosphor(0.9);ctx.lineWidth=1.8*dpr;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);ctx.stroke();}
@@ -1972,12 +2031,12 @@ const VIEWS={
     if(lp.loopLen&&lp.events.length&&(lp.state==='playing'||lp.state==='overdubbing')){
       const head=(((now-lp.loopStart)%lp.loopLen)+lp.loopLen)%lp.loopLen/lp.loopLen;
       const beats=lp.barLen?Math.round(lp.loopLen/(lp.barLen/4)):16;
-      return ring(head,lp.events.map(e=>[e.t/lp.loopLen,e.midi]),lp.state==='overdubbing'?'OVERDUB':'LOOP',Math.min(64,beats));
+      return ring(head,lp.events.map(e=>[e.t/lp.loopLen,e.midi,e.take]),lp.state==='overdubbing'?'OVERDUB':'LOOP',Math.min(64,beats));
     }
     if(lp.state==='recording'){
       const total=lp.autoEnd?lp.autoEnd-lp.loopStart:Math.max(1,now-lp.loopStart);
       const head=Math.max(0,Math.min(1,(now-lp.loopStart)/total));
-      return ring(head,lp.events.map(e=>[Math.max(0,e.t)/total,e.midi]),'REC',lp.bars?lp.bars*4:16);
+      return ring(head,lp.events.map(e=>[Math.max(0,e.t)/total,e.midi,e.take]),'REC',lp.bars?lp.bars*4:16);
     }
     if(rhythm.on&&rhythm.cur){
       const L=rhythm.cur.steps*stepDur();let head=((now-rhythm.barStart)/L)%1;if(head<0)head+=1;
@@ -2064,6 +2123,7 @@ function startWaveform(){
         SC.hzSmooth=hz?(SC.hzSmooth&&Math.abs(hz/SC.hzSmooth-1)<0.03?SC.hzSmooth*0.7+hz*0.3:hz):(SC.idle?0:SC.hzSmooth);
       }
     }
+    renderTakeLists();
     if(!SC.t)return;
     if(document.getElementById('led-panel').offsetWidth)renderScope(scopeMain,time);
     if(scopeFull&&!document.getElementById('scope-full').hidden)renderScope(scopeFull,time);
@@ -2073,10 +2133,10 @@ function startWaveform(){
    const openFull=()=>{const full=document.getElementById('scope-full');full.hidden=false;
      if(!scopeFull){scopeFull=makeScope(document.getElementById('scope-full-canvas'));scopeFull.full=true;}
      SC.label=performance.now();};
-   led.addEventListener('pointerdown',e=>{id=e.pointerId;x0=e.clientX;y0=e.clientY;held=false;clearTimeout(timer);
+   led.addEventListener('pointerdown',e=>{if(e.target.closest('.take-list'))return;id=e.pointerId;x0=e.clientX;y0=e.clientY;held=false;clearTimeout(timer);
      timer=setTimeout(()=>{held=true;openFull();},550);});
    led.addEventListener('pointermove',e=>{if(e.pointerId===id&&Math.hypot(e.clientX-x0,e.clientY-y0)>10)clearTimeout(timer);});
-   led.addEventListener('pointerup',e=>{if(e.pointerId!==id)return;id=null;clearTimeout(timer);
+   led.addEventListener('pointerup',e=>{if(e.pointerId!==id||e.target.closest('.take-list'))return;id=null;clearTimeout(timer);
      if(!held&&Math.hypot(e.clientX-x0,e.clientY-y0)<=10)setScopeMode(SC.mode+1);});
    led.addEventListener('pointercancel',()=>{id=null;clearTimeout(timer);});
    led.addEventListener('contextmenu',e=>e.preventDefault());}
