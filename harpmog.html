@@ -444,6 +444,20 @@ button{font-family:var(--font);color:inherit;}
   #recent-row{display:none;}   /* small screens: the progression strip covers recall */
   #chord-panel,#next-panel{gap:5px;}
 }
+/* short phones held upright: Where Next always keeps at least one row of
+   suggestions (it used to be squeezed to nothing below ~600px of screen) */
+@media (orientation:portrait) and (max-height:740px){
+  #lanes{min-height:46px;}
+  #next-panel>.panel-label{display:none;}   /* the PULL / COLOUR / DRIFT heads already say what this is */
+  .slot{height:26px;}
+  #controls-panel{gap:5px;}
+  .inst{height:24px;}
+  #fx-knobs{row-gap:2px;} .fader-wrap{height:16px;}
+  .lp-btn{height:26px;}
+}
+@media (orientation:portrait) and (max-height:600px){
+  .key{height:22px !important;} .slot{height:24px;}
+}
 /* ── PHONES HELD SIDEWAYS: tighter everything ── */
 @media (orientation:landscape) and (max-height:560px){
   #app{gap:6px;padding:max(env(safe-area-inset-top),6px) max(env(safe-area-inset-right),8px)
@@ -889,10 +903,14 @@ function voiceLead(prev,tmpl,c){
 
 // ── STATE / STRINGS ───────────────────────────────────────────
 const state={chord:{root:0,fam:'maj',v:0},insts:new Set(['harp']),ds:[],vis:[]};
+// the notes a chord gets (bass first), voice-led from `fromDs` (top-first) when SMOOTH is on
+function voicingFor(chord,fromDs,lead){
+  const tmpl=densify(chordNotes(chord),chord);
+  const prev=lead&&settings.voicing==='smooth'&&fromDs&&fromDs.length?[...fromDs].reverse():null;
+  return prev?voiceLead(prev,tmpl,chord):tmpl;
+}
 function applySet(lead){
-  const tmpl=densify(chordNotes(state.chord),state.chord);
-  const prev=lead&&settings.voicing==='smooth'&&state.ds.length?[...state.ds].reverse():null;
-  state.ds=(prev?voiceLead(prev,tmpl,state.chord):tmpl).slice().reverse();   // top string first
+  state.ds=voicingFor(state.chord,state.ds,lead).slice().reverse();   // top string first
   state.vis=[];
   for(let i=0;i<MAX_STRINGS;i++){
     const ri=Math.round(i*(state.ds.length-1)/Math.max(1,MAX_STRINGS-1));
@@ -1189,8 +1207,8 @@ function renderNext(){
 function fitLanes(){
   document.querySelectorAll('#lanes .lane').forEach(l=>{
     const dirs=[...l.querySelectorAll('.dir')];dirs.forEach(d=>d.hidden=false);
-    const bottom=l.getBoundingClientRect().bottom+1;
-    dirs.forEach(d=>{if(d.getBoundingClientRect().bottom>bottom)d.hidden=true;});
+    const room=l.clientHeight+1;   // layout boxes, not getBoundingClientRect: the slide-in animation moves tiles down 6px
+    dirs.forEach(d=>{if(d.offsetTop-l.offsetTop+d.offsetHeight>room)d.hidden=true;});
   });
 }
 window.addEventListener('resize',()=>requestAnimationFrame(fitLanes));
@@ -1736,7 +1754,10 @@ function bakePulse(freq,sr){
   for(let i=0;i<bufLen;i++){
     const t=i/sr;let s=0;
     const bright=0.35+3.5*Math.exp(-t*6);        // brightness falls fast after the strum
-    for(const h of H)s+=Math.sin(w*h.n*i)*h.a*Math.exp(-(h.n-1)/(bright*4));
+    // sin(n·x) for n=1,2,3… by recurrence, and the per-harmonic roll-off as powers of q
+    const x=w*i,c2=2*Math.cos(x),q=Math.exp(-1/(bright*4));
+    let sp=0,sc=Math.sin(x),k=1;
+    for(const h of H){s+=sc*h.a*k;const sn=c2*sc-sp;sp=sc;sc=sn;k*=q;}
     const env=Math.min(1,i/(sr*0.004))*Math.exp(-t*1.5);
     data[i]=s*env*0.5;
   }
@@ -1769,30 +1790,75 @@ function bakeBuffer(inst,midi){
 // (least-recently-used notes are dropped) so trying every instrument in
 // every key can't run a phone out of memory.
 const bufCache=new Map();
-const CACHE_LIMIT_BYTES=96*1024*1024;
+const CACHE_LIMIT_BYTES=80*1024*1024;
 let cacheBytes=0;
-function getBuffer(inst,midi){
-  const key=inst+':'+midi;
-  let buf=bufCache.get(key);
-  if(buf){bufCache.delete(key);bufCache.set(key,buf);return buf;} // mark as recently used
-  buf=bakeBuffer(inst,midi);
+function cacheAdd(key,buf){
   bufCache.set(key,buf);cacheBytes+=buf.length*4;
   for(const [k,b] of bufCache){
     if(cacheBytes<=CACHE_LIMIT_BYTES)break;
     if(k===key)continue;
     bufCache.delete(k);cacheBytes-=b.length*4;
   }
+}
+function getBuffer(inst,midi){
+  const key=inst+':'+midi;
+  let buf=bufCache.get(key);
+  if(buf){bufCache.delete(key);bufCache.set(key,buf);return buf;} // mark as recently used
+  buf=bakeBuffer(inst,midi);   // not ready yet: make it now (rare: the background baker usually got there first)
+  cacheAdd(key,buf);
   return buf;
+}
+// BACKGROUND BAKER: the synthesis code runs in a Web Worker, so making sounds
+// never freezes the screen or starves the audio queue (some sounds take
+// hundreds of ms per note on a phone). Same functions, copied into the worker.
+let bakeWorker=null;const bakePending=new Set();
+function startBakeWorker(){
+  try{
+    const fns=[bakeKS,bakeHarp,bakeBass,audible,bakeBell,bakeSine,bakePad,bakeOrgan,bakeChoir,bakeCello,bakeWood,
+               bakeThumb,bakeEpiano,bakeNylon,bakeVibes,bakeMusicBox,bakePulse,bakeBuffer];
+    const src=`const actx={sampleRate:${actx.sampleRate},createBuffer(c,n,sr){const d=new Float32Array(n);return{length:n,sampleRate:sr,duration:n/sr,getChannelData:()=>d};}};
+${fns.map(f=>f.toString()).join('\n')}
+onmessage=e=>{const [inst,midi]=e.data;const b=bakeBuffer(inst,midi);const d=b.getChannelData(0);postMessage({inst,midi,d,sr:b.sampleRate},[d.buffer]);};`;
+    bakeWorker=new Worker(URL.createObjectURL(new Blob([src],{type:'text/javascript'})));
+    bakeWorker.onmessage=e=>{
+      const {inst,midi,d,sr}=e.data,key=inst+':'+midi;bakePending.delete(key);
+      if(!bufCache.has(key)){const buf=actx.createBuffer(1,d.length,sr);buf.getChannelData(0).set(d);cacheAdd(key,buf);}
+      pumpBakes();
+    };
+    bakeWorker.onerror=()=>{bakeWorker=null;bakePending.clear();};
+  }catch(e){bakeWorker=null;}
 }
 // Synthesise the current chord's notes for the selected instruments in the
 // background, a few at a time, so the first strum after a change doesn't stutter.
+// Order: the chord you're on, then every chord of the progression as it will be
+// voiced when it plays, then the notes around the current ones (idle fill).
 let prewarmQueue=[],prewarmTimer=null;
 function prewarm(){
   if(!actx)return;
-  prewarmQueue=[];
-  const notes=[...new Set(state.ds)];
-  for(const inst of state.insts)for(const m of notes)if(!bufCache.has(inst+':'+m))prewarmQueue.push([inst,m]);
-  if(!prewarmTimer&&prewarmQueue.length)prewarmTimer=setTimeout(prewarmStep,30);
+  if(!bakeWorker&&window.Worker&&!prewarm.tried){prewarm.tried=true;startBakeWorker();}
+  prewarmQueue=[];const seen=new Set();
+  const add=notes=>{for(const inst of state.insts)for(const m of notes){const k=inst+':'+m;
+    if(!seen.has(k)&&!bufCache.has(k)&&!bakePending.has(k)){seen.add(k);prewarmQueue.push([inst,m]);}}};
+  add(new Set(state.ds));
+  try{
+    let ds=state.ds;
+    for(let n=0;n<2;n++)for(const c of prog)if(c){ds=voicingFor(c,ds,true).slice().reverse();add(ds);add(voicingFor(c,null,false));}
+  }catch(e){}
+  if(state.ds.length&&cacheBytes<CACHE_LIMIT_BYTES*0.6){
+    const lo=Math.min(...state.ds),hi=Math.max(...state.ds),mid=(lo+hi)>>1,around=[];
+    for(let m=lo-4;m<=hi+4;m++)around.push(m);
+    around.sort((a,b)=>Math.abs(a-mid)-Math.abs(b-mid));add(around);
+  }
+  pumpBakes();
+}
+function pumpBakes(){
+  if(!bakeWorker){if(!prewarmTimer&&prewarmQueue.length)prewarmTimer=setTimeout(prewarmStep,30);return;}
+  while(bakePending.size<2&&prewarmQueue.length){
+    const [inst,m]=prewarmQueue.shift(),k=inst+':'+m;
+    if(bufCache.has(k)||bakePending.has(k))continue;
+    if(cacheBytes>CACHE_LIMIT_BYTES*0.9&&prewarmQueue.length>40){prewarmQueue.length=40;}   // don't churn the cache
+    bakePending.add(k);bakeWorker.postMessage([inst,m]);
+  }
 }
 function prewarmStep(){
   prewarmTimer=null;
@@ -1808,7 +1874,7 @@ function prewarmStep(){
 // Loop notes are queued on the audio clock a little ahead of time (rather
 // than one timer per note), so loops stay in time, PLAY/STOP can't double
 // notes up, and STOP silences anything already queued.
-const LOOK_AHEAD=0.12;   // seconds of loop queued in advance
+const LOOK_AHEAD=0.2;   // seconds of loop queued in advance
 const looper={
   events:[],          // {t, midi, insts, velocity}, sorted by t (seconds into the loop)
   state:'stopped',    // 'stopped'|'armed'|'recording'|'playing'|'overdubbing'
@@ -2421,7 +2487,7 @@ function startWaveform(){
     if(analyser){
       if(analyser.fftSize!==2048)analyser.fftSize=2048;
       if(!SC.t||SC.t.length!==analyser.fftSize){SC.t=new Float32Array(analyser.fftSize);SC.f=new Float32Array(analyser.frequencyBinCount);}
-      analyser.getFloatTimeDomainData(SC.t);analyser.getFloatFrequencyData(SC.f);
+      analyser.getFloatTimeDomainData(SC.t);if(SCOPE_MODES[SC.mode].id==='spectrum')analyser.getFloatFrequencyData(SC.f);
       let s=0,pk=0;for(const x of SC.t){s+=x*x;const a=Math.abs(x);if(a>pk)pk=a;}
       SC.rms=Math.sqrt(s/SC.t.length);SC.peak=SC.peak?Math.max(pk,SC.peak*0.97):pk;
       if(SC.rms>0.003)SC.quietSince=performance.now();
@@ -2461,7 +2527,8 @@ function startWaveform(){
 function initAudio(){
   // iPhone (iOS 17+): play even when the ring/silent switch is set to silent
   try{if(navigator.audioSession)navigator.audioSession.type='playback';}catch(e){}
-  actx=new(window.AudioContext||window.webkitAudioContext)();
+  const AC=window.AudioContext||window.webkitAudioContext;
+  try{actx=new AC({latencyHint:'balanced'});}catch(e){actx=new AC();}   // a slightly bigger buffer: far fewer dropouts on phones
   actx.resume();
 
   // Safety limiter: a fast strum of many strings (plus FX) can add up past
@@ -2551,23 +2618,30 @@ function makeBus(fx){
   b.input=actx.createGain();
   b.tone=actx.createBiquadFilter();b.tone.type='lowpass';b.tone.Q.value=0.5;
   b.input.connect(b.tone);b.tone.connect(master);
-  const send=dest=>{const g=actx.createGain();g.gain.value=0;b.tone.connect(g);g.connect(dest);return g;};
-  b.rv=actx.createGain();b.rv.gain.value=0;b.tone.connect(b.rv);b.room=null;   // connected to its room in set()
+  const send=dest=>{const g=actx.createGain();g.gain.value=0;g.connect(dest);return g;};   // plugged in by link() when used
+  b.rv=actx.createGain();b.rv.gain.value=0;b.room=null;   // connected to its room in set()
+  // An effect at zero is unplugged at both ends after its fade, so phones don't
+  // spend audio time on silent chorus / crush / tape stages (on every loop take too).
+  const link=(g,on,outNode)=>{
+    clearTimeout(g._off);
+    if(on){if(!g._on){b.tone.connect(g);if(outNode)outNode.connect(master);g._on=true;}}
+    else if(g._on)g._off=setTimeout(()=>{try{b.tone.disconnect(g);if(outNode)outNode.disconnect(master);}catch(e){}g._on=false;},300);
+  };
   b.dl=send(delayNode);b.pg=send(pingDelay);
   // warble: a short delay wobbled by a slow LFO (chorus / vibrato)
   b.wd=actx.createDelay(0.05);b.wd.delayTime.value=0.01;
   b.wl=actx.createOscillator();b.wl.frequency.value=4.2;b.wlg=actx.createGain();b.wlg.gain.value=0;
   b.wl.connect(b.wlg);b.wlg.connect(b.wd.delayTime);b.wl.start();b.osc.push(b.wl);
-  b.ws=send(b.wd);b.wd.connect(master);
+  b.ws=send(b.wd);
   // crush: bit-reduction
-  b.cw=actx.createWaveShaper();b.cw.oversample='none';b.cs=send(b.cw);b.cw.connect(master);
+  b.cw=actx.createWaveShaper();b.cw.oversample='none';b.cs=send(b.cw);
   // twang (tape): wow/flutter + high roll-off + soft saturation
   b.td=actx.createDelay(0.1);b.td.delayTime.value=0.012;
   b.tl=actx.createOscillator();b.tl.frequency.value=0.6;b.tlg=actx.createGain();b.tlg.gain.value=0;
   b.tl.connect(b.tlg);b.tlg.connect(b.td.delayTime);b.tl.start();b.osc.push(b.tl);
   b.tf=actx.createBiquadFilter();b.tf.type='lowpass';
   const sat=actx.createWaveShaper();sat.curve=TANH_CURVE;sat.oversample='2x';
-  b.ts=send(b.td);b.td.connect(b.tf);b.tf.connect(sat);sat.connect(master);
+  b.ts=send(b.td);b.td.connect(b.tf);b.tf.connect(sat);
   b.set=f=>{
     b.fx={...f};const now=actx.currentTime,T=(p,v,k)=>p.setTargetAtTime(v,now,k||0.02);
     const room=ROOMS[f.room]?f.room:'hall';
@@ -2577,8 +2651,10 @@ function makeBus(fx){
     T(b.cs.gain,f.crush/100*0.65);if(b.crush!==f.crush){b.crush=f.crush;b.cw.curve=crushCurve(f.crush/100);}
     T(b.tlg.gain,f.tape/100*0.003,0.05);T(b.tf.frequency,20000-f.tape/100*16000,0.05);T(b.ts.gain,f.tape/100*0.7,0.05);
     T(b.tone.frequency,300*Math.pow(2,f.tone/100*6),0.03);   // 300 Hz … 19 kHz
+    link(b.rv,f.verb>0);link(b.dl,f.delay>0);link(b.pg,f.ping>0);
+    link(b.ws,f.warble>0,b.wd);link(b.cs,f.crush>0,b.cw);link(b.ts,f.tape>0,sat);
   };
-  b.dispose=()=>{try{b.input.disconnect();b.tone.disconnect();}catch(e){}b.osc.forEach(o=>{try{o.stop();}catch(e){}});};
+  b.dispose=()=>{try{b.input.disconnect();b.tone.disconnect();b.wd.disconnect();b.cw.disconnect();sat.disconnect();}catch(e){}b.osc.forEach(o=>{try{o.stop();}catch(e){}});};
   b.set(fx);
   return b;
 }
@@ -2627,6 +2703,14 @@ function pluckInst(inst,midi,velocity,volScale,when,damper,bus){
   }
   out.connect(bus.input);
   src.start(t);src.stop(t+buf.duration+0.05);
+  // Like a real string: plucking the same note again stops the old vibration.
+  // Keeps the number of voices small (auto-strum used to stack 100+ ringing copies).
+  if(!bus.voices)bus.voices=new Map();
+  const vk=inst+':'+midi,old=bus.voices.get(vk);
+  if(old&&old.end>t&&old.t<t&&old.g.gain.cancelAndHoldAtTime){
+    try{old.g.gain.cancelAndHoldAtTime(t);old.g.gain.setTargetAtTime(0,t,0.02);old.src.stop(t+0.15);}catch(e){}
+  }
+  bus.voices.set(vk,{src,g:gain,t,end:t+buf.duration});
   return outs;
 }
 
@@ -2973,7 +3057,7 @@ Object.assign(rhythm,{pat:rhythm.pat||'strum8',bpm:Math.max(50,Math.min(200,rhyt
 function saveRhythm(){try{localStorage.setItem('harpmog.rhythm',JSON.stringify({pat:rhythm.pat,bpm:rhythm.bpm,swing:rhythm.swing,follow:rhythm.follow,lockLoop:rhythm.lockLoop}));}catch(e){}}
 function buildBar(id){const P=RHYTHMS[id];return {steps:P.steps,ev:P.ev};}
 
-const RH_AHEAD=0.08;                              // seconds of rhythm queued in advance
+const RH_AHEAD=0.12;                              // seconds of rhythm queued in advance
 function stepDur(){return 60/rhythm.bpm/4;}       // one 16th note
 function stepAt(barStart,t){
   let at=barStart+t*stepDur();
