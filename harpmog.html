@@ -232,9 +232,8 @@ button{font-family:var(--font);color:inherit;}
 #display{background:var(--win);border-radius:10px;padding:8px 12px 7px;
   box-shadow:inset 0 2px 6px rgba(0,0,0,.6),0 1px 0 var(--hi);
   display:flex;align-items:baseline;justify-content:space-between;gap:10px;min-width:0;}
-#disp-chord{position:relative;flex:1;min-width:0;height:30px;font-size:24px;font-weight:700;color:transparent;white-space:nowrap;overflow:hidden;}   /* text kept for screen readers; the LCD canvas draws it */
-#lcd-canvas{position:absolute;left:0;top:0;height:100%;}
-#disp-inst{border:none;background:transparent;cursor:pointer;font-family:var(--font);padding:0;flex:none;max-width:45%;min-width:0;text-align:right;font-size:10px;letter-spacing:.14em;color:var(--lcd-dim);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#disp-chord{flex:none;max-width:70%;font-size:24px;font-weight:700;color:var(--lcd);text-shadow:0 0 10px rgba(185,224,122,.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#disp-inst{border:none;background:transparent;cursor:pointer;font-family:var(--font);padding:0;flex:1;min-width:0;text-align:right;font-size:10px;letter-spacing:.14em;color:var(--lcd-dim);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #harp-board{flex:1;min-height:0;position:relative;touch-action:none;
   background:
     linear-gradient(90deg,rgba(255,255,255,.04),transparent 18%,transparent 82%,rgba(255,255,255,.04)),
@@ -243,9 +242,6 @@ button{font-family:var(--font);color:inherit;}
   box-shadow:inset 0 3px 10px rgba(0,0,0,.6),0 1px 0 var(--hi);
   overflow:hidden;}
 #strings-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;}
-#harp-board::before,#harp-board::after{content:'';position:absolute;z-index:1;top:6px;bottom:6px;width:6px;border-radius:3px;
-  background:linear-gradient(90deg,#7d6234,var(--brass),#7d6234);opacity:.85;}
-#harp-board::before{left:5px;} #harp-board::after{right:5px;}
 
 /* ── CONTROLS ── */
 #controls-panel{gap:10px;}
@@ -389,10 +385,7 @@ button{font-family:var(--font);color:inherit;}
 #display,#rh-open{position:relative;}
 #display::after,#rh-open::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
   background:linear-gradient(160deg,rgba(255,255,255,.09) 0%,rgba(255,255,255,.02) 30%,transparent 45%);}
-/* LCD panel: backlit glass */
-#display{background:radial-gradient(120% 140% at 30% 30%,#1f2a17 0%,#121a0e 60%,#0b1009 100%);box-shadow:inset 0 2px 7px rgba(0,0,0,.75),inset 0 0 0 1px rgba(185,224,122,.06),0 1px 0 var(--hi);}
-#rh-bpm .bpm-seg{position:relative;display:inline-block;min-width:3ch;text-align:right;font-family:"SF Mono",Menlo,Consolas,monospace;}
-#rh-bpm .bpm-seg::before{content:'888';position:absolute;right:0;opacity:.12;}   /* unlit LCD segments */
+#disp-chord{text-shadow:0 0 10px rgba(185,224,122,.45),0 0 2px rgba(185,224,122,.6);}
 #harp-board{box-shadow:inset 0 3px 10px rgba(0,0,0,.6),0 1px 0 var(--hi),0 10px 18px -10px rgba(30,15,5,.5);}
 
 /* ══ MOTION ══════════════════════════════════════════════════════ */
@@ -409,10 +402,10 @@ button{font-family:var(--font);color:inherit;}
 .slot.now{transition:background .2s,color .2s;}
 /* on the beat */
 .key.active,.slot.playing,#rh-play.on,.lp-btn.rec-active{transition:box-shadow .12s ease-out,filter .12s;}
-body.beat .key.active{box-shadow:0 0 24px -1px var(--fam),0 1px 0 rgba(0,0,0,.25),inset 0 2px 5px rgba(0,0,0,.22);filter:brightness(1.08);}
-body.beat .slot.playing{box-shadow:0 0 0 2px var(--lcd),0 0 14px -2px var(--lcd);}
-body.beat #rh-play.on{box-shadow:0 0 22px rgba(185,224,122,.85);}
-body.beat .lp-btn.rec-active{box-shadow:0 0 22px -1px var(--dom),inset 0 2px 4px rgba(0,0,0,.3);}
+.key.active.beat{box-shadow:0 0 24px -1px var(--fam),0 1px 0 rgba(0,0,0,.25),inset 0 2px 5px rgba(0,0,0,.22);filter:brightness(1.08);}
+.slot.playing.beat{box-shadow:0 0 0 2px var(--lcd),0 0 14px -2px var(--lcd);}
+#rh-play.on.beat{box-shadow:0 0 22px rgba(185,224,122,.85);}
+.lp-btn.rec-active.beat{box-shadow:0 0 22px -1px var(--dom),inset 0 2px 4px rgba(0,0,0,.3);}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;}}
 
 /* ── PHONES / TABLETS HELD UPRIGHT: chords on top, plate on the right ── */
@@ -441,10 +434,7 @@ body.beat .lp-btn.rec-active{box-shadow:0 0 22px -1px var(--dom),inset 0 2px 4px
   #fx-knobs{gap:4px 6px;} .fader-wrap{height:20px;} .fx-name{font-size:8px;}
   .lp-btn{font-size:10px;height:30px;letter-spacing:0;}
   #brand{display:none;}
-  #disp-chord{font-size:20px;height:26px;flex:1 1 100%;}
-  #display{flex-wrap:wrap;row-gap:2px;align-items:center;}   /* chord on its own line, sounds + ⚙ under it */
-  #disp-inst{order:2;flex:1;max-width:none;text-align:left;font-size:9px;}
-  #settings-btn{order:3;font-size:15px;}
+  #disp-chord{font-size:20px;}
   #rh-bpm::after{content:'';} #rh-open{padding:0 6px;gap:4px;font-size:9px;letter-spacing:.02em;} #rh-play{width:34px;}
   #rh-dots{gap:2px;} #rh-dots i{width:4px;height:4px;}
 }
@@ -477,7 +467,7 @@ body.beat .lp-btn.rec-active{box-shadow:0 0 22px -1px var(--dom),inset 0 2px 4px
   #recent-row{display:none;}
   #lanes{gap:5px;} .lane{gap:3px;} .lane-head{font-size:7.5px;}
   .dir{padding:2px 5px;border-radius:7px;} .dir b{font-size:11px;} .dir small{font-size:7.5px;}
-  #display{padding:4px 8px;} #disp-chord{font-size:16px;height:20px;}
+  #display{padding:4px 8px;} #disp-chord{font-size:16px;}
   #rh-play,#rh-open{height:26px;} #rh-open{font-size:9px;gap:5px;padding:0 6px;} #rh-play{width:34px;font-size:11px;}
   #controls-panel{gap:6px;}
   .inst{height:26px;font-size:8px;letter-spacing:0;}
@@ -923,7 +913,7 @@ function applySet(lead){
 // (wound, below middle C) or steel colour, a sheen from the top-left light,
 // a glow while ringing, and a soft light under your finger.
 const STR={n:0,amp:new Float32Array(64),t0:new Float64Array(64),rate:new Float32Array(64),tau:new Float32Array(64),tauBase:new Float32Array(64),
-  bright:new Float32Array(64),wound:new Float32Array(64),touch:[0.5,0.5,0],gl:null,canvas:null,data:new Uint8Array(64*4)};
+  bright:new Float32Array(64),hand:new Float64Array(64),dirty:true,wound:new Float32Array(64),touch:[0.5,0.5,0],gl:null,canvas:null,data:new Uint8Array(64*4)};
 function buildBoard(){
   if(!STR.canvas)initStrings();
   STR.n=state.vis.length;
@@ -934,22 +924,31 @@ function buildBoard(){
     STR.rate[i]=6+k*18;                  // visible wobble, 6 Hz (low) … 24 Hz (high), stylised
     STR.tauBase[i]=STR.tau[i]=2.6-k*2.0; // low strings ring longer
   }
+  STR.dirty=true;
 }
 function stringLevel(i,now){return STR.amp[i]*Math.exp(-(now-STR.t0[i])/STR.tau[i]);}
 function excite(i,v){
   if(i<0||i>=STR.n)return;
   const now=performance.now()/1000;
-  STR.amp[i]=Math.min(1,stringLevel(i,now)*0.6+v);STR.t0[i]=now;STR.tau[i]=STR.tauBase[i];
+  STR.amp[i]=Math.min(1,stringLevel(i,now)*0.6+v);STR.t0[i]=now;STR.tau[i]=STR.tauBase[i];STR.dirty=true;
 }
-function flash(i){excite(i,0.55);}        // a finger crossing a string
-function exciteNote(midi,at,v){            // every line carrying this note, at audio time `at`
+function flash(i){excite(i,0.55);STR.hand[i]=performance.now();}   // a finger crossing a string: only that line moves
+// A note played by something other than a finger (auto-strum, looper, MIDI)
+// shakes ONE line: the middle one of the lines carrying that note. If a finger
+// has just plucked a line with this note, that line already moved: nothing more.
+function exciteNote(midi,at,v){
   const ms=Math.max(0,(at-(actx?actx.currentTime:0))*1000);
-  const go=()=>{for(let i=0;i<STR.n;i++)if(state.vis[i]===midi)excite(i,v);};
+  const go=()=>{
+    const lines=[];const t=performance.now();
+    for(let i=0;i<STR.n;i++)if(state.vis[i]===midi){if(t-STR.hand[i]<ms+150)return;lines.push(i);}
+    if(lines.length)excite(lines[lines.length>>1],v);
+  };
   if(ms<8)go();else setTimeout(go,ms);
 }
 function dampStrings(){                    // hold-to-sustain release: strings stop quickly
   const now=performance.now()/1000;
   for(let i=0;i<STR.n;i++){STR.amp[i]=stringLevel(i,now);STR.t0[i]=now;STR.tau[i]=0.08;}
+  STR.dirty=true;
 }
 const STR_FRAG=`precision mediump float;
 uniform sampler2D u_data;uniform vec2 u_res;uniform float u_n;uniform vec3 u_touch;varying vec2 v;
@@ -960,7 +959,7 @@ void main(){
   vec3 col=mix(vec3(.105,.088,.072),vec3(.05,.042,.036),v.y)+grain;
   col*=.82+.18*smoothstep(0.,.2,v.x)*smoothstep(1.,.8,v.x);
   float fi=floor(px.y/sp);
-  for(int k=-2;k<=2;k++){
+  for(int k=-1;k<=1;k++){
     float i=fi+float(k);
     if(i<0.||i>=u_n)continue;
     vec4 d=texture2D(u_data,vec2((i+.5)/64.,.5));
@@ -1003,10 +1002,15 @@ function initStrings(){
   if(!STR.gl)STR.ctx2d=STR.canvas.getContext('2d');
   (function frame(){
     requestAnimationFrame(frame);
-    const c=STR.canvas,dpr=Math.min(1.5,window.devicePixelRatio||1),W=Math.round(c.offsetWidth*dpr),H=Math.round(c.offsetHeight*dpr);
+    const c=STR.canvas,dpr=Math.min(1.25,window.devicePixelRatio||1),W=Math.round(c.offsetWidth*dpr),H=Math.round(c.offsetHeight*dpr);
     if(!W||!H||!STR.n)return;
-    if(c.width!==W||c.height!==H){c.width=W;c.height=H;if(STR.gl)STR.gl.viewport(0,0,W,H);}
+    if(c.width!==W||c.height!==H){c.width=W;c.height=H;if(STR.gl)STR.gl.viewport(0,0,W,H);STR.dirty=true;}
     const now=performance.now()/1000;STR.touch[2]*=0.9;
+    // nothing ringing, no finger glow, nothing changed: keep the last frame (saves the battery and the iPad)
+    let live=STR.dirty||STR.touch[2]>0.01;
+    for(let i=0;i<STR.n&&!live;i++)if(stringLevel(i,now)>0.004)live=true;
+    if(!live)return;
+    STR.dirty=STR.touch[2]>0.01;
     for(let i=0;i<STR.n;i++){
       const a=stringLevel(i,now),w=2*Math.PI*STR.rate[i]*(now-STR.t0[i]);
       const disp=a*(Math.cos(w)+0.35*Math.cos(2.3*w+1))/1.35;
@@ -1026,57 +1030,10 @@ function initStrings(){
     }
   })();
 }
-// ══ LCD: the chord name as a dot-matrix display ════════════════
-// The name is rasterised into a small grid; every grid cell is a round pixel:
-// lit pixels glow green, unlit ones stay faintly visible (ghost pixels), and a
-// new chord dissolves in pixel by pixel. The text element stays for screen readers.
-const LCD={c:null,x:null,rows:13,cols:0,cur:null,prev:null,rnd:null,t0:0,text:'',beat:0,anim:false};
-function lcdRaster(text,cols,rows){
-  const c=document.createElement('canvas');c.width=cols;c.height=rows;const x=c.getContext('2d');
-  x.fillStyle='#fff';x.font=`700 ${rows-2}px -apple-system,"Helvetica Neue",Arial,sans-serif`;x.textBaseline='alphabetic';
-  const sx=Math.max(0.55,Math.min(1,(cols-2)/x.measureText(text).width));   // long names: condensed to fit
-  x.setTransform(sx,0,0,1,0,0);x.fillText(text,1/sx,rows-2.5);
-  const d=x.getImageData(0,0,cols,rows).data,out=new Float32Array(cols*rows);
-  for(let i=0;i<out.length;i++){const a=d[i*4+3]/255;out[i]=a>0.55?1:a>0.3?0.45:0;}
-  return out;
-}
-function lcdSet(text){
-  if(!LCD.c){
-    LCD.c=document.createElement('canvas');LCD.c.id='lcd-canvas';LCD.c.setAttribute('aria-hidden','true');
-    document.getElementById('disp-chord').appendChild(LCD.c);LCD.x=LCD.c.getContext('2d');
-    window.addEventListener('resize',()=>{LCD.cols=0;lcdSet(LCD.text);});
-  }
-  const box=document.getElementById('disp-chord'),dpr=Math.min(2,window.devicePixelRatio||1);
-  const H=box.clientHeight,W=box.clientWidth;if(!H||!W)return;
-  const pitch=H/LCD.rows,cols=Math.floor(W/pitch);
-  if(cols!==LCD.cols){LCD.cols=cols;LCD.c.width=Math.round(cols*pitch*dpr);LCD.c.height=Math.round(H*dpr);LCD.prev=null;LCD.cur=null;}
-  const next=lcdRaster(text,cols,LCD.rows);
-  LCD.prev=LCD.cur||new Float32Array(next.length);LCD.cur=next;LCD.text=text;
-  LCD.rnd=Float32Array.from({length:next.length},()=>Math.random());LCD.t0=performance.now();
-  if(!LCD.anim){LCD.anim=true;requestAnimationFrame(lcdDraw);}
-}
-function lcdDraw(){
-  const {x,c,cols,rows}=LCD;if(!x||!LCD.cur){LCD.anim=false;return;}
-  const now=performance.now(),p=REDUCED?1:(now-LCD.t0)/220,flare=Math.max(0,1-(now-LCD.beat)/140);
-  const pw=c.width/cols,ph=c.height/rows,r=Math.min(pw,ph)*0.38;
-  x.clearRect(0,0,c.width,c.height);
-  x.fillStyle='rgba(185,224,122,.07)';                                  // ghost pixels
-  for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){x.beginPath();x.arc((i+.5)*pw,(j+.5)*ph,r,0,6.283);x.fill();}
-  x.shadowColor='rgba(185,224,122,.8)';x.shadowBlur=r*2.2;
-  for(let k=0;k<LCD.cur.length;k++){
-    const v=p>=1||p>LCD.rnd[k]?LCD.cur[k]:LCD.prev[k];if(!v)continue;  // dissolve: each pixel switches at its own moment
-    x.fillStyle=`rgba(${200+55*flare|0},245,${140+60*flare|0},${0.55+0.45*v})`;
-    x.beginPath();x.arc((k%cols+.5)*pw,((k/cols|0)+.5)*ph,r*(v<1?0.8:1),0,6.283);x.fill();
-  }
-  x.shadowBlur=0;
-  if(p<1||flare>0)requestAnimationFrame(lcdDraw);else LCD.anim=false;
-}
-function lcdBeat(){LCD.beat=performance.now();if(!LCD.anim){LCD.anim=true;requestAnimationFrame(lcdDraw);}}
 const REDUCED=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function updateDisplay(){
-  document.getElementById('disp-chord').firstChild?.nodeType===3?document.getElementById('disp-chord').firstChild.nodeValue=chordName(state.chord):document.getElementById('disp-chord').prepend(chordName(state.chord));
-  lcdSet(chordName(state.chord));
+  document.getElementById('disp-chord').textContent=chordName(state.chord);
   document.getElementById('disp-inst').textContent=(currentPreset?currentPreset+' · ':'')+[...state.insts].join(' + ')+' ▾';
 }
 
@@ -2432,7 +2389,7 @@ function detectPitch(){
   return sr/(bestL+d);
 }
 function renderScope(r,time){
-  const c=r.canvas,dpr=Math.min(2,window.devicePixelRatio||1),W=Math.round(c.offsetWidth*dpr),H=Math.round(c.offsetHeight*dpr);
+  const c=r.canvas,dpr=Math.min(1.5,window.devicePixelRatio||1),W=Math.round(c.offsetWidth*dpr),H=Math.round(c.offsetHeight*dpr);
   if(!W||!H)return;
   if(c.width!==W||c.height!==H){c.width=W;c.height=H;r.scene.width=W;r.scene.height=H;if(r.gl)r.gl.viewport(0,0,W,H);SC.shape=null;}
   const ctx=r.sctx,mode=SCOPE_MODES[SC.mode];
@@ -2482,6 +2439,10 @@ function startWaveform(){
     }
     renderTakeLists();
     if(!SC.t)return;
+    // silent, view label gone and the trails faded out: the screen is still, so stop redrawing it
+    const still=SC.idle&&performance.now()-SC.label>1800&&looper.state!=='playing';
+    SC.stillFrames=still?(SC.stillFrames||0)+1:0;
+    if(SC.stillFrames>90)return;
     if(document.getElementById('led-panel').offsetWidth)renderScope(scopeMain,time);
     if(scopeFull&&!document.getElementById('scope-full').hidden)renderScope(scopeFull,time);
   })();
@@ -2738,7 +2699,7 @@ function attachBoard(){
   b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);
     ptrs.set(e.pointerId,{li:-1,lt:0,lastMidi:-1});strum(e.pointerId,e.clientY);});
   b.addEventListener('pointermove',e=>{if(ptrs.has(e.pointerId))strum(e.pointerId,e.clientY);});
-  const glow=e=>{const r=b.getBoundingClientRect();STR.touch=[(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height,1];};
+  const glow=e=>{const r=b.getBoundingClientRect();STR.touch=[(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height,1];STR.dirty=true;};
   b.addEventListener('pointerdown',glow);b.addEventListener('pointermove',e=>{if(ptrs.has(e.pointerId))glow(e);});
   b.addEventListener('pointerup',e=>{ptrs.delete(e.pointerId);releaseFinger(e.pointerId);});
   b.addEventListener('pointercancel',e=>{ptrs.delete(e.pointerId);releaseFinger(e.pointerId);});
@@ -3200,7 +3161,7 @@ function paintRhythm(){
   play.classList.toggle('on',rhythm.on);play.innerHTML=rhythm.on?'<svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true"><rect x="1.5" y="1.5" width="7" height="7" rx="1" fill="currentColor"/></svg>':'<svg viewBox="0 0 10 10" width="11" height="11" aria-hidden="true"><path d="M2 1 L9 5 L2 9 Z" fill="currentColor"/></svg>';   // drawn, not ▶ ■ characters (iOS shows those as emoji)
   play.setAttribute('aria-label',rhythm.on?'Stop auto-strum':'Start auto-strum');
   document.getElementById('rh-name').textContent=pat.name+(rhythm.follow?' · strip':'');
-  document.getElementById('rh-bpm').innerHTML=`<span class="bpm-seg">${rhythm.bpm}</span>`;
+  document.getElementById('rh-bpm').textContent=rhythm.bpm;
   document.getElementById('rh-bpm2').textContent=rhythm.bpm;
   const beats=pat.steps/4,dots=document.getElementById('rh-dots');
   if(dots.children.length!==beats){dots.innerHTML='';for(let i=0;i<beats;i++)dots.appendChild(document.createElement('i'));}
@@ -3219,7 +3180,7 @@ let SC_beat=-1;
   let pos=(actx.currentTime-rhythm.barStart)/beatLen;
   if(pos<0)pos+=beats;                       // the scheduler can already be on the next bar
   const beat=Math.floor(pos)%beats,fresh=pos-Math.floor(pos)<0.35;
-  if(beat!==SC_beat){SC_beat=beat;document.body.classList.add('beat');setTimeout(()=>document.body.classList.remove('beat'),110);lcdBeat();}   // pulse on every beat
+  if(beat!==SC_beat){SC_beat=beat;const lit=document.querySelectorAll('.key.active,.slot.playing,#rh-play.on,.lp-btn.rec-active');lit.forEach(e=>e.classList.add('beat'));setTimeout(()=>lit.forEach(e=>e.classList.remove('beat')),110);}   // pulse on every beat
   [...dots].forEach((d,i)=>{d.classList.toggle('lit',i===beat&&fresh);d.classList.toggle('one',i===0);});
 })();
 {
