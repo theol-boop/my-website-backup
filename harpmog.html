@@ -283,6 +283,13 @@ button{font-family:var(--font);color:inherit;}
 .take-row span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.75;}
 .take-row button{flex:none;border:none;border-radius:4px;background:rgba(255,255,255,.1);color:inherit;font-size:9px;font-weight:700;width:18px;height:16px;padding:0;cursor:pointer;}
 .take-row.muted{opacity:.45;} .take-row.muted .tk-m{background:rgba(255,196,90,.6);color:#000;}
+#loop-sheet{position:fixed;inset:0;z-index:150;background:rgba(40,28,18,.35);display:flex;align-items:center;justify-content:center;padding:16px;}
+#loop-sheet .sheet{width:min(560px,100%);max-height:100%;overflow:auto;background:var(--body);border:1px solid var(--edge);border-radius:16px;padding:16px;box-shadow:0 20px 50px rgba(40,25,10,.4);touch-action:pan-y;-webkit-overflow-scrolling:touch;}
+.take-list-sheet{position:static;max-height:none;max-width:none;font-size:13px;gap:5px;color:var(--ink);margin:4px 0 6px;}
+.take-list-sheet .take-row{background:var(--card);box-shadow:inset 0 0 0 1px rgba(0,0,0,.07);padding:7px 8px 7px 10px;border-radius:9px;gap:8px;}
+.take-list-sheet .take-row i{width:10px;height:10px;box-shadow:0 0 0 1px rgba(0,0,0,.15);}
+.take-list-sheet .take-row span{opacity:.8;white-space:normal;}
+.take-list-sheet .take-row button{width:32px;height:28px;font-size:12px;border-radius:7px;background:var(--body-3);color:var(--ink);}
 .take-list-full{left:max(env(safe-area-inset-left),16px);bottom:max(env(safe-area-inset-bottom),44px);max-width:340px;font-size:13px;gap:4px;}
 .take-list-full .take-row{padding:5px 6px 5px 9px;border-radius:8px;gap:8px;}
 .take-list-full .take-row i{width:9px;height:9px;}
@@ -487,6 +494,15 @@ button{font-family:var(--font);color:inherit;}
   <div class="set-row"><div class="set-text"><b>Lock the looper to the beat</b><small>While auto-strum plays, REC starts on the next bar and loops round to whole bars, so they stay in time. The auto-strum keeps playing and isn't recorded into the loop.</small></div>
     <div class="seg" id="rh-lock"><button data-val="on">On</button><button data-val="off">Off</button></div></div>
   <div class="set-foot">You can keep strumming by hand on top. On a keyboard, Space starts and stops it.</div>
+</div></div>
+<div id="loop-sheet" hidden><div class="sheet">
+  <div class="sheet-head"><b>Loop</b><button id="loop-close">Done</button></div>
+  <div class="set-group">Takes</div>
+  <div class="take-list take-list-sheet" hidden></div>
+  <div class="set-group">Saved loops</div>
+  <div class="lib-actions"><button class="set-btn" id="loop-save">Save this loop</button></div>
+  <div id="loop-saved"></div>
+  <div class="set-foot">Saved loops keep every take's notes, sounds and effects. Loading one replaces the current loop and starts it playing. Tip: tap CLR to clear, hold CLR to open this.</div>
 </div></div>
 <div id="presets" hidden><div class="sheet">
   <div class="sheet-head"><b>Sound presets</b><button id="pre-close">Done</button></div>
@@ -1797,13 +1813,62 @@ paintLoopLen();
     rec.style.setProperty('--prog',total?Math.min(100,el/total*100)+'%':((el%L)/L*100)+'%');
   } else if(rec.textContent!=='REC'){rec.textContent='REC';rec.style.setProperty('--prog','0%');}
 })();
-document.getElementById('lp-clear').addEventListener('pointerup',e=>{
-  e.stopPropagation();
-  stopLooper();
-  clearTakes();
-  looper.events=[];
-  looper.loopLen=0;
+// CLR: tap clears the loop · hold opens the Loop panel (takes + saved loops)
+{const clr=document.getElementById('lp-clear');let timer=null,held=false;
+ clr.addEventListener('pointerdown',e=>{held=false;clearTimeout(timer);timer=setTimeout(()=>{held=true;openLoopSheet();},550);});
+ clr.addEventListener('pointercancel',()=>clearTimeout(timer));
+ clr.addEventListener('contextmenu',e=>e.preventDefault());
+ clr.addEventListener('pointerup',e=>{
+   e.stopPropagation();clearTimeout(timer);
+   if(held)return;
+   stopLooper();clearTakes();looper.events=[];looper.loopLen=0;
+ });}
+const loopSheet=document.getElementById('loop-sheet');
+let loopSheetAt=0;
+function openLoopSheet(){renderSavedLoops();loopSheet.hidden=false;takeSig='';loopSheetAt=performance.now();}
+document.getElementById('loop-close').addEventListener('click',()=>{loopSheet.hidden=true;takeSig='';});
+// (ignore the click the browser fires right after the hold that opened it)
+loopSheet.addEventListener('click',e=>{if(e.target===loopSheet&&performance.now()-loopSheetAt>450){loopSheet.hidden=true;takeSig='';}});
+// SAVED LOOPS: the whole performance (notes, sounds, each take's effects, mutes)
+let savedLoops=(()=>{try{const l=JSON.parse(localStorage.getItem('harpmog.loops')||'[]');return Array.isArray(l)?l.filter(x=>x&&Array.isArray(x.events)&&x.loopLen>0):[];}catch(e){return[];}})();
+function storeLoops(){try{localStorage.setItem('harpmog.loops',JSON.stringify(savedLoops));return true;}catch(e){alert('Could not save: the browser storage is full.');return false;}}
+function renderSavedLoops(){
+  const box=document.getElementById('loop-saved');box.innerHTML='';
+  document.getElementById('loop-save').disabled=!(looper.events.length&&looper.loopLen&&looper.state!=='recording'&&looper.state!=='overdubbing');
+  if(!savedLoops.length){box.innerHTML='<div class="lib-empty">No saved loops yet.</div>';return;}
+  savedLoops.forEach((L,i)=>{
+    const b=document.createElement('button');b.className='lib-item';
+    b.innerHTML='<span class="lib-text"><b></b><span class="lib-chords"></span></span>';
+    b.querySelector('b').textContent=L.name;
+    const bars=L.barLen?Math.round(L.loopLen/L.barLen)+' bars':L.loopLen.toFixed(1)+' s';
+    const takes=new Set(L.events.map(e=>e.take)).size;
+    b.querySelector('.lib-chords').textContent=`${bars} · ${takes} take${takes>1?'s':''} · ${L.events.length} notes`;
+    b.addEventListener('click',()=>{loadLoop(L);loopSheet.hidden=true;takeSig='';});
+    const x=document.createElement('span');x.className='lib-del';x.textContent='✕';
+    x.addEventListener('click',e=>{e.stopPropagation();if(confirm(`Delete “${L.name}”?`)){savedLoops.splice(i,1);storeLoops();renderSavedLoops();}});
+    b.appendChild(x);box.appendChild(b);
+  });
+}
+document.getElementById('loop-save').addEventListener('click',()=>{
+  if(!looper.events.length||!looper.loopLen)return;
+  const name=prompt('Name this loop:','Loop '+(savedLoops.length+1));
+  if(name==null)return;
+  savedLoops.unshift({name:name.trim()||'Untitled loop',loopLen:looper.loopLen,barLen:looper.barLen||0,
+    events:looper.events.map(e=>({midi:e.midi,insts:e.insts,velocity:+e.velocity.toFixed(3),t:+e.t.toFixed(4),take:e.take})),
+    takes:looper.takes.map(b=>b?{...b.fx}:null),muted:[...looper.muted]});
+  if(storeLoops())renderSavedLoops();else savedLoops.shift();
 });
+function loadLoop(L){
+  if(!actx)return;
+  stopLooper();clearTakes();
+  looper.events=L.events.map(e=>({...e})).sort((a,b)=>a.t-b.t);
+  looper.loopLen=L.loopLen;looper.barLen=L.barLen||0;
+  looper.takes=(L.takes||[]).map(fx=>fx?makeBus({...FX_DEFAULTS,...fx}):null);
+  for(const k of new Set(looper.events.map(e=>e.take)))if(!looper.takes[k])looper.takes[k]=makeBus(fxState);
+  looper.curTake=looper.takes.length;looper.muted=new Set(L.muted||[]);
+  for(const e of looper.events)for(const i of e.insts)getBuffer(i,e.midi);   // ready the sounds
+  setLooperState('playing');startPlayback(actx.currentTime+0.05);
+}
 
 // ══ SCOPE SCREEN ══════════════════════════════════════════════
 // Seven views (tap the screen to change): FIGURE (X-Y Lissajous), WAVE,
@@ -1885,28 +1950,44 @@ const TAKE_RGB=[[90,255,170],[90,210,255],[255,196,90],[255,120,190],[180,150,25
 function takeColor(k,a){const c=TAKE_RGB[k%TAKE_RGB.length];return `rgba(${c[0]},${c[1]},${c[2]},${a})`;}
 // TAKE LIST: shown over the Loop view (small screen and full screen): mute (M) or delete (✕) each take
 let takeSig='';
+// what's switched on in a take's effects, e.g. "REV 50 · WARB 30 · TONE 70" ("dry" when nothing is)
+function fxSummary(fx){
+  if(!fx)return 'rec…';
+  const p=[];
+  if(fx.verb>0)p.push('REV '+Math.round(fx.verb));
+  if(fx.delay>0)p.push('DLY '+Math.round(fx.delay));
+  if(fx.ping>0)p.push('PING '+Math.round(fx.ping));
+  if(fx.warble>0)p.push('WARB '+Math.round(fx.warble));
+  if(fx.crush>0)p.push('CRSH '+Math.round(fx.crush));
+  if(fx.tape>0)p.push('TWNG '+Math.round(fx.tape));
+  if(fx.tone<100)p.push('TONE '+Math.round(fx.tone));
+  if(fx.width!==30)p.push('WIDE '+Math.round(fx.width));
+  return p.length?p.join(' · '):'dry';
+}
 function takeInfo(){
   const out=[];
   const ids=[...new Set(looper.events.map(e=>e.take))].sort((a,b)=>a-b);
   for(const k of ids){
     const ev=looper.events.filter(e=>e.take===k),insts=[...new Set(ev.flatMap(e=>e.insts))];
     const fx=looper.takes[k]?looper.takes[k].fx:null;
-    out.push({k,n:ev.length,insts,verb:fx?Math.round(fx.verb):null,live:!looper.takes[k]});
+    out.push({k,n:ev.length,insts,fx:fxSummary(fx)});
   }
   return out;
 }
 function renderTakeLists(){
-  const show=SCOPE_MODES[SC.mode].id==='loop'&&looper.events.length>0;
-  const info=show?takeInfo():[];
-  const sig=show+'|'+JSON.stringify(info)+'|'+[...looper.muted].join(',');
+  const onScope=SCOPE_MODES[SC.mode].id==='loop'&&looper.events.length>0,inSheet=!document.getElementById('loop-sheet').hidden;
+  const info=(onScope||inSheet)?takeInfo():[];
+  const sig=onScope+'|'+inSheet+'|'+JSON.stringify(info)+'|'+[...looper.muted].join(',');
   if(sig===takeSig)return;takeSig=sig;
   document.querySelectorAll('.take-list').forEach(box=>{
+    const show=box.classList.contains('take-list-sheet')?inSheet:onScope;
     box.hidden=!show;if(!show)return;
+    if(!info.length){box.innerHTML='<div class="lib-empty">No loop yet. Record one with REC.</div>';return;}
     box.innerHTML='';
     info.forEach((t,i)=>{
       const row=document.createElement('div');row.className='take-row'+(looper.muted.has(t.k)?' muted':'');
       row.innerHTML=`<i style="background:${takeColor(t.k,1)}"></i><b>T${i+1}</b><span></span><button class="tk-m" title="Mute">M</button><button class="tk-x" title="Delete">&#10005;</button>`;
-      row.querySelector('span').textContent=t.insts.map(x=>x.toUpperCase()).join('+')+(t.live?' · rec…':' · rev '+t.verb);
+      row.querySelector('span').textContent=t.insts.map(x=>x.toUpperCase()).join('+')+' · '+t.fx;
       row.querySelector('.tk-m').addEventListener('pointerup',e=>{e.stopPropagation();
         if(looper.muted.has(t.k))looper.muted.delete(t.k);else{looper.muted.add(t.k);
           const now=actx.currentTime;for(const q of looper.queued)if(q.take===t.k&&q.at>now)q.outs.forEach(n=>n.disconnect());}
