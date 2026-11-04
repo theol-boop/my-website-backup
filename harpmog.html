@@ -1778,7 +1778,7 @@ document.getElementById('lp-clear').addEventListener('pointerup',e=>{
 // WebGL shader turns it into a CRT tube: curved glass, bloom, colour fringing,
 // scanlines + phosphor mask, a rolling brightness band, flicker and grain.
 // Effects show on screen: REVERB widens the glow, WARBLE adds fringing and
-// wobble, TWANG/CRUSH warm the phosphor towards amber.
+// wobble, TWANG/CRUSH warm the phosphor towards amber. In silence the screen stays empty.
 const SCOPE_MODES=[
   {id:'figure',name:'FIGURE',fade:0.07},{id:'wave',name:'WAVE',fade:0.22},{id:'spectrum',name:'SPECTRUM',fade:0.3},
   {id:'wheel',name:'NOTE WHEEL',fade:0.18},{id:'shape',name:'CHORD SHAPE',fade:0.16},{id:'loop',name:'LOOP',fade:0.25},{id:'tuner',name:'TUNER',fade:0.25},
@@ -1854,17 +1854,10 @@ function drawGrid(ctx,W,H,a){
   for(let i=1;i<10;i++){const y=i/10*H;ctx.moveTo(0,y);ctx.lineTo(W,y);}
   ctx.stroke();
 }
-function idleFigure(ctx,W,H,dpr,time){          // slow breathing Lissajous when nothing plays
-  const R=Math.min(W,H)*(0.24+0.04*Math.sin(time*0.7)),cx=W/2,cy=H/2;
-  ctx.strokeStyle=phosphor(0.55);ctx.lineWidth=1.4*dpr;ctx.beginPath();
-  for(let i=0;i<=360;i++){const a=i/360*Math.PI*2;
-    const x=cx+R*Math.sin(3*a+time*0.4),y=cy+R*Math.sin(2*a);i?ctx.lineTo(x,y):ctx.moveTo(x,y);}
-  ctx.stroke();
-}
 const VIEWS={
   figure(ctx,W,H,dpr,time){
     drawGrid(ctx,W,H,0.012);
-    if(SC.idle)return idleFigure(ctx,W,H,dpr,time);
+    if(SC.idle)return;   // silence: just the empty screen
     const b=SC.t,N=b.length,R=Math.min(W,H)*0.36,g=Math.min(8,0.7/Math.max(SC.peak,0.03)),lag=Math.floor(N*0.23);
     const wob=fxState.warble/100*4*dpr;
     ctx.strokeStyle=phosphor(0.6);ctx.lineWidth=1.1*dpr;ctx.beginPath();
@@ -1877,7 +1870,7 @@ const VIEWS={
   },
   wave(ctx,W,H,dpr,time){
     drawGrid(ctx,W,H,0.04);
-    if(SC.idle)return idleFigure(ctx,W,H,dpr,time);
+    if(SC.idle)return;   // silence: just the empty screen
     const b=SC.t,N=b.length;let t0=0;
     for(let j=Math.floor(N*0.1);j<N*0.5;j++)if(b[j]<=0&&b[j+1]>0){t0=j;break;}
     const span=Math.floor(N*0.45),g=Math.min(6,0.38/Math.max(SC.peak,0.02))*H,wob=fxState.warble/100*3*dpr;
