@@ -84,6 +84,14 @@ button{font-family:var(--font);color:inherit;}
 .key.active::after{background:var(--card-2);opacity:.7;}
 
 /* hold-for-extensions popover */
+#len-pop{position:fixed;z-index:60;width:240px;background:var(--key);border:1px solid var(--edge);border-radius:14px;padding:10px;box-shadow:0 14px 40px rgba(40,25,10,.35);}
+#len-pop .pop-title{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);margin:0 2px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#len-pop .len-btns{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;}
+#len-pop button{border:none;border-radius:8px;padding:8px 2px;font-size:12px;font-weight:700;cursor:pointer;background:var(--card-2);box-shadow:0 2px 0 var(--key-shadow),inset 0 0 0 1px rgba(0,0,0,.07);color:var(--ink);}
+#len-pop button.on{background:var(--ink);color:var(--body);}
+.slot{position:relative;}
+.slot-bars{position:absolute;top:2px;right:4px;font-style:normal;font-size:9px;font-weight:700;opacity:.75;}
+.slot.playing{box-shadow:0 0 0 2px var(--lcd-dim),0 2px 0 var(--key-shadow);}
 #fam-pop{position:fixed;z-index:50;width:250px;background:var(--key);border:1px solid var(--edge);border-radius:14px;padding:10px;box-shadow:0 14px 40px rgba(40,25,10,.35);}
 #fam-pop .pop-title{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);margin:0 2px 8px;}
 #fam-pop .fam-list{display:flex;flex-direction:column;gap:4px;}
@@ -135,6 +143,7 @@ button{font-family:var(--font);color:inherit;}
 .slot.empty{background:transparent;box-shadow:inset 0 0 0 1.5px var(--edge);border-bottom:none;color:var(--ink-3);font-weight:400;font-size:16px;}
 #prog.dropping .slot{box-shadow:0 2px 0 var(--key-shadow),inset 0 0 0 1.5px var(--edge-d);}
 #prog .slot.over{transform:translateY(-2px) scale(1.05);box-shadow:0 0 0 2px var(--ink),0 4px 10px rgba(0,0,0,.2);}
+#prog .slot{padding-right:12px;padding-left:8px;}
 .drag-ghost{position:fixed;left:0;top:0;z-index:200;pointer-events:none;margin:-22px 0 0 -40px;min-width:80px;text-align:center;
   padding:8px 12px;border-radius:10px;background:var(--card);border-left:5px solid var(--fam);font-weight:700;font-size:15px;
   box-shadow:0 10px 24px rgba(40,25,10,.35);color:var(--ink);}
@@ -414,7 +423,7 @@ button{font-family:var(--font);color:inherit;}
   <section id="next-panel" class="panel">
     <div class="panel-label">Where next <span class="hint">from the chord you're on</span></div>
     <div id="lanes"></div>
-    <div class="prog-head"><span class="mini">Progression</span><span class="hint">drag chords in · tap to play · drag out to remove</span><button id="lib-btn">Library</button></div>
+    <div class="prog-head"><span class="mini">Progression</span><span class="hint">drag chords in · tap to play · hold to set length · drag out to remove</span><button id="lib-btn">Library</button></div>
     <div id="prog"></div>
     <div class="memory" id="recent-row"><span class="mini">Recent</span><div class="chips" id="recents"></div></div>
   </section>
@@ -497,7 +506,7 @@ button{font-family:var(--font);color:inherit;}
     <div class="rh-tempo"><button id="rh-minus">&minus;</button><span id="rh-bpm2">96</span><button id="rh-plus">+</button><button id="rh-tap">TAP</button></div></div>
   <div class="set-row"><div class="set-text"><b>Swing</b><small>Pushes the off-beats late. Full is a triplet feel, great with Comp.</small></div>
     <div class="seg" id="rh-swing"><button data-val="0">Off</button><button data-val="0.5">Light</button><button data-val="1">Full</button></div></div>
-  <div class="set-row"><div class="set-text"><b>Play the progression</b><small>Each chord in the progression strip gets one bar, then it moves to the next and loops.</small></div>
+  <div class="set-row"><div class="set-text"><b>Play the progression</b><small>Plays the progression strip in order and loops. Each chord lasts its slot's length (hold a slot to set ½–8 bars).</small></div>
     <div class="seg" id="rh-follow"><button data-val="off">Off</button><button data-val="on">On</button></div></div>
   <div class="set-row"><div class="set-text"><b>Lock the looper to the beat</b><small>While auto-strum plays, REC starts on the next bar and loops round to whole bars, so they stay in time. The auto-strum keeps playing and isn't recorded into the loop.</small></div>
     <div class="seg" id="rh-lock"><button data-val="on">On</button><button data-val="off">Off</button></div></div>
@@ -531,6 +540,7 @@ button{font-family:var(--font);color:inherit;}
   <div id="lib-built"></div>
 </div></div>
 <div id="scope-full" hidden><canvas id="scope-full-canvas"></canvas><div class="take-list take-list-full" hidden></div><button id="scope-full-close" aria-label="Close">&#10005;</button><div class="scope-full-hint">tap to change view</div></div>
+<div id="len-pop" hidden><div class="pop-title"></div><div class="len-btns"></div></div>
 <div id="fam-pop" hidden><div class="pop-title">Show in this row</div><div class="fam-list"></div></div>
 <div id="var-pop" hidden><div class="pop-title"></div><div class="pop-grid"></div><div class="pop-bass-label">bass note <span>(for slash chords)</span></div><div class="pop-bass"></div></div>
 <script>
@@ -1068,16 +1078,29 @@ let prog=loadList('harpmog.prog',true);
 if(!prog.some(Boolean))prog=loadList('harpmog.favs').slice(0,PROG_LEN);   // old "Saved" chords move in here
 while(prog.length<PROG_LEN)prog.push(null);
 prog=prog.slice(0,PROG_LEN);
-function saveProg(){saveList('harpmog.prog',prog);}
+let progBars=(()=>{try{const a=JSON.parse(localStorage.getItem('harpmog.progbars')||'[]');return Array.isArray(a)?a:[];}catch(e){return[];}})();
+const BAR_CHOICES=[0.5,1,2,3,4,6,8];
+for(let i=0;i<PROG_LEN;i++)if(!BAR_CHOICES.includes(progBars[i]))progBars[i]=1;
+progBars=progBars.slice(0,PROG_LEN);
+function saveProg(){saveList('harpmog.prog',prog);try{localStorage.setItem('harpmog.progbars',JSON.stringify(progBars));}catch(e){}}
+const barLabel=b=>b===0.5?'½':String(b);
 function renderProg(){
   const box=document.getElementById('prog');box.innerHTML='';
   const cur=chordKey(state.chord);
   prog.forEach((c,i)=>{
     const b=document.createElement('button');b.className='slot'+(c?'':' empty');b.dataset.slot=i;
-    if(c){b.textContent=chordName(c);b.style.setProperty('--fam',famColor(c));if(chordKey(c)===cur)b.classList.add('now');}
+    if(c){b.textContent=chordName(c);b.style.setProperty('--fam',famColor(c));if(chordKey(c)===cur)b.classList.add('now');
+      if(slotBars(i)!==1){const g=document.createElement('em');g.className='slot-bars';g.textContent=barLabel(slotBars(i));b.appendChild(g);}
+      if(rhythm.on&&rhythm.follow&&rhythm.slot===i)b.classList.add('playing');}
     else b.innerHTML='<span>+</span>';
-    b.addEventListener('pointerdown',e=>{if(c)dragStart(e,c,{fromSlot:i});});
-    onTap(b,()=>{if(c)selectChord(c);else{prog[i]={...state.chord};saveProg();renderProg();}});
+    let holdT=null,held=false;
+    b.addEventListener('pointerdown',e=>{
+      if(!c)return;dragStart(e,c,{fromSlot:i,onActivate:()=>clearTimeout(holdT)});
+      held=false;holdT=setTimeout(()=>{held=true;if(drag&&!drag.active)drag=null;openLenPop(b,i);},500);   // hold: set its length
+    });
+    b.addEventListener('pointerup',()=>clearTimeout(holdT));b.addEventListener('pointercancel',()=>clearTimeout(holdT));
+    b.addEventListener('contextmenu',e=>e.preventDefault());
+    onTap(b,()=>{if(held){held=false;return;}if(c)selectChord(c);else{prog[i]={...state.chord};progBars[i]=1;saveProg();renderProg();}});
     box.appendChild(b);
   });
 }
@@ -1109,10 +1132,11 @@ function builtChords(p,key){
 }
 let libKey=0;
 let myProgs=(()=>{try{const l=JSON.parse(localStorage.getItem('harpmog.progs')||'[]');
-  return Array.isArray(l)?l.filter(x=>x&&Array.isArray(x.chords)).map(x=>({name:String(x.name||'Untitled'),chords:x.chords.map(unpackChord)})):[];}catch(e){return[];}})();
-function saveMyProgs(){try{localStorage.setItem('harpmog.progs',JSON.stringify(myProgs.map(p=>({name:p.name,chords:p.chords.map(packChord)}))));}catch(e){}}
-function loadIntoStrip(chords){
+  return Array.isArray(l)?l.filter(x=>x&&Array.isArray(x.chords)).map(x=>({name:String(x.name||'Untitled'),chords:x.chords.map(unpackChord),bars:Array.isArray(x.bars)?x.bars:null})):[];}catch(e){return[];}})();
+function saveMyProgs(){try{localStorage.setItem('harpmog.progs',JSON.stringify(myProgs.map(p=>({name:p.name,chords:p.chords.map(packChord),bars:p.bars||null}))));}catch(e){}}
+function loadIntoStrip(chords,bars){
   prog=chords.slice(0,PROG_LEN);while(prog.length<PROG_LEN)prog.push(null);
+  progBars=prog.map((c,i)=>bars&&BAR_CHOICES.includes(bars[i])?bars[i]:1);
   saveProg();
   const first=prog.find(Boolean);
   if(first)selectChord(first);else renderProg();
@@ -1132,7 +1156,7 @@ function renderLib(){
   const mine=document.getElementById('lib-mine');mine.innerHTML='';
   if(!myProgs.length)mine.innerHTML='<div class="lib-empty">Nothing saved yet. Build a progression in the strip, then tap “Save current strip”.</div>';
   myProgs.forEach((p,i)=>mine.appendChild(libItem(p.name,'',p.chords,
-    ()=>{loadIntoStrip(p.chords);closeLib();},
+    ()=>{loadIntoStrip(p.chords,p.bars);closeLib();},
     ()=>{if(confirm(`Delete “${p.name}”?`)){myProgs.splice(i,1);saveMyProgs();renderLib();}})));
   const keys=document.getElementById('lib-keys');keys.innerHTML='';
   for(let k=0;k<12;k++){const b=document.createElement('button');b.textContent=PC_NAMES[k];b.classList.toggle('on',k===libKey);
@@ -1150,9 +1174,28 @@ document.getElementById('lib-save').addEventListener('click',()=>{
   if(!chords.length){alert('The strip is empty. Drag some chords in first.');return;}
   const name=prompt('Name this progression:',chords.slice(0,4).map(chordName).join(' – '));
   if(name==null)return;
-  myProgs.unshift({name:name.trim()||'Untitled',chords:prog.slice()});saveMyProgs();renderLib();
+  myProgs.unshift({name:name.trim()||'Untitled',chords:prog.slice(),bars:progBars.slice()});saveMyProgs();renderLib();
 });
-document.getElementById('lib-clear').addEventListener('click',()=>{prog=Array(PROG_LEN).fill(null);saveProg();renderProg();});
+document.getElementById('lib-clear').addEventListener('click',()=>{prog=Array(PROG_LEN).fill(null);progBars=Array(PROG_LEN).fill(1);saveProg();renderProg();});
+
+// slot length menu (hold a slot)
+const lenPop=document.getElementById('len-pop');
+function openLenPop(slotEl,i){
+  const box=lenPop.querySelector('.len-btns');box.innerHTML='';
+  lenPop.querySelector('.pop-title').textContent=chordName(prog[i])+' · length';
+  for(const v of BAR_CHOICES){
+    const b=document.createElement('button');b.textContent=v===0.5?'½ bar':v+(v>1?' bars':' bar');
+    b.classList.toggle('on',slotBars(i)===v);
+    b.addEventListener('click',()=>{progBars[i]=v;saveProg();renderProg();lenPop.hidden=true;});
+    box.appendChild(b);
+  }
+  lenPop.hidden=false;lenPopAt=performance.now();
+  const r=slotEl.getBoundingClientRect(),M=8;
+  lenPop.style.left=Math.max(M,Math.min(innerWidth-lenPop.offsetWidth-M,r.left+r.width/2-lenPop.offsetWidth/2))+'px';
+  lenPop.style.top=Math.max(M,r.top-lenPop.offsetHeight-8)+'px';
+}
+let lenPopAt=0;
+document.addEventListener('pointerdown',e=>{if(!lenPop.hidden&&!lenPop.contains(e.target)&&performance.now()-lenPopAt>300)lenPop.hidden=true;},true);
 
 // ── DRAG AND DROP (chords → progression) ──────────────────────
 let drag=null,dragEndedAt=0;
@@ -1180,8 +1223,10 @@ function endDrag(e,cancel){
   d.ghost.remove();document.getElementById('prog').classList.remove('dropping');
   if(!cancel){
     const sl=slotAt(e.clientX,e.clientY);
-    if(sl!=null){if(d.fromSlot!=null){const t=prog[sl];prog[sl]=prog[d.fromSlot];prog[d.fromSlot]=t;}else prog[sl]=d.chord;}
-    else if(d.fromSlot!=null)prog[d.fromSlot]=null;
+    if(sl!=null){if(d.fromSlot!=null){const t=prog[sl];prog[sl]=prog[d.fromSlot];prog[d.fromSlot]=t;
+        const tb=progBars[sl];progBars[sl]=progBars[d.fromSlot];progBars[d.fromSlot]=tb;}
+      else{if(!prog[sl])progBars[sl]=1;prog[sl]=d.chord;}}
+    else if(d.fromSlot!=null){prog[d.fromSlot]=null;progBars[d.fromSlot]=1;}
     saveProg();
   }
   renderProg();
@@ -2732,29 +2777,48 @@ function rhythmEvent(e,at){
   notes.forEach((m,k)=>rhythmNote(m,e.v*(1-0.15*k/notes.length),at+k*gap));
 }
 // called as each new bar is queued: switch pattern, step the progression strip
-function rhythmBar(){
+function rhythmBar(){            // a new bar line: switch pattern if one is waiting
   if(rhythm.next){rhythm.curId=rhythm.next;rhythm.next=null;}
   rhythm.cur=buildBar(rhythm.curId);
-  if(rhythm.follow){
-    const filled=prog.map((c,i)=>c?i:-1).filter(i=>i>=0);
-    if(filled.length){
-      const after=filled.find(i=>i>rhythm.slot);
-      rhythm.slot=after!=null?after:filled[0];
-      selectChord(prog[rhythm.slot]);
-    }
-  }
+}
+// PLAY THE PROGRESSION: chord changes are their own timeline, counted in bars of
+// whatever pattern is playing (½ bar = half a bar of 4/4, 3/4 or 6/8 alike).
+// rhythm.barNo counts bars; rhythm.changeBar is when the next chord starts.
+function slotBars(i){return progBars[i]||1;}
+function nextFilledSlot(after){
+  const filled=prog.map((c,i)=>c?i:-1).filter(i=>i>=0);
+  if(!filled.length)return -1;
+  const n=filled.find(i=>i>after);return n!=null?n:filled[0];
+}
+function chordChange(at,gap){
+  const i=nextFilledSlot(rhythm.slot);
+  if(i<0){rhythm.changeBar=Infinity;return;}
+  rhythm.slot=i;selectChord(prog[i]);renderProg();
+  rhythm.changeBar+=slotBars(i);
+  // the pattern has nothing coming for a while (Pad swell, Harp gliss, a ½-bar
+  // chord mid-bar…): strum the new chord on the change so it's heard
+  if(gap>60/rhythm.bpm*0.5)rhythmEvent({do:'strum',lo:0,hi:1,v:0.45,ms:22,rise:true},at);
 }
 function rhythmTick(){
   const now=actx.currentTime,horizon=now+RH_AHEAD;
   const barLen=()=>rhythm.cur.steps*stepDur();
   if(rhythm.barStart+barLen()<now-0.5){   // fell far behind (tab in background): restart on the next beat
-    rhythm.barStart=now+0.05;rhythm.idx=0;rhythmBar();
+    rhythm.barStart=now+0.05;rhythm.idx=0;rhythm.barNo=Math.ceil(rhythm.barNo)+1;rhythmBar();
+    if(rhythm.follow)rhythm.changeBar=Math.min(rhythm.changeBar,rhythm.barNo);
   }
   for(;;){
-    const ev=rhythm.cur.ev;
+    const ev=rhythm.cur.ev,steps=rhythm.cur.steps,L=barLen();
+    const nextPos=rhythm.idx<ev.length?rhythm.barNo+ev[rhythm.idx].t/steps:rhythm.barNo+1;
+    // a chord change due before the next note (or the bar line) goes first
+    if(rhythm.follow&&rhythm.changeBar<=nextPos+1e-9){
+      const cAt=rhythm.barStart+(rhythm.changeBar-rhythm.barNo)*L;
+      if(cAt>horizon)break;
+      chordChange(cAt,(nextPos-(rhythm.changeBar-0))*L);
+      continue;
+    }
     if(rhythm.idx>=ev.length){                 // bar done: move on only once the next bar line is near
-      if(rhythm.barStart+barLen()>horizon)break;
-      rhythm.barStart+=barLen();rhythm.idx=0;rhythmBar();continue;
+      if(rhythm.barStart+L>horizon)break;
+      rhythm.barStart+=L;rhythm.idx=0;rhythm.barNo++;rhythmBar();continue;
     }
     const e=ev[rhythm.idx],at=stepAt(rhythm.barStart,e.t);
     if(at>horizon)break;
@@ -2763,15 +2827,18 @@ function rhythmTick(){
   }
   rhythm.queued=rhythm.queued.filter(q=>q.at>now);
 }
+// start following the strip: from the chord you're on (if it's in the strip), else the first slot
+function beginFollow(startNow){
+  const k=chordKey(state.chord),here=prog.findIndex(c=>c&&chordKey(c)===k);
+  if(startNow){rhythm.slot=here>=0?here-1:-1;rhythm.changeBar=rhythm.barNo;}      // the first change selects it on beat 1
+  else{rhythm.slot=here;rhythm.changeBar=Math.floor(rhythm.barNo)+1;}            // switched on mid-play: next chord on the next bar
+}
 function rhythmStart(){
   if(!actx||rhythm.on)return;
   rhythm.on=true;rhythm.curId=rhythm.pat;rhythm.cur=buildBar(rhythm.curId);rhythm.next=null;rhythm.idx=0;
-  rhythm.barStart=actx.currentTime+0.06;
-  if(rhythm.follow){               // start from the chord you're on if it's in the strip
-    const k=chordKey(state.chord),here=prog.findIndex(c=>c&&chordKey(c)===k);
-    rhythm.slot=here>=0?here-1:-1;   // rhythmBar() steps forward one → lands on this one (or the first filled slot)
-  }
+  rhythm.barStart=actx.currentTime+0.06;rhythm.barNo=0;
   rhythmBar();
+  if(rhythm.follow)beginFollow(true);
   rhythmTick();
   rhythm.timer=setInterval(rhythmTick,20);
   paintRhythm();
@@ -2917,7 +2984,7 @@ function paintRhythm(){
   document.querySelectorAll('#rh-lock button').forEach(b=>b.addEventListener('click',()=>{rhythm.lockLoop=b.dataset.val==='on';saveRhythm();paintRhythm();}));
   document.querySelectorAll('#rh-follow button').forEach(b=>b.addEventListener('click',()=>{
     rhythm.follow=b.dataset.val==='on';saveRhythm();
-    if(rhythm.follow&&rhythm.on){const k=chordKey(state.chord);rhythm.slot=prog.findIndex(c=>c&&chordKey(c)===k);}   // carry on from here
+    if(rhythm.follow&&rhythm.on)beginFollow(false);   // carry on from here
     paintRhythm();
   }));
   // Space starts/stops (computer keyboards)
