@@ -66,6 +66,7 @@ button{font-family:var(--font);color:inherit;}
 .key.pressed{transform:translateY(2px);box-shadow:0 1px 0 var(--key-shadow),0 1px 2px rgba(60,40,20,.2),inset 0 0 0 1px rgba(0,0,0,.06);}
 .key.active{background:var(--fam);color:#fff;transform:translateY(2px);
   box-shadow:0 1px 0 rgba(0,0,0,.25),inset 0 2px 4px rgba(0,0,0,.25);}
+.key-bass{font-size:.75em;opacity:.85;}
 .key.active::after{background:#fff;opacity:.7;}
 
 /* hold-for-extensions popover */
@@ -784,8 +785,12 @@ function updateGrid(){
     h.innerHTML=`<b>${f.name}</b><small>${ext}</small>`;
   });
   const c=state.chord;
-  document.querySelectorAll('#chord-grid .key').forEach(k=>
-    k.classList.toggle('active',k.dataset.fam===c.fam&&+k.dataset.root===c.root));
+  document.querySelectorAll('#chord-grid .key').forEach(k=>{
+    const on=k.dataset.fam===c.fam&&+k.dataset.root===c.root;
+    k.classList.toggle('active',on);
+    // the playing key shows its slash bass, e.g. F/G
+    k.innerHTML=PC_NAMES[+k.dataset.root]+(on&&hasBass(c)?`<span class="key-bass">/${PC_NAMES[c.bass]}</span>`:'');
+  });
 }
 // Row-family menu
 const FAM_TITLES={maj:'major',min:'minor',dom:'dominant 7',dim:'diminished',aug:'augmented',half:'half-diminished (ø)',sus:'suspended',qrt:'quartal & clusters',ust:'upper structures (triad over a 7)'};
@@ -822,7 +827,10 @@ function attachKey(k){
   k.addEventListener('pointerdown',e=>{
     e.preventDefault();k.setPointerCapture(e.pointerId);k.classList.add('pressed');held=false;
     // the chord changes the instant the key is touched; keep holding to open its extensions
-    const chord={root:+k.dataset.root,fam:k.dataset.fam,v:rowVar[k.dataset.fam]};
+    // the key that's already playing keeps its exact chord (extension and slash bass),
+    // so it can be dragged into the progression as it is; other keys use the row's extension
+    const cur=state.chord,isCur=cur.fam===k.dataset.fam&&cur.root===+k.dataset.root;
+    const chord=isCur?{...cur}:{root:+k.dataset.root,fam:k.dataset.fam,v:rowVar[k.dataset.fam]};
     selectChord(chord);
     dragStart(e,chord,{src:k,onActivate:()=>{clearTimeout(timer);k.classList.remove('pressed');}});
     timer=setTimeout(()=>{if(drag&&drag.src===k&&!drag.active)drag=null;held=true;openPop(k);},HOLD_MS);
