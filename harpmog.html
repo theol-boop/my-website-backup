@@ -254,8 +254,15 @@ button{font-family:var(--font);color:inherit;}
 .fader-fill{position:absolute;top:0;left:0;bottom:0;width:0%;background:linear-gradient(90deg,rgba(207,84,40,.25),rgba(207,84,40,.6));pointer-events:none;}
 .fader-line{position:absolute;top:2px;bottom:2px;width:14px;margin-left:-7px;left:0%;border-radius:8px;pointer-events:none;
   background:linear-gradient(180deg,var(--card),var(--knob-lo));box-shadow:0 1px 2px rgba(0,0,0,.35),inset 0 0 0 1px rgba(0,0,0,.12);}
-#looper-panel{flex:1;min-height:0;display:flex;flex-direction:column;gap:8px;}
-#looper-transport{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;}
+#looper-panel{flex:1;min-height:0;display:flex;flex-direction:column;gap:8px;container:looper / inline-size;}
+#looper-transport{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;}
+.lp-loops{font-size:10px;letter-spacing:.04em;color:var(--ink-2);}
+/* narrow columns: REC · PLAY · CLR on top, length + LOOPS underneath */
+@container looper (max-width:300px){
+  #looper-transport{grid-template-columns:repeat(6,minmax(0,1fr));}
+  #lp-rec,#lp-play,#lp-clear{grid-column:span 2;}
+  #lp-len,#lp-loops{grid-column:span 3;}
+}
 .lp-len{font-size:10px;letter-spacing:.04em;color:var(--ink-2);}
 #lp-rec{position:relative;overflow:hidden;}
 #lp-rec::before{content:'';position:absolute;left:0;top:0;bottom:0;width:var(--prog,0%);background:rgba(207,84,40,.35);pointer-events:none;}
@@ -455,6 +462,7 @@ button{font-family:var(--font);color:inherit;}
         <button class="lp-btn" id="lp-play">PLAY</button>
         <button class="lp-btn lp-clear" id="lp-clear">CLR</button>
         <button class="lp-btn lp-len" id="lp-len" aria-label="Loop length">2 BARS</button>
+        <button class="lp-btn lp-loops" id="lp-loops" aria-label="Takes and saved loops">LOOPS</button>
       </div>
     </div>
     <div id="brand"><span>HarpMog</span><a class="site-back" href="javascript:history.back()" hidden>&#8249; back</a></div>
@@ -502,7 +510,7 @@ button{font-family:var(--font);color:inherit;}
   <div class="set-group">Saved loops</div>
   <div class="lib-actions"><button class="set-btn" id="loop-save">Save this loop</button></div>
   <div id="loop-saved"></div>
-  <div class="set-foot">Saved loops keep every take's notes, sounds and effects. Loading one replaces the current loop and starts it playing. Tip: tap CLR to clear, hold CLR to open this.</div>
+  <div class="set-foot">Saved loops keep every take's notes, sounds and effects. Loading one replaces the current loop and starts it playing. Open this with LOOPS (or hold CLR).</div>
 </div></div>
 <div id="presets" hidden><div class="sheet">
   <div class="sheet-head"><b>Sound presets</b><button id="pre-close">Done</button></div>
@@ -1824,6 +1832,7 @@ paintLoopLen();
    stopLooper();clearTakes();looper.events=[];looper.loopLen=0;
  });}
 const loopSheet=document.getElementById('loop-sheet');
+document.getElementById('lp-loops').addEventListener('click',()=>openLoopSheet());
 let loopSheetAt=0;
 function openLoopSheet(){renderSavedLoops();loopSheet.hidden=false;takeSig='';loopSheetAt=performance.now();}
 document.getElementById('loop-close').addEventListener('click',()=>{loopSheet.hidden=true;takeSig='';});
