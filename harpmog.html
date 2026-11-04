@@ -1155,7 +1155,7 @@ window.addEventListener('pointercancel',e=>endDrag(e,true));
 document.getElementById('display').addEventListener('pointerdown',e=>{if(!e.target.closest('#settings-btn'))dragStart(e,state.chord);});
 
 // ── AUDIO — pre-baked buffer cache, distinct synthesis per voice ─
-let actx=null,master=null,reverbConv=null,reverbSend=null,delayNode=null,delaySend=null;
+let actx=null,master=null,reverbConv=null,delayNode=null;
 let analyser=null,waveRaf=null;
 let scopeWaveBuf=null;
 // Scope settings are fixed (the old dials, all turned fully right): longest window,
@@ -1165,9 +1165,7 @@ function scopeFftFromTime(t){
   const sizes=[512,1024,2048];
   return sizes[Math.min(2,Math.floor(Number(t)/34.001))];
 }
-let tapeDelay=null,tapeLFO=null,tapeLFOGain=null,tapeFilter=null,tapeSend=null;
-let pingDelay=null,pingSend=null,warbleLFO=null,warbleLFOGain=null,warbleDelay=null,warbleSend=null,crushSend=null,crushWS=null;
-let limiter=null,toneFilter=null,pingDelayR=null;
+let pingDelay=null,pingDelayR=null,limiter=null;
 // per-sound volume (hold a sound button), 0–1.5, 1 = normal
 const instVol=(()=>{try{const o=JSON.parse(localStorage.getItem('harpmog.vol')||'{}');
   if(o&&o.omni!=null&&o.pulse==null){o.pulse=o.omni;}if(o)delete o.omni;   // OMNI was renamed PULSE
@@ -1566,9 +1564,12 @@ const looper={
   cycleStart:0,idx:0, // where the scheduler has got to
   timer:null,overdubTimer:null,
   queued:[],          // {at, outs} for queued notes, so STOP can cut them
+  takes:[],curTake:0, // FX bus per take (see freezeTake)
 };
 
 function setLooperState(s){
+  // a take ends when recording/overdubbing stops: freeze its effects
+  if((looper.state==='recording'||looper.state==='overdubbing')&&s!=='recording'&&s!=='overdubbing')freezeTake();
   looper.state=s;
   const rec=document.getElementById('lp-rec');
   const play=document.getElementById('lp-play');
@@ -1591,7 +1592,8 @@ function schedulerTick(){
     if(at>horizon)break;
     if(at>=now-0.02){
       const vol=e.insts.length>1?1/Math.sqrt(e.insts.length):1;
-      e.insts.forEach(inst=>looper.queued.push({at,outs:pluckInst(inst,e.midi,e.velocity,vol,at)}));
+      const bus=looper.takes[e.take]||liveBus;   // each take plays through its own effects
+      e.insts.forEach(inst=>looper.queued.push({at,outs:pluckInst(inst,e.midi,e.velocity,vol,at,false,bus)}));
       midiNote(e.midi,e.velocity,at);scopeNote(e.midi,at);
     }
     looper.idx++;
@@ -1615,7 +1617,14 @@ function stopLooper(){
   setLooperState('stopped');
 }
 
+// TAKES: the first recording is take 0, each overdub a new take. When a take
+// finishes it gets its own FX bus with the effect settings of that moment.
+function freezeTake(){
+  if(looper.curTake!=null&&!looper.takes[looper.curTake])looper.takes[looper.curTake]=makeBus(fxState);
+}
+function clearTakes(){(looper.takes||[]).forEach(b=>b&&b.dispose());looper.takes=[];looper.curTake=0;}
 function beginRecording(at){
+  clearTakes();
   looper.events=[];
   looper.loopStart=at;
   looper.loopLen=0;looper.locked=false;looper.closing=false;looper.autoEnd=0;clearTimeout(looper.autoTimer);
@@ -1688,7 +1697,7 @@ function looperRecord(midi,velocity,when,insts){
     if(loopBars)startTimedLoop(when,4*60/rhythm.bpm,!rhythm.on);   // timed loop: starts on this first note
   }
   if(looper.state==='recording'){
-    looper.events.push({midi,insts,velocity,t:when-looper.loopStart});
+    looper.events.push({midi,insts,velocity,t:when-looper.loopStart,take:looper.curTake});
   } else if(looper.state==='overdubbing'){
     const len=looper.loopLen;
     const t=(((when-looper.loopStart)%len)+len)%len;
@@ -1696,7 +1705,7 @@ function looperRecord(midi,velocity,when,insts){
     // before the scheduler's position, step past it (don't play it twice).
     const ev=looper.events;
     let i=ev.findIndex(x=>x.t>t);if(i<0)i=ev.length;
-    ev.splice(i,0,{midi,insts,velocity,t});
+    ev.splice(i,0,{midi,insts,velocity,t,take:looper.curTake});
     if(i<=looper.idx)looper.idx++;
   }
 }
@@ -1714,6 +1723,7 @@ document.getElementById('lp-rec').addEventListener('pointerup',e=>{
   } else if(s==='playing'){
     // Overdub for exactly one loop, then back to playing
     clearTimeout(looper.overdubTimer);
+    looper.curTake=looper.takes.length;   // a new take
     setLooperState('overdubbing');
     looper.overdubTimer=setTimeout(()=>{
       if(looper.state==='overdubbing')setLooperState('playing');
@@ -1767,6 +1777,7 @@ paintLoopLen();
 document.getElementById('lp-clear').addEventListener('pointerup',e=>{
   e.stopPropagation();
   stopLooper();
+  clearTakes();
   looper.events=[];
   looper.loopLen=0;
 });
@@ -2088,9 +2099,7 @@ function initAudio(){
   limiter.attack.value=0.003;limiter.release.value=0.25;
   limiter.connect(actx.destination);
   master=actx.createGain();master.gain.value=0.80;
-  // TONE: a gentle low-pass on everything (fully open at 100)
-  toneFilter=actx.createBiquadFilter();toneFilter.type='lowpass';toneFilter.Q.value=0.5;toneFilter.frequency.value=20000;
-  master.connect(toneFilter);toneFilter.connect(limiter);
+  master.connect(limiter);
   analyser=actx.createAnalyser();
   analyser.fftSize=scopeFftFromTime(scopeState.time);
   analyser.smoothingTimeConstant=0.45;
@@ -2098,63 +2107,72 @@ function initAudio(){
   scopeWaveBuf=new Float32Array(analyser.fftSize);
   startWaveform();
 
-  // Reverb IR
+  // ── shared effect processors (fed by the buses below) ──
+  // Reverb
   const sr=actx.sampleRate,rl=Math.ceil(sr*2.4);
   const rbuf=actx.createBuffer(2,rl,sr);
   for(let c=0;c<2;c++){const d=rbuf.getChannelData(c);
     for(let i=0;i<rl;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/rl,2.0);}
-  reverbConv=actx.createConvolver();reverbConv.buffer=rbuf;
-  reverbSend=actx.createGain();reverbSend.gain.value=0.18;
-  reverbSend.connect(reverbConv);reverbConv.connect(master);
-
+  reverbConv=actx.createConvolver();reverbConv.buffer=rbuf;reverbConv.connect(master);
   // DELAY: echo locked to the tempo (a dotted 8th; see syncDelays)
   delayNode=actx.createDelay(2.0);delayNode.delayTime.value=0.18;
   const fb=actx.createGain();fb.gain.value=0.28;
-  delaySend=actx.createGain();delaySend.gain.value=0.0;
-  delaySend.connect(delayNode);
-  delayNode.connect(fb);fb.connect(delayNode);
-  delayNode.connect(master);
-
-  // Tape: modulated delay (wow/flutter) + HF rolloff + subtle saturation via WaveShaper
-  tapeDelay=actx.createDelay(0.1);tapeDelay.delayTime.value=0.012;
-  tapeLFO=actx.createOscillator();tapeLFO.type='sine';tapeLFO.frequency.value=0.6;
-  tapeLFOGain=actx.createGain();tapeLFOGain.gain.value=0.0; // 0 = off
-  tapeLFO.connect(tapeLFOGain);tapeLFOGain.connect(tapeDelay.delayTime);
-  tapeLFO.start();
-  tapeFilter=actx.createBiquadFilter();tapeFilter.type='lowpass';tapeFilter.frequency.value=20000;
-  // soft-clip waveshaper for tape saturation
-  // 257 points so silence maps exactly to 0 (an even-length curve adds a small DC offset)
-  const wsCurve=new Float32Array(257);
-  for(let i=0;i<257;i++){const x=(i/128)-1;wsCurve[i]=Math.tanh(x);}
-  const ws=actx.createWaveShaper();ws.curve=wsCurve;ws.oversample='2x';
-  tapeSend=actx.createGain();tapeSend.gain.value=0.0;
-  tapeSend.connect(tapeDelay);tapeDelay.connect(tapeFilter);tapeFilter.connect(ws);ws.connect(master);
-
+  delayNode.connect(fb);fb.connect(delayNode);delayNode.connect(master);
   // PING: stereo ping-pong, a quarter note per bounce, left then right
   pingDelay=actx.createDelay(2.0);pingDelayR=actx.createDelay(2.0);
   const pfb=actx.createGain();pfb.gain.value=0.5;
-  pingSend=actx.createGain();pingSend.gain.value=0.0;
-  pingSend.connect(pingDelay);pingDelay.connect(pingDelayR);pingDelayR.connect(pfb);pfb.connect(pingDelay);
+  pingDelay.connect(pingDelayR);pingDelayR.connect(pfb);pfb.connect(pingDelay);
   const toLR=(node,side)=>{if(actx.createStereoPanner){const pn=actx.createStereoPanner();pn.pan.value=side;node.connect(pn);pn.connect(master);}else node.connect(master);};
   toLR(pingDelay,-0.8);toLR(pingDelayR,0.8);
 
-  // Warble — slow LFO modulating a short delay line (chorus/vibrato shimmer)
-  warbleDelay=actx.createDelay(0.05);warbleDelay.delayTime.value=0.01;
-  warbleLFO=actx.createOscillator();warbleLFO.type='sine';warbleLFO.frequency.value=4.2;
-  warbleLFOGain=actx.createGain();warbleLFOGain.gain.value=0.0;
-  warbleLFO.connect(warbleLFOGain);warbleLFOGain.connect(warbleDelay.delayTime);warbleLFO.start();
-  warbleSend=actx.createGain();warbleSend.gain.value=0.0;
-  warbleSend.connect(warbleDelay);warbleDelay.connect(master);
+  liveBus=makeBus(fxState);   // what you play now
+  syncDelays();
+}
 
-  // Crush — bit-crusher via WaveShaper with variable resolution
-  crushWS=actx.createWaveShaper();
-  crushWS.oversample='none';
-  crushSend=actx.createGain();crushSend.gain.value=0.0;
-  crushSend.connect(crushWS);crushWS.connect(master);
-  // Initial curve (full resolution = passthrough)
-  _setCrushCurve(0);
-
-  updateFX();syncDelays();
+// ── FX BUSES ──────────────────────────────────────────────────
+// A bus is one set of effect settings: its own tone filter, warble, crush and
+// twang, plus send levels into the shared reverb / delay / ping-pong. The LIVE
+// bus carries what you play now (the faders). Each finished loop take gets its
+// own bus, frozen with the settings at the end of that take, so one take can
+// keep its reverb while the next is dry.
+let liveBus=null;
+const TANH_CURVE=(()=>{const c=new Float32Array(257);for(let i=0;i<257;i++)c[i]=Math.tanh(i/128-1);return c;})();  // 257 points: 0 in → 0 out
+function crushCurve(amt){
+  const steps=Math.max(2,Math.round(256*(1-amt*0.98)));   // 0 → 256 steps (clean), 1 → ~5 steps (crushed)
+  const c=new Float32Array(257);for(let i=0;i<257;i++){const x=i/128-1;c[i]=Math.round(x*steps)/steps;}return c;
+}
+function makeBus(fx){
+  const b={fx:{},osc:[],crush:-1};
+  b.input=actx.createGain();
+  b.tone=actx.createBiquadFilter();b.tone.type='lowpass';b.tone.Q.value=0.5;
+  b.input.connect(b.tone);b.tone.connect(master);
+  const send=dest=>{const g=actx.createGain();g.gain.value=0;b.tone.connect(g);g.connect(dest);return g;};
+  b.rv=send(reverbConv);b.dl=send(delayNode);b.pg=send(pingDelay);
+  // warble: a short delay wobbled by a slow LFO (chorus / vibrato)
+  b.wd=actx.createDelay(0.05);b.wd.delayTime.value=0.01;
+  b.wl=actx.createOscillator();b.wl.frequency.value=4.2;b.wlg=actx.createGain();b.wlg.gain.value=0;
+  b.wl.connect(b.wlg);b.wlg.connect(b.wd.delayTime);b.wl.start();b.osc.push(b.wl);
+  b.ws=send(b.wd);b.wd.connect(master);
+  // crush: bit-reduction
+  b.cw=actx.createWaveShaper();b.cw.oversample='none';b.cs=send(b.cw);b.cw.connect(master);
+  // twang (tape): wow/flutter + high roll-off + soft saturation
+  b.td=actx.createDelay(0.1);b.td.delayTime.value=0.012;
+  b.tl=actx.createOscillator();b.tl.frequency.value=0.6;b.tlg=actx.createGain();b.tlg.gain.value=0;
+  b.tl.connect(b.tlg);b.tlg.connect(b.td.delayTime);b.tl.start();b.osc.push(b.tl);
+  b.tf=actx.createBiquadFilter();b.tf.type='lowpass';
+  const sat=actx.createWaveShaper();sat.curve=TANH_CURVE;sat.oversample='2x';
+  b.ts=send(b.td);b.td.connect(b.tf);b.tf.connect(sat);sat.connect(master);
+  b.set=f=>{
+    b.fx={...f};const now=actx.currentTime,T=(p,v,k)=>p.setTargetAtTime(v,now,k||0.02);
+    T(b.rv.gain,f.verb/100*0.6);T(b.dl.gain,f.delay/100*0.45);T(b.pg.gain,f.ping/100*0.5);
+    T(b.wlg.gain,f.warble/100*0.006,0.05);T(b.ws.gain,f.warble/100*0.7,0.05);
+    T(b.cs.gain,f.crush/100*0.65);if(b.crush!==f.crush){b.crush=f.crush;b.cw.curve=crushCurve(f.crush/100);}
+    T(b.tlg.gain,f.tape/100*0.003,0.05);T(b.tf.frequency,20000-f.tape/100*16000,0.05);T(b.ts.gain,f.tape/100*0.7,0.05);
+    T(b.tone.frequency,300*Math.pow(2,f.tone/100*6),0.03);   // 300 Hz … 19 kHz
+  };
+  b.dispose=()=>{try{b.input.disconnect();b.tone.disconnect();}catch(e){}b.osc.forEach(o=>{try{o.stop();}catch(e){}});};
+  b.set(fx);
+  return b;
 }
 
 // delay times follow the tempo (the auto-strum's BPM, even when it isn't playing)
@@ -2166,39 +2184,12 @@ function syncDelays(){
   pingDelayR.delayTime.setTargetAtTime(Math.min(1.9,beat),now,0.05);
 }
 
-function _setCrushCurve(amt){
-  if(!crushWS)return;
-  const steps=Math.max(2,Math.round(256*(1-amt*0.98))); // amt=0 → 256 steps (clean), amt=1 → ~5 steps (crushed)
-  const curve=new Float32Array(257);   // odd length: 0 in → exactly 0 out
-  for(let i=0;i<257;i++){
-    const x=(i/128)-1;
-    curve[i]=Math.round(x*steps)/steps;
-  }
-  crushWS.curve=curve;
-}
-
-function updateFX(){
-  if(!reverbSend)return;
-  const now=actx.currentTime;
-  const rv=fxState.verb/100;
-  const dv=fxState.delay/100;
-  const tv=fxState.tape/100;
-  reverbSend.gain.setTargetAtTime(rv*0.6,now,0.02);
-  delaySend.gain.setTargetAtTime(dv*0.45,now,0.02);
-  if(pingSend)pingSend.gain.setTargetAtTime((fxState.ping/100)*0.5,now,0.02);
-  if(warbleLFOGain){warbleLFOGain.gain.setTargetAtTime((fxState.warble/100)*0.006,now,0.05);}
-  if(warbleSend)warbleSend.gain.setTargetAtTime((fxState.warble/100)*0.7,now,0.05);
-  if(crushSend){crushSend.gain.setTargetAtTime((fxState.crush/100)*0.65,now,0.02);_setCrushCurve(fxState.crush/100);}
-  // Tape: scale wobble depth and HF rolloff with knob
-  tapeLFOGain.gain.setTargetAtTime(tv*0.003,now,0.05); // max 3ms wow
-  tapeFilter.frequency.setTargetAtTime(20000-tv*16000,now,0.05); // 20kHz→4kHz rolloff
-  tapeSend.gain.setTargetAtTime(tv*0.7,now,0.05);
-  toneFilter.frequency.setTargetAtTime(300*Math.pow(2,fxState.tone/100*6),now,0.03);   // 300 Hz … 19 kHz
-}
+function updateFX(){if(liveBus)liveBus.set(fxState);}
 
 // Play one note on one instrument at audio time `when` (now if omitted).
 // Returns its output nodes so the looper can cut notes it has queued.
-function pluckInst(inst,midi,velocity,volScale,when,damper){
+function pluckInst(inst,midi,velocity,volScale,when,damper,bus){
+  bus=bus||liveBus;
   const buf=getBuffer(inst,midi);
   const t=Math.max(when||0,actx.currentTime);
   const src=actx.createBufferSource();src.buffer=buf;
@@ -2213,7 +2204,7 @@ function pluckInst(inst,midi,velocity,volScale,when,damper){
     osc.frequency.value=440*Math.pow(2,(midi-69)/12)/2;
     const og=actx.createGain();og.gain.setValueAtTime(0.13*velocity*volScale,t);
     og.gain.exponentialRampToValueAtTime(0.0001,t+2.2);
-    osc.connect(og);og.connect(master);osc.start(t);osc.stop(t+2.3);
+    osc.connect(og);og.connect(bus.input);osc.start(t);osc.stop(t+2.3);
     outs.push(og);
   }
   src.connect(gain);
@@ -2222,17 +2213,11 @@ function pluckInst(inst,midi,velocity,volScale,when,damper){
     const dg=actx.createGain();gain.connect(dg);out=dg;outs.damp=dg;
     if(outs[1]){outs[1].disconnect();outs[1].connect(dg);}   // bass sub-octave goes through it too
   }
-  if(actx.createStereoPanner&&fxState.width>0){   // WIDTH: low strings left, high right
-    const pn=actx.createStereoPanner();pn.pan.value=Math.max(-1,Math.min(1,(midi-66)/30))*fxState.width/100;
+  if(actx.createStereoPanner&&bus.fx.width>0){   // WIDTH: low strings left, high right
+    const pn=actx.createStereoPanner();pn.pan.value=Math.max(-1,Math.min(1,(midi-66)/30))*bus.fx.width/100;
     out.connect(pn);out=pn;
   }
-  out.connect(master);
-  out.connect(reverbSend);
-  out.connect(delaySend);
-  out.connect(pingSend);
-  out.connect(warbleSend);
-  out.connect(crushSend);
-  out.connect(tapeSend);
+  out.connect(bus.input);
   src.start(t);src.stop(t+buf.duration+0.05);
   return outs;
 }
