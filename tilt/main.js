@@ -195,7 +195,7 @@ function groundContact() {
         const p = m.solverContactPoint(i);
         const nx = c.x - p.x, ny = c.y - p.y, nz = c.z - p.z;
         const len = Math.hypot(nx, ny, nz) || 1;
-        if (ny / len > bestUp) { bestUp = ny / len; best = { collider: other, point: { x: p.x, y: p.y, z: p.z } }; }
+        if (ny / len > bestUp) { bestUp = ny / len; best = { collider: other, point: { x: p.x, y: p.y, z: p.z }, ny: ny / len }; }
       }
     });
   });
@@ -250,7 +250,13 @@ function physicsStep() {
       ballRb.applyTorqueImpulse({ x: ax * params.torque * DT, y: 0, z: az * params.torque * DT }, true);
     }
     if (grounded && v.x * dir.x + v.z * dir.z < params.maxSpeed) {
-      const ix = dir.x * params.push * DT, iz = dir.z * params.push * DT;
+      // The push is a shove, not traction, so it fades out on slopes: full strength up to a third of
+      // `pushSlope`, gone at `pushSlope`. Climbing is left to spin and grip, so steep hills need momentum.
+      const slope = Math.acos(Math.min(1, ground.ny)) * 180 / Math.PI;
+      const lo = params.pushSlope / 3, hi = Math.max(lo + 1e-3, params.pushSlope);
+      const x = Math.min(1, Math.max(0, (slope - lo) / (hi - lo)));
+      const fade = 1 - x * x * (3 - 2 * x);
+      const ix = dir.x * params.push * fade * DT, iz = dir.z * params.push * fade * DT;
       ballRb.applyImpulse({ x: ix, y: 0, z: iz }, true);
       reactOn(ground, ix, 0, iz);
     }

@@ -12,6 +12,7 @@ export const PARAM_SPECS = [
   { group: 'steering' },
   { key: 'torque',    label: 'roll torque',        min: 0,  max: 150, step: 1,    def: 18,   unit: 'N·m' },
   { key: 'push',      label: 'push force',         min: 0,  max: 150, step: 1,    def: 33,   unit: 'N' },
+  { key: 'pushSlope', label: 'push fades out by', min: 1,  max: 90,  step: 1,    def: 30,   unit: '°' },
   { key: 'maxSpeed',  label: 'top speed',          min: 1,  max: 30,  step: 0.5,  def: 7,    unit: 'm/s' },
   { key: 'brake',     label: 'brake (shift)',      min: 0,  max: 20,  step: 0.5,  def: 4 },
   { key: 'jump',      label: 'jump',               min: 0,  max: 12,  step: 0.1,  def: 4.5,  unit: 'm/s' },

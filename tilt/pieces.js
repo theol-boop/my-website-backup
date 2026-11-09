@@ -4,7 +4,7 @@
 
 import * as THREE from 'three';
 import RAPIER from '@dimforge/rapier3d-compat';
-import { outlinedBox, outlinedSphere, inkFaceMat, faceMat } from 'tilt-draw';
+import { outlinedBox, outlinedSphere, outlinedCylinder, outlinedMesh, greyLines, inkFaceMat, faceMat } from 'tilt-draw';
 
 // Collision groups. The tilting platform never touches static course geometry or its own post:
 // it may swing through them freely, and only balls and loose objects ride on it.
@@ -31,6 +31,139 @@ function staticBox(ctx, center, size, quat = IDQ, { grid = false, friction = 1 }
   ctx.scene.add(vis);
   ctx.extendBounds(center, Math.max(w, h, d));
   return vis;
+}
+
+// ---------------------------------------------------------------------------
+// strip: a solid ribbon of track swept along a curve. `at(u)` (u from 0 to 1) returns the centre of the
+// top surface and the horizontal direction of travel. Built as a closed, outward-facing triangle mesh so
+// Rapier can smooth over the internal edges (no bumps on curves). Returns sample points for drawing lines.
+// ---------------------------------------------------------------------------
+function strip(ctx, at, n, width, thick, { offset = 0, raise = 0, collide = true } = {}) {
+  const pos = [], idx = [], rows = [];
+  const tmpR = new THREE.Vector3();
+  for (let i = 0; i <= n; i++) {
+    const { c, t } = at(i / n);
+    const r = tmpR.set(-t.z, 0, t.x).normalize();               // to the right of travel
+    const mid = c.clone().addScaledVector(r, offset).addScaledVector(UP, raise);
+    const TL = mid.clone().addScaledVector(r, -width / 2), TR = mid.clone().addScaledVector(r, width / 2);
+    const BL = TL.clone().addScaledVector(UP, -thick), BR = TR.clone().addScaledVector(UP, -thick);
+    const base = pos.length / 3;
+    pos.push(...TL.toArray(), ...TR.toArray(), ...BL.toArray(), ...BR.toArray());
+    rows.push({ base, TL, TR, BL, BR, r: r.clone(), t: t.clone(), c: mid });
+  }
+  const P = (k) => new THREE.Vector3(pos[k * 3], pos[k * 3 + 1], pos[k * 3 + 2]);
+  // Add a quad, flipping it if needed so its normal points along `out`
+  function quad(a, b, c, d, out) {
+    const nrm = P(b).sub(P(a)).cross(P(c).sub(P(a)));
+    if (nrm.dot(out) < 0) idx.push(a, c, b, a, d, c); else idx.push(a, b, c, a, c, d);
+  }
+  for (let i = 0; i < n; i++) {
+    const A = rows[i], B = rows[i + 1];
+    const out = A.r.clone().add(B.r);
+    quad(A.base + 0, A.base + 1, B.base + 1, B.base + 0, UP);                   // top
+    quad(A.base + 2, B.base + 2, B.base + 3, A.base + 3, UP.clone().negate());  // bottom
+    quad(A.base + 1, A.base + 3, B.base + 3, B.base + 1, out);                  // right side
+    quad(A.base + 0, B.base + 0, B.base + 2, A.base + 2, out.clone().negate()); // left side
+  }
+  const f = rows[0], l = rows[n];
+  quad(f.base + 0, f.base + 2, f.base + 3, f.base + 1, f.t.clone().negate());   // start cap
+  quad(l.base + 0, l.base + 1, l.base + 3, l.base + 2, l.t);                    // end cap
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setIndex(idx);
+  ctx.scene.add(outlinedMesh(geo));
+  if (collide) {
+    ctx.world.createCollider(
+      RAPIER.ColliderDesc.trimesh(new Float32Array(pos), new Uint32Array(idx), RAPIER.TriMeshFlags.FIX_INTERNAL_EDGES)
+        .setFriction(1).setCollisionGroups(STATIC_GROUPS),
+      ctx.staticBody);
+  }
+  for (const r of rows) ctx.extendBounds(r.c, 1);
+  return rows;
+}
+
+// A grey line across the top of a strip at fractional row position k (between sample rows)
+function crossLine(rows, k, out) {
+  const i = Math.min(rows.length - 2, Math.floor(k)), f = k - i;
+  const a = rows[i], b = rows[i + 1];
+  const L = a.TL.clone().lerp(b.TL, f), R = a.TR.clone().lerp(b.TR, f);
+  out.push(L.x, L.y + 0.004, L.z, R.x, R.y + 0.004, R.z);
+}
+
+// Rails for a strip: two thin strips riding on its edges
+function stripRails(ctx, at, n, width, { railH = 0.5, railW = 0.2, left = railH, right = railH } = {}) {
+  if (left > 0) strip(ctx, at, n, railW, left, { offset: -(width / 2 - railW / 2), raise: left });
+  if (right > 0) strip(ctx, at, n, railW, right, { offset: width / 2 - railW / 2, raise: right });
+}
+
+const DIRS = { '+x': [1, 0], '-x': [-1, 0], '+z': [0, 1], '-z': [0, -1] };
+
+// ---------------------------------------------------------------------------
+// hill: a smooth hump in a straight run of track (shape 'hump'), or a smooth climb from one level to
+// another (shape 'rise'; negative height drops). Grey contour lines every 0.25 m of height, so steeper
+// slopes show tighter lines. Starts and ends flat so it joins ordinary track without a kink.
+// Steepest slope: hump atan(π·h/L), rise atan(π·h/2L).
+// ---------------------------------------------------------------------------
+function hill(spec, ctx) {
+  const { length, height, width = 3, thick = 0.5, rails = true, railH = 0.5, shape = 'hump' } = spec;
+  const start = V(spec.start);
+  const [dx, dz] = DIRS[spec.dir];
+  const t = new THREE.Vector3(dx, 0, dz);
+  const n = Math.max(24, Math.ceil(length * 6));
+  const at = (u) => ({
+    c: start.clone().addScaledVector(t, length * u)
+      .add(new THREE.Vector3(0, height * (1 - Math.cos((shape === 'rise' ? 1 : 2) * Math.PI * u)) / 2, 0)),
+    t,
+  });
+  const rows = strip(ctx, at, n, width, thick);
+  if (rails) stripRails(ctx, at, n, width, { railH });
+  // Contours: wherever the surface crosses a 0.25 m level
+  const lines = [], step = 0.25, top = Math.abs(height);
+  for (let i = 0; i < n; i++) {
+    const y0 = Math.abs(rows[i].c.y - start.y), y1 = Math.abs(rows[i + 1].c.y - start.y);
+    for (let lev = step; lev < top; lev += step) {
+      if ((y0 - lev) * (y1 - lev) < 0) crossLine(rows, i + (lev - y0) / (y1 - y0), lines);
+    }
+  }
+  ctx.scene.add(greyLines(lines));
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// spiral: a corkscrew ramp around a central column, dropping `drop` metres per turn.
+// Angles: 0° = +x, 90° = +z. With the default start of 180° the ramp is entered heading -z.
+// Grey lines cross it every metre so you can read its speed and slope.
+// ---------------------------------------------------------------------------
+function spiral(spec, ctx) {
+  const { radius = 4, width = 2.4, thick = 0.4, turns = 1.75, drop = 3.6, startDeg = 180, innerRail = 0.4, outerRail = 1.0 } = spec;
+  const centre = V(spec.center);
+  const a0 = startDeg * Math.PI / 180, span = turns * 2 * Math.PI;
+  const n = Math.ceil(turns * 72);
+  const at = (u) => {
+    const a = a0 + span * u;
+    return {
+      c: new THREE.Vector3(centre.x + radius * Math.cos(a), centre.y - drop * turns * u, centre.z + radius * Math.sin(a)),
+      t: new THREE.Vector3(-Math.sin(a), 0, Math.cos(a)),
+    };
+  };
+  const rows = strip(ctx, at, n, width, thick);
+  // Increasing angle curves toward the right of travel (y is up), so the column is on the right
+  stripRails(ctx, at, n, width, { left: outerRail, right: innerRail });
+  const arc = radius * span, lines = [];
+  for (let m = 1; m < arc; m += 1) crossLine(rows, (m / arc) * n, lines);
+  ctx.scene.add(greyLines(lines));
+
+  // Central column, solid, from below the bottom turn to above the top
+  const colR = radius - width / 2 - 0.5;
+  const top = centre.y + 1.5, bottom = centre.y - drop * turns - 3;
+  const h = top - bottom;
+  const col = outlinedCylinder(colR, h);
+  col.position.set(centre.x, bottom + h / 2, centre.z);
+  ctx.scene.add(col);
+  ctx.world.createCollider(RAPIER.ColliderDesc.cylinder(h / 2, colR)
+    .setTranslation(centre.x, bottom + h / 2, centre.z).setCollisionGroups(STATIC_GROUPS), ctx.staticBody);
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -251,7 +384,7 @@ function tiltPlatform(spec, ctx) {
   return self;
 }
 
-const BUILDERS = { path, gate, tiltPlatform };
+const BUILDERS = { path, gate, tiltPlatform, hill, spiral };
 
 export function buildCourse(course, ctx) {
   const gates = [], dynamic = [];

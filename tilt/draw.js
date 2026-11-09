@@ -44,17 +44,48 @@ export function circleLine(radius, segments = 64, mat = edgeMat) {
   return new THREE.LineLoop(geo, mat);
 }
 
-// Sphere with a black silhouette: the back faces of a slightly bigger black sphere ("inverted hull").
-const outlinedSpheres = [];
+// Round things get their silhouette from an "inverted hull": the back faces of a slightly bigger black copy.
+const hulls = [];
 export function outlinedSphere(r) {
   const g = new THREE.Group();
   const hull = new THREE.Mesh(new THREE.SphereGeometry(r, 48, 32), hullMat);
   g.add(new THREE.Mesh(new THREE.SphereGeometry(r, 48, 32), faceMat), hull);
-  outlinedSpheres.push({ hull, r });
+  hulls.push({ hull, r, h: 0 });
+  return g;
+}
+
+// Upright cylinder: hull for the curved sides, plus drawn rims top and bottom.
+export function outlinedCylinder(r, height) {
+  const g = new THREE.Group();
+  const geo = new THREE.CylinderGeometry(r, r, height, 64);
+  const hull = new THREE.Mesh(geo, hullMat);
+  g.add(new THREE.Mesh(geo, faceMat), hull);
+  g.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo, 30), edgeMat));
+  hulls.push({ hull, r, h: height });
   return g;
 }
 
 // Keep silhouettes ~1.5 css px thick whatever the zoom.
 export function updateOutlineScale(unitsPerPixel) {
-  for (const o of outlinedSpheres) o.hull.scale.setScalar(1 + (1.5 * unitsPerPixel) / o.r);
+  const t = 1.5 * unitsPerPixel;
+  for (const o of hulls) {
+    const s = 1 + t / o.r;
+    if (o.h) o.hull.scale.set(s, 1 + 0.001 / o.h, s); else o.hull.scale.setScalar(s);
+  }
+}
+
+// A solid mesh (white faces) whose sharp edges are drawn black. Smooth curves stay clean as long as each
+// facet turns less than `threshold` degrees from its neighbour.
+export function outlinedMesh(geo, threshold = 25) {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(geo, faceMat));
+  g.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo, threshold), edgeMat));
+  return g;
+}
+
+// Loose grey line segments (contours, cross-hatching). `pts` is a flat [x,y,z, x,y,z, ...] list of pairs.
+export function greyLines(pts) {
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+  return new THREE.LineSegments(geo, gridMat);
 }
