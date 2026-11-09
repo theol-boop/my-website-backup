@@ -11,20 +11,20 @@ const PARAM_SPECS = [
   { group: 'world' },
   { key: 'gravity',   label: 'gravity',        min: 0,  max: 30,  step: 0.1,  def: 9.81, unit: 'm/s²' },
   { group: 'ball' },
-  { key: 'mass',      label: 'mass',           min: 1,  max: 50,  step: 0.5,  def: 8,    unit: 'kg' },
+  { key: 'mass',      label: 'mass',           min: 1,  max: 50,  step: 0.5,  def: 5.5,  unit: 'kg' },
   { key: 'friction',  label: 'grip (friction)',min: 0,  max: 2,   step: 0.05, def: 0.9 },
   { key: 'bounce',    label: 'bounce',         min: 0,  max: 1,   step: 0.05, def: 0.1 },
   { key: 'rollDamp',  label: 'rolling resistance', min: 0, max: 3, step: 0.05, def: 0.15 },
   { key: 'airDrag',   label: 'air drag',       min: 0,  max: 2,   step: 0.01, def: 0.02 },
   { group: 'steering' },
   { key: 'torque',    label: 'roll torque',    min: 0,  max: 150, step: 1,    def: 18,   unit: 'N·m' },
-  { key: 'push',      label: 'push force',     min: 0,  max: 150, step: 1,    def: 8,    unit: 'N' },
+  { key: 'push',      label: 'push force',     min: 0,  max: 150, step: 1,    def: 33,   unit: 'N' },
   { key: 'maxSpeed',  label: 'top speed',      min: 1,  max: 30,  step: 0.5,  def: 7,    unit: 'm/s' },
   { key: 'brake',     label: 'brake (shift)',  min: 0,  max: 20,  step: 0.5,  def: 4 },
   { key: 'jump',      label: 'jump',           min: 0,  max: 12,  step: 0.1,  def: 4.5,  unit: 'm/s' },
 ];
 const DEFAULTS = Object.fromEntries(PARAM_SPECS.filter(s => s.key).map(s => [s.key, s.def]));
-const STORE_KEY = 'tilt.params.v1';
+const STORE_KEY = 'tilt.params.v2';
 const params = { ...DEFAULTS };
 try {
   const saved = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
