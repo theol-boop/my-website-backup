@@ -16,6 +16,10 @@
   #help b { color: var(--ink); font-weight: normal; }
   #readout { bottom: 12px; right: 16px; text-align: right; color: var(--muted); white-space: pre; pointer-events: none; }
   #dial { width: 64px; height: 64px; display: block; margin: 0 0 6px auto; }
+  #dial[hidden] { display: none; }
+  #banner { position: fixed; z-index: 2; top: 56px; left: 50%; transform: translateX(-50%); max-width: calc(100vw - 32px);
+    background: var(--paper); border: 1px solid var(--ink); padding: 6px 12px; text-align: center; }
+  #banner[hidden] { display: none; }
   @media (max-width: 700px) { #help { right: 16px; } #readout { bottom: auto; top: 44px; } }
 
   #panel { position: fixed; z-index: 3; top: 40px; right: 16px; width: 260px; max-width: calc(100vw - 32px);
@@ -38,7 +42,11 @@
 {
   "imports": {
     "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-    "@dimforge/rapier3d-compat": "https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.14.0/rapier.es.js"
+    "@dimforge/rapier3d-compat": "https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.14.0/rapier.es.js",
+    "tilt-params": "./tilt/params.js?v=6",
+    "tilt-draw": "./tilt/draw.js?v=6",
+    "tilt-pieces": "./tilt/pieces.js?v=6",
+    "tilt-course": "./tilt/course.js?v=6"
   }
 }
 </script>
@@ -49,9 +57,10 @@
 
   <a id="back" class="corner" href="projects.html">&#8249; back</a>
   <button id="tune-btn" class="corner" type="button">tune (T)</button>
+  <div id="banner" hidden></div>
   <div id="readout" class="corner"><canvas id="dial" width="64" height="64"></canvas><div id="readout-text"></div></div>
   <div id="help" class="corner">
-    <b>WASD/arrows</b> roll &nbsp; <b>space</b> jump &nbsp; <b>Q/E</b> turn view &nbsp; <b>R</b> reset &nbsp; <b>T</b> tuning
+    <b>WASD/arrows</b> roll &nbsp; <b>space</b> jump &nbsp; <b>Q/E</b> turn view &nbsp; <b>shift</b> brake &nbsp; <b>C</b> last checkpoint &nbsp; <b>R</b> restart &nbsp; <b>T</b> tuning
   </div>
 
   <div id="panel" hidden>
@@ -59,12 +68,12 @@
     <div id="sliders"></div>
     <p style="margin:12px 0 0; display:flex; flex-wrap:wrap; gap:6px;">
       <button id="reset-defaults" type="button">defaults</button>
-      <button id="reset-ball" type="button">reset</button>
-      <button id="level-platform" type="button">level platform</button>
+      <button id="to-checkpoint" type="button">last checkpoint</button>
+      <button id="restart" type="button">restart</button>
     </p>
   </div>
 
-  <!-- bump ?v= on every change to tilt.js so browsers never pair a new page with a cached old script -->
-  <script type="module" src="tilt.js?v=5"></script>
+  <!-- bump every ?v= (here and in the import map) on each change, so browsers never mix new and cached old files -->
+  <script type="module" src="tilt/main.js?v=6"></script>
 </body>
 </html>

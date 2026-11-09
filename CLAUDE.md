@@ -47,11 +47,13 @@ Use `<a href="javascript:history.back()" class="back-button">` for sub-pages, or
 | `utility.html` | inline JS | Canvas-based image pixelation tool ("imageMog") |
 | `project-x.html` | `project-x-script.js` | Three.js shader/gradient experiment with slide layout |
 | `three-sphere-experiment.html` | `sphere-script.js` | Three.js sphere with animated GIF texture via gifler library |
+| `tilt.html` | `tilt/*.js` (ES modules) | Isometric rolling-ball game: Three.js + Rapier physics. `course.js` is the level as data, `pieces.js` builds it, `params.js` holds the tuning sliders. Bump every `?v=` in `tilt.html` (script tag + import map) on each change so browsers don't mix cached files. `?debug` exposes `window.__tilt` for testing. |
 
 ### External Libraries
 Only used in specific experiment pages, loaded via CDN (no local copies):
-- **Three.js** — `project-x.html`, `three-sphere-experiment.html`
+- **Three.js** — `project-x.html`, `three-sphere-experiment.html`, `tilt.html`
 - **gifler** — `three-sphere-experiment.html` (renders animated GIF frames onto a canvas as a Three.js texture)
+- **Rapier** (`@dimforge/rapier3d-compat`) — `tilt.html` (physics engine)
 
 ### Homepage (`index.html` + `script.js`)
 The homepage uses an `.icon-grid` of clickable icons. Some icons trigger hover popups (`.info-box` elements positioned via JS using `getBoundingClientRect`). The red button icon has a multi-click "apocalypse sequence" that hides the page and plays an animation.
