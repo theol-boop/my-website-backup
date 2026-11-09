@@ -24,13 +24,16 @@ const PARAM_SPECS = [
   { key: 'brake',     label: 'brake (shift)',  min: 0,  max: 20,  step: 0.5,  def: 4 },
   { key: 'jump',      label: 'jump',           min: 0,  max: 12,  step: 0.1,  def: 4.5,  unit: 'm/s' },
   { group: 'platform' },
-  { key: 'platMass',  label: 'mass',           min: 5,  max: 300, step: 1,    def: 50,   unit: 'kg' },
+  { key: 'platMass',  label: 'mass',           min: 5,  max: 600, step: 5,    def: 250,  unit: 'kg' },
   { key: 'spring',    label: 'self-levelling', min: 0,  max: 600, step: 5,    def: 30,   unit: 'N·m/rad' },
   { key: 'platDamp',  label: 'wobble damping', min: 0,  max: 600, step: 5,    def: 90,   unit: 'N·m·s' },
   { key: 'maxTilt',   label: 'max tilt',       min: 0,  max: 45,  step: 1,    def: 20,   unit: '°' },
+  { group: 'cube' },
+  { key: 'cubeMass',  label: 'mass',           min: 1,  max: 100, step: 0.5,  def: 6,    unit: 'kg' },
+  { key: 'cubeGrip',  label: 'grip (friction)',min: 0,  max: 1,   step: 0.01, def: 0.33 },
 ];
 const DEFAULTS = Object.fromEntries(PARAM_SPECS.filter(s => s.key).map(s => [s.key, s.def]));
-const STORE_KEY = 'tilt.params.v2';
+const STORE_KEY = 'tilt.params.v3';
 const params = { ...DEFAULTS };
 try {
   const saved = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
@@ -45,6 +48,8 @@ const PLATFORM = { size: 10, thick: 0.4 };          // 10 m square slab, top sur
 const PIVOT_Y = -PLATFORM.thick / 2;                // pivots about the slab's centre
 const BALL_R = 0.5;
 const SPAWN = { x: 0, y: 2.5, z: 0 };
+const CUBE_SIZE = 1;
+const CUBE_START = { x: -2.5, y: CUBE_SIZE / 2 + 0.01, z: 0.5 };
 const FALL_LIMIT = -20;                             // below this, respawn
 const DT = 1 / 120;                                 // physics step
 
@@ -124,6 +129,10 @@ scene.add(postVis);
 const knuckle = outlinedSphere(0.25);
 knuckle.position.y = PIVOT_Y - 0.45;
 scene.add(knuckle);
+
+// Cube (not controllable): just mass and friction
+const cubeVis = outlinedBox(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE);
+scene.add(cubeVis);
 
 // Ball, with three great circles so you can see it spin
 const ballVis = outlinedSphere(BALL_R);
@@ -276,6 +285,16 @@ const ballRb = world.createRigidBody(
   RAPIER.RigidBodyDesc.dynamic().setTranslation(SPAWN.x, SPAWN.y, SPAWN.z).setCcdEnabled(true).setCanSleep(false));
 const ballCol = world.createCollider(RAPIER.ColliderDesc.ball(BALL_R), ballRb);
 
+// Cube. Its friction rule is "Min" so its grip slider alone decides when it slides
+// (a box on a slope starts sliding once tan(tilt) > grip: 0.33 → about 18°, just under the 20° stop).
+const cubeRb = world.createRigidBody(RAPIER.RigidBodyDesc.dynamic()
+  .setTranslation(CUBE_START.x, CUBE_START.y, CUBE_START.z).setCcdEnabled(true).setCanSleep(false));
+const cubeCol = world.createCollider(
+  RAPIER.ColliderDesc.cuboid(CUBE_SIZE / 2, CUBE_SIZE / 2, CUBE_SIZE / 2)
+    .setRestitution(0).setFrictionCombineRule(RAPIER.CoefficientCombineRule.Min),
+  cubeRb);
+let cubeFalls = 0;
+
 function applyParams() {
   world.gravity = { x: 0, y: -params.gravity, z: 0 };
   ballCol.setMass(params.mass);
@@ -284,6 +303,8 @@ function applyParams() {
   ballRb.setLinearDamping(params.airDrag);
   ballRb.setAngularDamping(params.rollDamp);
   platformCol.setMass(params.platMass);
+  cubeCol.setMass(params.cubeMass);
+  cubeCol.setFriction(params.cubeGrip);
 }
 applyParams();
 
@@ -297,7 +318,13 @@ function levelPlatform() {
   platformRb.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
   platformRb.setAngvel({ x: 0, y: 0, z: 0 }, true);
 }
-function resetAll() { levelPlatform(); respawn(); }
+function placeCube(y) {
+  cubeRb.setTranslation({ x: CUBE_START.x, y, z: CUBE_START.z }, true);
+  cubeRb.setLinvel({ x: 0, y: 0, z: 0 }, true);
+  cubeRb.setAngvel({ x: 0, y: 0, z: 0 }, true);
+  cubeRb.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
+}
+function resetAll() { levelPlatform(); respawn(); placeCube(CUBE_START.y); cubeFalls = 0; }
 
 // Platform tilt state: the platform's up vector, the tilt angle, and the horizontal axis that would level it
 const platUp = new THREE.Vector3(), platQ = new THREE.Quaternion(), UP = new THREE.Vector3(0, 1, 0);
@@ -330,11 +357,12 @@ function platformForces() {
   platformRb.applyTorqueImpulse({ x: tx * DT, y: 0, z: tz * DT }, true);
 }
 
-// Push the platform the opposite way when the ball pushes off it (Newton's third law)
+// Push whatever the ball is standing on (platform or cube) the opposite way when it pushes off (Newton's third law)
 function reactOnGround(hit, ix, iy, iz) {
-  if (!hit || hit.collider.parent() !== platformRb) return;
+  const body = hit && hit.collider.parent();
+  if (!body || !body.isDynamic()) return;
   const p = ballRb.translation();
-  platformRb.applyImpulseAtPoint({ x: -ix, y: -iy, z: -iz }, { x: p.x, y: p.y - hit.timeOfImpact, z: p.z }, true);
+  body.applyImpulseAtPoint({ x: -ix, y: -iy, z: -iz }, { x: p.x, y: p.y - hit.timeOfImpact, z: p.z }, true);
 }
 
 // Ground check: short ray straight down from the ball's centre
@@ -396,7 +424,8 @@ function physicsStep() {
 
   world.step();
 
-  if (ballRb.translation().y < FALL_LIMIT) resetAll();   // fell off: start over on a level platform
+  if (ballRb.translation().y < FALL_LIMIT) resetAll();   // ball fell off: start over on a level platform
+  if (cubeRb.translation().y < FALL_LIMIT) { cubeFalls++; placeCube(4); }  // cube fell: drop it back in
 }
 
 // ---------------------------------------------------------------------------
@@ -451,6 +480,9 @@ function frame(now) {
   // Sync visuals
   readTilt();
   platformVis.quaternion.copy(platQ);
+  const cp = cubeRb.translation(), cq = cubeRb.rotation();
+  cubeVis.position.set(cp.x, cp.y, cp.z);
+  cubeVis.quaternion.set(cq.x, cq.y, cq.z, cq.w);
   const p = ballRb.translation(), q = ballRb.rotation();
   ballVis.position.set(p.x, p.y, p.z);
   ballVis.quaternion.set(q.x, q.y, q.z, q.w);
@@ -484,6 +516,7 @@ function frame(now) {
     `speed ${speed.toFixed(1)} m/s\n` +
     `height ${p.y.toFixed(2)} m\n` +
     `${grounded ? 'on ground' : 'airborne'}\n` +
+    `cube fell ${cubeFalls}×\n` +
     `${fps.toFixed(0)} fps`;
 
   requestAnimationFrame(frame);
