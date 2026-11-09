@@ -15,6 +15,7 @@
   #help { bottom: 12px; left: 16px; color: var(--muted); pointer-events: none; }
   #help b { color: var(--ink); font-weight: normal; }
   #readout { bottom: 12px; right: 16px; text-align: right; color: var(--muted); white-space: pre; pointer-events: none; }
+  #dial { width: 64px; height: 64px; display: block; margin: 0 0 6px auto; }
   @media (max-width: 700px) { #help { right: 16px; } #readout { bottom: auto; top: 44px; } }
 
   #panel { position: fixed; z-index: 3; top: 40px; right: 16px; width: 260px; max-width: calc(100vw - 32px);
@@ -48,17 +49,18 @@
 
   <a id="back" class="corner" href="projects.html">&#8249; back</a>
   <button id="tune-btn" class="corner" type="button">tune (T)</button>
-  <div id="readout" class="corner"></div>
+  <div id="readout" class="corner"><canvas id="dial" width="64" height="64"></canvas><div id="readout-text"></div></div>
   <div id="help" class="corner">
-    <b>WASD</b> roll &nbsp; <b>space</b> jump &nbsp; <b>Q/E</b> turn view &nbsp; <b>R</b> reset ball &nbsp; <b>T</b> tuning
+    <b>WASD</b> roll &nbsp; <b>space</b> jump &nbsp; <b>Q/E</b> turn view &nbsp; <b>R</b> reset &nbsp; <b>T</b> tuning
   </div>
 
   <div id="panel" hidden>
     <h2><span>tuning</span><button id="panel-close" type="button" aria-label="Close">×</button></h2>
     <div id="sliders"></div>
-    <p style="margin:12px 0 0; display:flex; gap:6px;">
+    <p style="margin:12px 0 0; display:flex; flex-wrap:wrap; gap:6px;">
       <button id="reset-defaults" type="button">defaults</button>
-      <button id="reset-ball" type="button">reset ball</button>
+      <button id="reset-ball" type="button">reset</button>
+      <button id="level-platform" type="button">level platform</button>
     </p>
   </div>
 

@@ -1,4 +1,5 @@
-// tilt — step 1+2: isometric line-drawing scene + heavy rolling sphere on a fixed platform.
+// tilt — isometric line-drawing scene, heavy rolling sphere, and a platform balanced on a central pivot
+// that tips under the weight of whatever is on it.
 // Three.js draws, Rapier simulates. Units are metres, kilograms, seconds.
 
 import * as THREE from 'three';
@@ -22,6 +23,11 @@ const PARAM_SPECS = [
   { key: 'maxSpeed',  label: 'top speed',      min: 1,  max: 30,  step: 0.5,  def: 7,    unit: 'm/s' },
   { key: 'brake',     label: 'brake (shift)',  min: 0,  max: 20,  step: 0.5,  def: 4 },
   { key: 'jump',      label: 'jump',           min: 0,  max: 12,  step: 0.1,  def: 4.5,  unit: 'm/s' },
+  { group: 'platform' },
+  { key: 'platMass',  label: 'mass',           min: 5,  max: 300, step: 1,    def: 50,   unit: 'kg' },
+  { key: 'spring',    label: 'self-levelling', min: 0,  max: 600, step: 5,    def: 30,   unit: 'N·m/rad' },
+  { key: 'platDamp',  label: 'wobble damping', min: 0,  max: 600, step: 5,    def: 90,   unit: 'N·m·s' },
+  { key: 'maxTilt',   label: 'max tilt',       min: 0,  max: 45,  step: 1,    def: 20,   unit: '°' },
 ];
 const DEFAULTS = Object.fromEntries(PARAM_SPECS.filter(s => s.key).map(s => [s.key, s.def]));
 const STORE_KEY = 'tilt.params.v2';
@@ -35,7 +41,8 @@ function saveParams() { try { localStorage.setItem(STORE_KEY, JSON.stringify(par
 // ---------------------------------------------------------------------------
 // Fixed world dimensions
 // ---------------------------------------------------------------------------
-const PLATFORM = { size: 10, thick: 0.4 };          // 10 m square slab, top surface at y = 0
+const PLATFORM = { size: 10, thick: 0.4 };          // 10 m square slab, top surface at y = 0 when level
+const PIVOT_Y = -PLATFORM.thick / 2;                // pivots about the slab's centre
 const BALL_R = 0.5;
 const SPAWN = { x: 0, y: 2.5, z: 0 };
 const FALL_LIMIT = -20;                             // below this, respawn
@@ -91,25 +98,35 @@ renderer.setClearColor(PAPER, 1);
 const scene = new THREE.Scene();
 const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 200);
 
-// Platform: slab with grid on top, and a pivot post underneath (fixed for now; it becomes the tilt axis in step 3)
+// Spheres: white body plus a black "inverted hull" (back faces of a slightly bigger sphere) as the silhouette
+const hullMat = new THREE.MeshBasicMaterial({ color: INK, side: THREE.BackSide });
+const outlinedSpheres = [];
+function outlinedSphere(r) {
+  const g = new THREE.Group();
+  const hull = new THREE.Mesh(new THREE.SphereGeometry(r, 48, 32), hullMat);
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(r, 48, 32), faceMat), hull);
+  outlinedSpheres.push({ hull, r });
+  return g;
+}
+
+// Platform: slab with grid on top. The group's origin is the pivot, so rotating it tilts the slab about the pivot.
 const platformVis = new THREE.Group();
-const slab = outlinedBox(PLATFORM.size, PLATFORM.thick, PLATFORM.size);
-slab.position.y = -PLATFORM.thick / 2;
-platformVis.add(slab);
-platformVis.add(gridLines(PLATFORM.size, 1, 0.002));
+platformVis.position.y = PIVOT_Y;
+platformVis.add(outlinedBox(PLATFORM.size, PLATFORM.thick, PLATFORM.size));
+platformVis.add(gridLines(PLATFORM.size, 1, PLATFORM.thick / 2 + 0.002));
 scene.add(platformVis);
 
-const POST = { w: 0.6, h: 6 };
+// Post and pivot knuckle underneath (the knuckle is drawn only; the post is solid)
+const POST = { w: 0.6, h: 6, top: PIVOT_Y - 0.6 };
 const postVis = outlinedBox(POST.w, POST.h, POST.w);
-postVis.position.y = -PLATFORM.thick - POST.h / 2;
+postVis.position.y = POST.top - POST.h / 2;
 scene.add(postVis);
+const knuckle = outlinedSphere(0.25);
+knuckle.position.y = PIVOT_Y - 0.45;
+scene.add(knuckle);
 
-// Ball: white sphere, a black "inverted hull" silhouette, and three great circles so you can see it spin
-const ballVis = new THREE.Group();
-const ballBody = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 48, 32), faceMat);
-const ballHull = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 48, 32),
-  new THREE.MeshBasicMaterial({ color: INK, side: THREE.BackSide }));
-ballVis.add(ballBody, ballHull);
+// Ball, with three great circles so you can see it spin
+const ballVis = outlinedSphere(BALL_R);
 const ringR = BALL_R * 1.004;
 const ringA = circleLine(ringR);                               // equator
 const ringB = circleLine(ringR); ringB.rotation.x = Math.PI / 2; // meridian
@@ -120,8 +137,8 @@ scene.add(ballVis);
 // Contact shadow: a faint disc dropped straight down onto whatever is below the ball
 const shadow = new THREE.Mesh(new THREE.CircleGeometry(BALL_R * 0.9, 40),
   new THREE.MeshBasicMaterial({ color: INK, transparent: true, opacity: 0.12, depthWrite: false }));
-shadow.rotation.x = -Math.PI / 2;
 scene.add(shadow);
+const Z_AXIS = new THREE.Vector3(0, 0, 1), tmpNormal = new THREE.Vector3();
 
 // ---------------------------------------------------------------------------
 // Camera: true isometric, rotatable in 90° steps (Q/E)
@@ -152,8 +169,7 @@ function resize() {
   camera.updateProjectionMatrix();
   unitsPerPixel = (2 * halfH) / h;
   // Silhouette thickness: ~1.5 css px regardless of zoom
-  const s = 1 + (1.5 * unitsPerPixel) / BALL_R;
-  ballHull.scale.setScalar(s);
+  for (const o of outlinedSpheres) o.hull.scale.setScalar(1 + (1.5 * unitsPerPixel) / o.r);
 }
 window.addEventListener('resize', resize);
 resize();
@@ -175,7 +191,7 @@ window.addEventListener('keydown', (e) => {
   if (k === ' ') jumpQueued = true;
   if (k === 'q') camYawTarget -= Math.PI / 2;
   if (k === 'e') camYawTarget += Math.PI / 2;
-  if (k === 'r') respawn();
+  if (k === 'r') resetAll();
   if (k === 't') togglePanel();
 });
 window.addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
@@ -214,7 +230,8 @@ for (const spec of PARAM_SPECS) {
 }
 document.getElementById('tune-btn').addEventListener('click', () => togglePanel());
 document.getElementById('panel-close').addEventListener('click', () => togglePanel(false));
-document.getElementById('reset-ball').addEventListener('click', () => respawn());
+document.getElementById('reset-ball').addEventListener('click', () => resetAll());
+document.getElementById('level-platform').addEventListener('click', () => levelPlatform());
 document.getElementById('reset-defaults').addEventListener('click', () => {
   Object.assign(params, DEFAULTS);
   for (const k in sliderEls) {
@@ -232,15 +249,27 @@ document.getElementById('loading').remove();
 const world = new RAPIER.World({ x: 0, y: -params.gravity, z: 0 });
 world.timestep = DT;
 
-// Platform (fixed for now)
-const platformBody = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0, -PLATFORM.thick / 2, 0));
-world.createCollider(
-  RAPIER.ColliderDesc.cuboid(PLATFORM.size / 2, PLATFORM.thick / 2, PLATFORM.size / 2).setFriction(1).setRestitution(0.1),
-  platformBody);
+// Collision groups: the platform and the post never touch each other (the pivot handles that relationship)
+const GROUP_PLATFORM = 0x0002, GROUP_POST = 0x0004;
+const groups = (member, filter) => (member << 16) | filter;
+
+// Platform: a dynamic body pinned at its centre of mass (= the pivot). It can tip on X and Z but not spin
+// around the vertical. Weight on it tips it; nothing else needs scripting.
+const platformRb = world.createRigidBody(RAPIER.RigidBodyDesc.dynamic()
+  .setTranslation(0, PIVOT_Y, 0)
+  .enabledTranslations(false, false, false)
+  .enabledRotations(true, false, true)
+  .setCanSleep(false));
+const platformCol = world.createCollider(
+  RAPIER.ColliderDesc.cuboid(PLATFORM.size / 2, PLATFORM.thick / 2, PLATFORM.size / 2)
+    .setFriction(1).setRestitution(0.1)
+    .setCollisionGroups(groups(GROUP_PLATFORM, 0xffff & ~GROUP_POST)),
+  platformRb);
 
 // Pivot post (fixed)
 const postBody = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0, postVis.position.y, 0));
-world.createCollider(RAPIER.ColliderDesc.cuboid(POST.w / 2, POST.h / 2, POST.w / 2), postBody);
+world.createCollider(RAPIER.ColliderDesc.cuboid(POST.w / 2, POST.h / 2, POST.w / 2)
+  .setCollisionGroups(groups(GROUP_POST, 0xffff & ~GROUP_PLATFORM)), postBody);
 
 // Ball
 const ballRb = world.createRigidBody(
@@ -254,6 +283,7 @@ function applyParams() {
   ballCol.setRestitution(params.bounce);
   ballRb.setLinearDamping(params.airDrag);
   ballRb.setAngularDamping(params.rollDamp);
+  platformCol.setMass(params.platMass);
 }
 applyParams();
 
@@ -262,6 +292,49 @@ function respawn() {
   ballRb.setLinvel({ x: 0, y: 0, z: 0 }, true);
   ballRb.setAngvel({ x: 0, y: 0, z: 0 }, true);
   ballRb.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
+}
+function levelPlatform() {
+  platformRb.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
+  platformRb.setAngvel({ x: 0, y: 0, z: 0 }, true);
+}
+function resetAll() { levelPlatform(); respawn(); }
+
+// Platform tilt state: the platform's up vector, the tilt angle, and the horizontal axis that would level it
+const platUp = new THREE.Vector3(), platQ = new THREE.Quaternion(), UP = new THREE.Vector3(0, 1, 0);
+let tiltAngle = 0;
+function readTilt() {
+  const q = platformRb.rotation();
+  platQ.set(q.x, q.y, q.z, q.w);
+  platUp.copy(UP).applyQuaternion(platQ);
+  tiltAngle = Math.acos(Math.min(1, Math.max(-1, platUp.y)));
+}
+
+// Pivot forces: a (weak) levelling spring, wobble damping, and a hard stop at max tilt
+function platformForces() {
+  readTilt();
+  const s = Math.hypot(platUp.x, platUp.z);
+  // Unit axis that rotates the platform back toward level: up' × worldUp, normalised
+  const nx = s > 1e-6 ? -platUp.z / s : 0, nz = s > 1e-6 ? platUp.x / s : 0;
+  const w = platformRb.angvel();
+  let tx = params.spring * tiltAngle * nx - params.platDamp * w.x;
+  let tz = params.spring * tiltAngle * nz - params.platDamp * w.z;
+
+  const maxT = params.maxTilt * Math.PI / 180;
+  if (tiltAngle > maxT) {
+    const over = tiltAngle - maxT;
+    tx += 6000 * over * nx; tz += 6000 * over * nz;
+    // Kill any angular velocity that tips it further past the stop
+    const tipping = -(w.x * nx + w.z * nz);
+    if (tipping > 0) platformRb.setAngvel({ x: w.x + tipping * nx, y: 0, z: w.z + tipping * nz }, true);
+  }
+  platformRb.applyTorqueImpulse({ x: tx * DT, y: 0, z: tz * DT }, true);
+}
+
+// Push the platform the opposite way when the ball pushes off it (Newton's third law)
+function reactOnGround(hit, ix, iy, iz) {
+  if (!hit || hit.collider.parent() !== platformRb) return;
+  const p = ballRb.translation();
+  platformRb.applyImpulseAtPoint({ x: -ix, y: -iy, z: -iz }, { x: p.x, y: p.y - hit.timeOfImpact, z: p.z }, true);
 }
 
 // Ground check: short ray straight down from the ball's centre
@@ -276,7 +349,9 @@ let grounded = false;
 const tmpFwd = new THREE.Vector3(), tmpRight = new THREE.Vector3(), tmpDir = new THREE.Vector3();
 
 function physicsStep() {
-  grounded = !!groundHit(BALL_R + 0.06);
+  platformForces();
+  const ground = groundHit(BALL_R + 0.06);
+  grounded = !!ground;
 
   // Screen-relative steering: W = away from the camera, D = screen right
   tmpFwd.set(-Math.sin(camYaw), 0, -Math.cos(camYaw));
@@ -300,7 +375,9 @@ function physicsStep() {
     // A little direct shove, only with ground under the ball (no air control)
     const speedAlong = v.x * tmpDir.x + v.z * tmpDir.z;
     if (grounded && speedAlong < params.maxSpeed) {
-      ballRb.applyImpulse({ x: tmpDir.x * params.push * DT, y: 0, z: tmpDir.z * params.push * DT }, true);
+      const ix = tmpDir.x * params.push * DT, iz = tmpDir.z * params.push * DT;
+      ballRb.applyImpulse({ x: ix, y: 0, z: iz }, true);
+      reactOnGround(ground, ix, 0, iz);
     }
   }
 
@@ -313,18 +390,49 @@ function physicsStep() {
       const v = ballRb.linvel();
       const dv = Math.max(0, params.jump - v.y);           // jump sets upward speed, never stacks
       ballRb.applyImpulse({ x: 0, y: dv * params.mass, z: 0 }, true);
+      reactOnGround(ground, 0, dv * params.mass, 0);
     }
   }
 
   world.step();
 
-  if (ballRb.translation().y < FALL_LIMIT) respawn();
+  if (ballRb.translation().y < FALL_LIMIT) resetAll();   // fell off: start over on a level platform
 }
 
 // ---------------------------------------------------------------------------
 // Main loop: fixed-step physics, render every frame
 // ---------------------------------------------------------------------------
-const readout = document.getElementById('readout');
+const readoutText = document.getElementById('readout-text');
+const dial = document.getElementById('dial'), dctx = dial.getContext('2d');
+
+// Tilt dial: a top-down map of which way the platform slopes (dot = downhill side), turned to match the view.
+// The circle is the max tilt.
+function drawDial() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), S = 64;
+  if (dial.width !== S * dpr) { dial.width = dial.height = S * dpr; }
+  dctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  dctx.clearRect(0, 0, S, S);
+  const c = S / 2, R = S / 2 - 4;
+  dctx.lineWidth = 1;
+  dctx.strokeStyle = '#000';
+  dctx.beginPath(); dctx.arc(c, c, R, 0, Math.PI * 2); dctx.stroke();
+  dctx.strokeStyle = '#bbb';
+  dctx.beginPath(); dctx.moveTo(c - R, c); dctx.lineTo(c + R, c); dctx.moveTo(c, c - R); dctx.lineTo(c, c + R); dctx.stroke();
+  const maxT = Math.max(1e-3, params.maxTilt * Math.PI / 180);
+  const s = Math.hypot(platUp.x, platUp.z);
+  const f = Math.min(1, tiltAngle / maxT);
+  let sx = 0, sy = 0;
+  if (s > 1e-6) {
+    const dx = platUp.x / s, dz = platUp.z / s;          // downhill, in world XZ
+    sx = dx * tmpRight.x + dz * tmpRight.z;              // project into screen space
+    sy = -(dx * tmpFwd.x + dz * tmpFwd.z);
+  }
+  const x = c + sx * f * R, y = c + sy * f * R;
+  dctx.strokeStyle = '#000';
+  dctx.beginPath(); dctx.moveTo(c, c); dctx.lineTo(x, y); dctx.stroke();
+  dctx.fillStyle = '#000';
+  dctx.beginPath(); dctx.arc(x, y, 3.5, 0, Math.PI * 2); dctx.fill();
+}
 let last = performance.now(), acc = 0, fpsT = 0, fpsN = 0, fps = 0;
 
 function frame(now) {
@@ -341,6 +449,8 @@ function frame(now) {
   placeCamera();
 
   // Sync visuals
+  readTilt();
+  platformVis.quaternion.copy(platQ);
   const p = ballRb.translation(), q = ballRb.rotation();
   ballVis.position.set(p.x, p.y, p.z);
   ballVis.quaternion.set(q.x, q.y, q.z, q.w);
@@ -349,7 +459,9 @@ function frame(now) {
   if (hit) {
     const h = hit.timeOfImpact;
     shadow.visible = true;
-    shadow.position.set(p.x, p.y - h + 0.004, p.z);
+    tmpNormal.set(hit.normal.x, hit.normal.y, hit.normal.z);
+    shadow.quaternion.setFromUnitVectors(Z_AXIS, tmpNormal);
+    shadow.position.set(p.x, p.y - h, p.z).addScaledVector(tmpNormal, 0.004);
     const k = Math.max(0, 1 - (h - BALL_R) / 6);
     shadow.material.opacity = 0.12 * k;
     shadow.scale.setScalar(0.6 + 0.4 * k);
@@ -363,7 +475,12 @@ function frame(now) {
   if (fpsT >= 0.5) { fps = fpsN / fpsT; fpsN = 0; fpsT = 0; }
   const v = ballRb.linvel();
   const speed = Math.hypot(v.x, v.z);
-  readout.textContent =
+  // keep steering axes fresh for the dial even when no physics step ran this frame
+  tmpFwd.set(-Math.sin(camYaw), 0, -Math.cos(camYaw));
+  tmpRight.set(Math.cos(camYaw), 0, -Math.sin(camYaw));
+  drawDial();
+  readoutText.textContent =
+    `tilt ${(tiltAngle * 180 / Math.PI).toFixed(1)}°\n` +
     `speed ${speed.toFixed(1)} m/s\n` +
     `height ${p.y.toFixed(2)} m\n` +
     `${grounded ? 'on ground' : 'airborne'}\n` +
