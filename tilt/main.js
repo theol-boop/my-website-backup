@@ -398,5 +398,5 @@ requestAnimationFrame(frame);
 
 // Test hook: only with ?debug in the URL
 if (new URLSearchParams(location.search).has('debug')) {
-  window.__tilt = { ballRb, run, checkpoints, placeBall: (x, y, z) => placeBall(new THREE.Vector3(x, y, z)) };
+  window.__tilt = { ballRb, run, checkpoints, scene, camera, THREE, placeBall: (x, y, z) => placeBall(new THREE.Vector3(x, y, z)) };
 }

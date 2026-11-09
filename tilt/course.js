@@ -5,6 +5,8 @@
 // a beam over the void, the tilting platform with its cube.
 // Stage B: a gentle hill, a steep hill, a steep climb that needs a run-up, and a spiral down that passes
 // under the climb.
+// Stage C: arches to roll under, a loop-the-loop, a half-pipe, a humped bridge, and a funnel bowl that drops
+// you through its middle onto a lower level.
 
 export const COURSE = {
   spawn: [0, 0.8, 0.5],
@@ -56,8 +58,41 @@ export const COURSE = {
     // 9. The spiral: 1¾ turns down around a column, 6.3 m in all. It passes under the top of the climb,
     //    and so does the track that leaves it.
     { type: 'spiral', center: [-41, 1, -117.5], radius: 4, width: 2.4, turns: 1.75, drop: 3.6 },
-    { type: 'path', width: 2.4, capEnd: true,
-      points: [[-42.2, -5.3, -113.5], [-52, -5.3, -113.5], [-52, -5.3, -120]] },
-    { type: 'gate', kind: 'finish', pos: [-52, -5.3, -119], dir: 'z', width: 2.4 },
+    { type: 'path', width: 2.4,
+      points: [[-42.2, -5.3, -113.5], [-52, -5.3, -113.5], [-52, -5.3, -130]] },
+
+    // ---- Stage C ----
+    // 10. A colonnade: three arches to roll under, each lower and narrower than the last
+    { type: 'gate', pos: [-52, -5.3, -116], dir: 'z', width: 2.4 },
+    { type: 'arch', pos: [-52, -5.3, -119], dir: '-z', span: 2.2, clearance: 2.2 },
+    { type: 'arch', pos: [-52, -5.3, -123], dir: '-z', span: 1.8, clearance: 1.6 },
+    { type: 'arch', pos: [-52, -5.3, -127], dir: '-z', span: 1.3, clearance: 1.15 },
+
+    // 11. Drop 3 m for speed, straight into a loop-the-loop (it drifts 3.4 m to the left as it goes round)
+    { type: 'hill', shape: 'rise', start: [-52, -5.3, -131.2], dir: '-z', length: 6, height: -3, width: 2.4 },
+    { type: 'path', width: 2.4,
+      points: [[-52, -8.3, -138.4], [-52, -8.3, -140.6]] },
+    { type: 'loop', start: [-52, -8.3, -141.8], dir: '-z', side: '-x', radius: 2.2, width: 2.4, shift: 3.4 },
+
+    // 12. Checkpoint, then a half-pipe
+    { type: 'path', width: 2.4,
+      points: [[-55.4, -8.3, -143], [-55.4, -8.3, -146]] },
+    { type: 'gate', pos: [-55.4, -8.3, -145], dir: 'z', width: 2.4 },
+    { type: 'halfpipe', start: [-55.4, -8.3, -147.2], dir: '-z', radius: 2.5, length: 14 },
+
+    // 13. A humped arch bridge over a gap (thin, low rails)
+    { type: 'path', width: 2.4,
+      points: [[-55.4, -8.3, -162.4], [-55.4, -8.3, -166.3]] },
+    { type: 'hill', start: [-55.4, -8.3, -167.5], dir: '-z', length: 7, height: 1.5, width: 2.4, thick: 0.35, railH: 0.3 },
+
+    // 14. Sharp right, checkpoint, and into the bowl: the track runs off its end at the rim, the ball orbits
+    //     down the funnel and drops through the hole onto track 3 m below, which runs out under the bowl.
+    { type: 'path', width: 3, openStart: '+z',
+      points: [[-55.4, -8.3, -176], [-66, -8.3, -176]] },
+    { type: 'gate', pos: [-58.5, -8.3, -176], dir: 'x', width: 3 },
+    { type: 'bowl', center: [-66, -8.3, -180.5], radius: 6, depth: 3, hole: 0.9, gap: [25, 105] },
+    { type: 'path', width: 3, capStart: true, capEnd: true,
+      points: [[-66, -14.6, -180.5], [-66, -14.6, -194]] },
+    { type: 'gate', kind: 'finish', pos: [-66, -14.6, -192], dir: 'z', width: 3 },
   ],
 };
