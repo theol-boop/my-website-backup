@@ -557,7 +557,129 @@ function tiltPlatform(spec, ctx) {
   return self;
 }
 
-const BUILDERS = { path, gate, tiltPlatform, hill, spiral, arch, halfpipe, loop, bowl };
+// ---------------------------------------------------------------------------
+// seesaw: a plank balanced on an axle across the track, tipping between ±maxDeg. It starts tipped toward
+// you (near end down at track level), so you roll up it, and it drops the far end once your weight passes
+// the axle. `pivot` is the plank's centre, which is also its axle. Rails are optional.
+// ---------------------------------------------------------------------------
+function seesaw(spec, ctx) {
+  const { length = 8, width = 2.4, thick = 0.3, maxDeg = 12, rails = true, railH = 0.3, railW = 0.15, dir = '-z' } = spec;
+  const { world, scene, params } = ctx;
+  const pivot = V(spec.pivot);
+  const d = new THREE.Vector3(DIRS[dir][0], 0, DIRS[dir][1]);
+  const axis = d.clone().cross(UP);                          // tipping by +angle lowers the near end
+  const yaw = yawFor(dir);
+  const maxA = maxDeg * Math.PI / 180;
+
+  // Drawing: plank (+ rails) in a group that rotates; post and knuckle underneath
+  const vis = new THREE.Group();
+  vis.position.copy(pivot);
+  const plank = new THREE.Group();
+  plank.rotation.y = yaw;                                    // local z along the plank
+  plank.add(outlinedBox(width, thick, length, { grid: true }));
+  const railBoxes = [];
+  if (rails) for (const sx of [-1, 1]) {
+    const r = outlinedBox(railW, railH, length);
+    r.position.set(sx * (width / 2 - railW / 2), thick / 2 + railH / 2, 0);
+    plank.add(r); railBoxes.push(r.position.clone());
+  }
+  vis.add(plank);
+  scene.add(vis);
+  const post = outlinedBox(0.4, 5, 0.4);
+  post.position.set(pivot.x, pivot.y - 0.75 - 2.5, pivot.z);
+  scene.add(post);
+  const knuckle = outlinedSphere(0.25);
+  knuckle.position.set(pivot.x, pivot.y - 0.5, pivot.z);
+  scene.add(knuckle);
+  ctx.extendBounds(pivot, length);
+
+  // Physics: pinned at its centre, free to turn only about the axle
+  const rb = world.createRigidBody(RAPIER.RigidBodyDesc.dynamic()
+    .setTranslation(pivot.x, pivot.y, pivot.z)
+    .enabledTranslations(false, false, false)
+    .enabledRotations(Math.abs(axis.x) > 0.5, false, Math.abs(axis.z) > 0.5)
+    .setCanSleep(false));
+  const qYaw = new THREE.Quaternion().setFromAxisAngle(UP, yaw);
+  const cols = [world.createCollider(RAPIER.ColliderDesc.cuboid(width / 2, thick / 2, length / 2)
+    .setRotation(rq(qYaw)).setFriction(1).setCollisionGroups(PLATFORM_GROUPS), rb)];
+  for (const p of railBoxes) {
+    const off = p.clone().applyQuaternion(qYaw);
+    cols.push(world.createCollider(RAPIER.ColliderDesc.cuboid(railW / 2, railH / 2, length / 2)
+      .setTranslation(off.x, off.y, off.z).setRotation(rq(qYaw)).setFriction(1).setCollisionGroups(PLATFORM_GROUPS), rb));
+  }
+
+  const q = new THREE.Quaternion();
+  const angle = () => { const r = rb.rotation(); return 2 * Math.atan2(r.x * axis.x + r.y * axis.y + r.z * axis.z, r.w); };
+  const self = {
+    type: 'seesaw',
+    applyParams() {
+      // Spread the mass over plank and rails by volume
+      const total = params.seesawMass, vols = cols.map(c => { const h = c.halfExtents(); return h.x * h.y * h.z; });
+      const sum = vols.reduce((a, b) => a + b, 0);
+      cols.forEach((c, i) => c.setMass(total * vols[i] / sum));
+    },
+    reset() {
+      rb.setRotation(rq(new THREE.Quaternion().setFromAxisAngle(axis, maxA)), true);
+      rb.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    },
+    preStep(DT) {
+      // Hard stops at ±maxDeg, plus a little friction in the axle
+      const a = angle(), w = rb.angvel();
+      const wa = w.x * axis.x + w.y * axis.y + w.z * axis.z;
+      let tq = -2 * wa;
+      if (a > maxA) { tq += -4000 * (a - maxA); if (wa > 0) rb.setAngvel({ x: 0, y: 0, z: 0 }, true); }
+      if (a < -maxA) { tq += -4000 * (a + maxA); if (wa < 0) rb.setAngvel({ x: 0, y: 0, z: 0 }, true); }
+      rb.applyTorqueImpulse({ x: axis.x * tq * DT, y: 0, z: axis.z * tq * DT }, true);
+    },
+    sync() { const r = rb.rotation(); q.set(r.x, r.y, r.z, r.w); vis.quaternion.copy(q); },
+  };
+  self.applyParams();
+  self.reset();
+  return self;
+}
+
+// ---------------------------------------------------------------------------
+// sweeper: a square deck with no rails and a bar turning round a central hub, low enough to bat the ball
+// off the edge. The bar is driven (it can't be stopped or slowed); its speed is a tuning slider (rpm).
+// `pos` is the centre of the deck's top surface.
+// ---------------------------------------------------------------------------
+function sweeper(spec, ctx) {
+  const { size = 9, thick = 0.5, armLength = 8.2, armH = 0.5, armW = 0.3, armLift = 0.25, hubR = 0.5 } = spec;
+  const { world, scene, params } = ctx;
+  const pos = V(spec.pos);
+  staticBox(ctx, new THREE.Vector3(pos.x, pos.y - thick / 2, pos.z), [size, thick, size], IDQ, { grid: true });
+
+  const vis = new THREE.Group();
+  vis.position.copy(pos);
+  const hub = outlinedCylinder(hubR, armLift + armH + 0.4);
+  hub.position.y = (armLift + armH + 0.4) / 2;
+  vis.add(hub);
+  const arm = outlinedBox(armLength, armH, armW);
+  arm.position.y = armLift + armH / 2;
+  vis.add(arm);
+  scene.add(vis);
+
+  const rb = world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(pos.x, pos.y, pos.z));
+  world.createCollider(RAPIER.ColliderDesc.cylinder((armLift + armH + 0.4) / 2, hubR)
+    .setTranslation(0, (armLift + armH + 0.4) / 2, 0), rb);
+  world.createCollider(RAPIER.ColliderDesc.cuboid(armLength / 2, armH / 2, armW / 2)
+    .setTranslation(0, armLift + armH / 2, 0).setFriction(0.3), rb);
+
+  let a = 0;
+  const q = new THREE.Quaternion();
+  return {
+    type: 'sweeper',
+    reset() { a = 0; },
+    preStep(DT) {
+      a -= params.sweepRpm * 2 * Math.PI / 60 * DT;          // clockwise seen from above
+      q.setFromAxisAngle(UP, a);
+      rb.setNextKinematicRotation(rq(q));
+    },
+    sync() { const r = rb.rotation(); vis.quaternion.set(r.x, r.y, r.z, r.w); },
+  };
+}
+
+const BUILDERS = { path, gate, tiltPlatform, hill, spiral, arch, halfpipe, loop, bowl, seesaw, sweeper };
 
 export function buildCourse(course, ctx) {
   const gates = [], dynamic = [];

@@ -7,6 +7,7 @@
 // under the climb.
 // Stage C: arches to roll under, a loop-the-loop, a half-pipe, a humped bridge, and a funnel bowl that drops
 // you through its middle onto a lower level.
+// Stage D: two seesaws over the void, and a sweeper arm on a bare deck.
 
 export const COURSE = {
   spawn: [0, 0.8, 0.5],
@@ -91,8 +92,26 @@ export const COURSE = {
       points: [[-55.4, -8.3, -176], [-66, -8.3, -176]] },
     { type: 'gate', pos: [-58.5, -8.3, -176], dir: 'x', width: 3 },
     { type: 'bowl', center: [-66, -8.3, -180.5], radius: 6, depth: 3, hole: 0.9, gap: [25, 105] },
-    { type: 'path', width: 3, capStart: true, capEnd: true,
-      points: [[-66, -14.6, -180.5], [-66, -14.6, -194]] },
-    { type: 'gate', kind: 'finish', pos: [-66, -14.6, -192], dir: 'z', width: 3 },
+    { type: 'path', width: 3, capStart: true,
+      points: [[-66, -14.6, -180.5], [-66, -14.6, -192]] },
+
+    // ---- Stage D ----
+    // 15. Checkpoint, then two seesaws over the void. Each starts tipped toward you; roll up it and it drops
+    //     the far end once your weight passes the axle. The second is narrower, steeper and has no rails.
+    { type: 'gate', pos: [-66, -14.6, -189], dir: 'z', width: 3 },
+    { type: 'seesaw', pivot: [-66, -13.915, -197.79], dir: '-z', length: 8, width: 2.4, maxDeg: 12 },
+    { type: 'path', width: 3,
+      points: [[-66, -14.6, -203.6], [-66, -14.6, -206]] },
+    { type: 'seesaw', pivot: [-66, -13.969, -210.79], dir: '-z', length: 6, width: 1.6, maxDeg: 15, rails: false },
+
+    // 16. Checkpoint, then the sweeper: a bare 9 m deck with a bar turning round a hub in the middle.
+    //     Get round the hub and across without being batted off the edge.
+    { type: 'path', width: 3,
+      points: [[-66, -14.6, -215.6], [-66, -14.6, -217]] },
+    { type: 'gate', pos: [-66, -14.6, -216.5], dir: 'z', width: 3 },
+    { type: 'sweeper', pos: [-66, -14.6, -223], size: 9 },
+    { type: 'path', width: 3, capEnd: true,
+      points: [[-66, -14.6, -229], [-66, -14.6, -234]] },
+    { type: 'gate', kind: 'finish', pos: [-66, -14.6, -233], dir: 'z', width: 3 },
   ],
 };
