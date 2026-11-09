@@ -103,6 +103,60 @@ window.addEventListener('keydown', (e) => {
   if (k === 't') togglePanel();
 });
 window.addEventListener('keyup', (e) => keys.delete(keyName(e)));
+
+// ---------------------------------------------------------------------------
+// Touch controls: a floating analog stick (wherever your thumb lands on the left of the screen),
+// jump and brake buttons, and view-turn buttons. Shown on touch-first devices, or after the first touch.
+// ---------------------------------------------------------------------------
+const STICK_R = 60;                                   // px from centre to full deflection
+const stick = { id: null, ox: 0, oy: 0, x: 0, y: 0 }; // x right, y up, each -1..1
+let touchBrake = false;
+const stickBase = document.getElementById('stick-base'), stickKnob = document.getElementById('stick-knob');
+const stickHint = document.getElementById('stick-hint');
+function enableTouchUI() { document.body.classList.add('touch'); document.getElementById('tune-btn').textContent = 'tune'; }
+if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) enableTouchUI();
+window.addEventListener('touchstart', enableTouchUI, { once: true, passive: true });
+
+const zone = document.getElementById('stick-zone');
+zone.addEventListener('pointerdown', (e) => {
+  if (stick.id !== null) return;
+  e.preventDefault();
+  zone.setPointerCapture(e.pointerId);
+  stick.id = e.pointerId; stick.ox = e.clientX; stick.oy = e.clientY; stick.x = stick.y = 0;
+  stickBase.style.left = stickKnob.style.left = e.clientX + 'px';
+  stickBase.style.top = stickKnob.style.top = e.clientY + 'px';
+  stickBase.hidden = stickKnob.hidden = false;
+  stickHint.hidden = true;
+});
+zone.addEventListener('pointermove', (e) => {
+  if (e.pointerId !== stick.id) return;
+  let dx = e.clientX - stick.ox, dy = e.clientY - stick.oy;
+  const d = Math.hypot(dx, dy);
+  if (d > STICK_R) { dx *= STICK_R / d; dy *= STICK_R / d; }
+  stick.x = dx / STICK_R; stick.y = -dy / STICK_R;
+  stickKnob.style.left = stick.ox + dx + 'px';
+  stickKnob.style.top = stick.oy + dy + 'px';
+});
+function endStick(e) {
+  if (e.pointerId !== stick.id) return;
+  stick.id = null; stick.x = stick.y = 0;
+  stickBase.hidden = stickKnob.hidden = true;
+}
+zone.addEventListener('pointerup', endStick);
+zone.addEventListener('pointercancel', endStick);
+
+function holdButton(id, onDown, onUp) {
+  const el = document.getElementById(id);
+  el.addEventListener('pointerdown', (e) => { e.preventDefault(); el.setPointerCapture(e.pointerId); el.classList.add('on'); onDown(); });
+  const up = () => { el.classList.remove('on'); onUp && onUp(); };
+  el.addEventListener('pointerup', up);
+  el.addEventListener('pointercancel', up);
+  el.addEventListener('contextmenu', (e) => e.preventDefault());
+}
+holdButton('jump-btn', () => { jumpQueued = true; });
+holdButton('brake-btn', () => { touchBrake = true; }, () => { touchBrake = false; });
+holdButton('rotl-btn', () => { camYawTarget -= Math.PI / 2; });
+holdButton('rotr-btn', () => { camYawTarget += Math.PI / 2; });
 window.addEventListener('blur', () => keys.clear());
 function togglePanel(force) { panel.hidden = force === undefined ? !panel.hidden : !force; }
 
@@ -235,19 +289,24 @@ function physicsStep() {
 
   // Screen-relative steering: W = up the screen, D = screen right
   updateViewAxes();
-  dir.set(0, 0, 0);
-  if (keys.has('w')) dir.add(fwd);
-  if (keys.has('s')) dir.sub(fwd);
-  if (keys.has('d')) dir.add(right);
-  if (keys.has('a')) dir.sub(right);
+  // Input as a screen-space vector: keys give full strength, the touch stick is analog (with a small dead zone)
+  let inX = 0, inY = 0;
+  if (keys.has('w')) inY += 1;
+  if (keys.has('s')) inY -= 1;
+  if (keys.has('d')) inX += 1;
+  if (keys.has('a')) inX -= 1;
+  const sm = Math.hypot(stick.x, stick.y);
+  if (sm > 0.12) { const k = (sm - 0.12) / 0.88 / sm; inX += stick.x * k; inY += stick.y * k; }
+  const strength = Math.min(1, Math.hypot(inX, inY));
+  dir.set(0, 0, 0).addScaledVector(fwd, inY).addScaledVector(right, inX);
 
-  if (dir.lengthSq() > 0) {
+  if (dir.lengthSq() > 1e-6) {
     dir.normalize();
     if (!run.started) { run.started = true; run.t0 = performance.now(); }
     const ax = dir.z, az = -dir.x;                          // spin axis that rolls the ball along dir: up × dir
     const w = ballRb.angvel(), v = ballRb.linvel();
     if (w.x * ax + w.z * az < params.maxSpeed / BALL_R) {
-      ballRb.applyTorqueImpulse({ x: ax * params.torque * DT, y: 0, z: az * params.torque * DT }, true);
+      ballRb.applyTorqueImpulse({ x: ax * params.torque * strength * DT, y: 0, z: az * params.torque * strength * DT }, true);
     }
     if (grounded && v.x * dir.x + v.z * dir.z < params.maxSpeed) {
       // The push is a shove, not traction, so it fades out on slopes: full strength up to a third of
@@ -256,13 +315,13 @@ function physicsStep() {
       const lo = params.pushSlope / 3, hi = Math.max(lo + 1e-3, params.pushSlope);
       const x = Math.min(1, Math.max(0, (slope - lo) / (hi - lo)));
       const fade = 1 - x * x * (3 - 2 * x);
-      const ix = dir.x * params.push * fade * DT, iz = dir.z * params.push * fade * DT;
+      const ix = dir.x * params.push * fade * strength * DT, iz = dir.z * params.push * fade * strength * DT;
       ballRb.applyImpulse({ x: ix, y: 0, z: iz }, true);
       reactOn(ground, ix, 0, iz);
     }
   }
 
-  ballRb.setAngularDamping(keys.has('shift') ? params.rollDamp + params.brake : params.rollDamp);
+  ballRb.setAngularDamping(keys.has('shift') || touchBrake ? params.rollDamp + params.brake : params.rollDamp);
 
   if (jumpQueued) {
     jumpQueued = false;
