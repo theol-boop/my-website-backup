@@ -191,9 +191,13 @@ const keys = new Set();
 let jumpQueued = false;
 const panel = document.getElementById('panel');
 
+// Arrow keys steer exactly like WASD
+const ARROWS = { arrowup: 'w', arrowleft: 'a', arrowdown: 's', arrowright: 'd' };
+const keyName = (e) => { const k = e.key.toLowerCase(); return ARROWS[k] || k; };
+
 window.addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement) return;
-  const k = e.key.toLowerCase();
+  const k = keyName(e);
   if (['w', 'a', 's', 'd', ' ', 'shift'].includes(k)) e.preventDefault();
   if (e.repeat) { keys.add(k); return; }
   keys.add(k);
@@ -203,7 +207,7 @@ window.addEventListener('keydown', (e) => {
   if (k === 'r') resetAll();
   if (k === 't') togglePanel();
 });
-window.addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
+window.addEventListener('keyup', (e) => keys.delete(keyName(e)));
 window.addEventListener('blur', () => keys.clear());
 
 function togglePanel(force) {
